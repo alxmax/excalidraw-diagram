@@ -112,6 +112,23 @@ s.frame(x, y, w, h, *, fill=None, stroke=None, dashed=False, group=None)
 Drawn behind everything added so far; always exempt from the overlap check.
 Place child boxes on top at coordinates inside it.
 
+### Auto-layout — place groups without coordinate math
+```python
+s.row(items, x, y, *, w=160, h=70, gap=40, fill=None,
+      font_size=16, shape="rectangle", connect=False)   # -> [ids] left→right
+s.column(items, x, y, *, w=160, h=70, gap=30, ...)       # -> [ids] top→down
+s.grid(items, x, y, cols, *, w=160, h=70,
+       gap_x=40, gap_y=30, ...)                          # -> [ids] cols-wide grid
+s.enclose(ids, *, pad=24, dashed=True, fill=None,
+          stroke=None, label=None)                       # -> frame id around ids
+```
+- `items`: each entry is `"text"`, `(text, fill)`, or a dict of `box()` options
+  (`text`, `fill`, `stroke`, `shape`, `font_size`, `w`, `h`, `container`).
+- `connect=True` (row/column) chains consecutive nodes with arrows.
+- `grid` uses a uniform cell size so rows/columns align (per-item `w/h` ignored).
+- `enclose` measures the bounding box of `ids`, pads it, and draws a `frame()`
+  behind them; call it *after* placing the nodes. Optional centered caption.
+
 ### Layout sanity
 ```python
 s.check_overlaps(min_px=1.0)            # -> [(label_a, label_b), ...] overlapping nodes

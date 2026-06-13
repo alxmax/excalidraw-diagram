@@ -254,6 +254,93 @@ class Scene:
         return fid
 
     # ====================================================================
+    #  AUTO-LAYOUT  (place several nodes without hand-computing coordinates)
+    # ====================================================================
+    @staticmethod
+    def _norm(items):
+        """Normalise row/grid items to dicts. An item may be a plain string
+        (text), a (text, fill) pair, or a full dict of box() options."""
+        out = []
+        for it in items:
+            if isinstance(it, dict):
+                out.append(dict(it))
+            elif isinstance(it, (tuple, list)):
+                d = {"text": it[0]}
+                if len(it) > 1:
+                    d["fill"] = it[1]
+                out.append(d)
+            else:
+                out.append({"text": str(it)})
+        return out
+
+    def _place(self, it, x, y, w, h, fill, font_size, shape):
+        return self.box(it.get("text", ""), x, y,
+                        it.get("w", w), it.get("h", h),
+                        fill=it.get("fill", fill), stroke=it.get("stroke"),
+                        shape=it.get("shape", shape),
+                        font_size=it.get("font_size", font_size),
+                        container=it.get("container", False))
+
+    def row(self, items, x, y, *, w=160, h=70, gap=40, fill=None,
+            font_size=16, shape="rectangle", connect=False):
+        """Place items left→right starting at (x, y); return their ids.
+        connect=True chains them with arrows (a quick pipeline)."""
+        ids, cx = [], x
+        for it in self._norm(items):
+            ids.append(self._place(it, cx, y, w, h, fill, font_size, shape))
+            cx += it.get("w", w) + gap
+        if connect:
+            for a, b in zip(ids, ids[1:]):
+                self.arrow(a, b)
+        return ids
+
+    def column(self, items, x, y, *, w=160, h=70, gap=30, fill=None,
+               font_size=16, shape="rectangle", connect=False):
+        """Place items top→down starting at (x, y); return their ids."""
+        ids, cy = [], y
+        for it in self._norm(items):
+            ids.append(self._place(it, x, cy, w, h, fill, font_size, shape))
+            cy += it.get("h", h) + gap
+        if connect:
+            for a, b in zip(ids, ids[1:]):
+                self.arrow(a, b)
+        return ids
+
+    def grid(self, items, x, y, cols, *, w=160, h=70, gap_x=40, gap_y=30,
+             fill=None, font_size=16, shape="rectangle"):
+        """Place items in a `cols`-wide grid (row-major); return their ids.
+        Cell size is uniform so columns and rows stay aligned."""
+        ids = []
+        for i, it in enumerate(self._norm(items)):
+            r, c = divmod(i, cols)
+            ids.append(self.box(it.get("text", ""),
+                                x + c * (w + gap_x), y + r * (h + gap_y), w, h,
+                                fill=it.get("fill", fill),
+                                stroke=it.get("stroke"),
+                                shape=it.get("shape", shape),
+                                font_size=it.get("font_size", font_size)))
+        return ids
+
+    def enclose(self, ids, *, pad=24, dashed=True, fill=None, stroke=None,
+                label=None, label_size=13, label_color="grey"):
+        """Draw a frame auto-sized around the given node ids (call it AFTER
+        placing them, so it sits behind). Optional centered caption above.
+        Returns the frame id."""
+        if not ids:
+            raise ValueError("enclose() needs at least one node id")
+        x0 = min(self._geom[i][0] for i in ids)
+        y0 = min(self._geom[i][1] for i in ids)
+        x1 = max(self._geom[i][0] + self._geom[i][2] for i in ids)
+        y1 = max(self._geom[i][1] + self._geom[i][3] for i in ids)
+        fx, fy = x0 - pad, y0 - pad
+        fw, fh = (x1 - x0) + 2 * pad, (y1 - y0) + 2 * pad
+        fid = self.frame(fx, fy, fw, fh, fill=fill, stroke=stroke, dashed=dashed)
+        if label:
+            self.label(label, fx + fw / 2, fy - 22, size=label_size,
+                       color=label_color, align="center")
+        return fid
+
+    # ====================================================================
     #  FREE-STANDING TEXT (titles & small caption labels)
     # ====================================================================
     def title(self, text, x, y, *, size=28, color=None, align="left",
@@ -663,11 +750,21 @@ window.addEventListener("load", function(){
 
 
 if __name__ == "__main__":
-    # tiny smoke test
-    s = Scene()
-    a = s.box("A", 80, 80, fill="blue")
-    b = s.box("B", 80, 240, fill="green")
-    s.arrow(a, b, label="next")
-    s.title("demo", 80, 20, size=24)
-    pj, ph = s.save("smoke", out_dir="/tmp/excd")
+    # smoke test — also exercises the auto-layout helpers and sanity checks
+    import tempfile
+    out = os.path.join(tempfile.gettempdir(), "excd")
+    s = Scene(seed=1)
+    s.title("demo", 0, -40, size=24)
+    stages = s.row(["ingest", "process", "store"], 0, 0, fill="blue",
+                   connect=True)
+    workers = s.grid([f"n{i}" for i in range(9)], 0, 150, 3,
+                     w=120, h=60, fill="violet")
+    s.enclose(workers, label="parallel workers")
+    done = s.box("done", 620, 0, fill="green")
+    s.arrow(stages[-1], done)
+    assert not s.check_overlaps(), s.check_overlaps()
+    assert not s.check_arrow_crossings(), s.check_arrow_crossings()
+    pj, ph = s.save("smoke", out_dir=out)
     print("wrote", pj, ph)
+    print("overlaps:", s.check_overlaps(),
+          "crossings:", s.check_arrow_crossings())

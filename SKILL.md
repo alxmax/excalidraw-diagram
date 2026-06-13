@@ -72,9 +72,15 @@ and emits both files in one `.save()` call.
 **Parallel groups — the most common source of spaghetti arrows**
 
 When N nodes run simultaneously (e.g. 9 senators, 3 agents, parallel workers):
-- Enclose them ALL in a single `frame()`.
-- Draw **one arrow in** to the frame, **one arrow out**. Never draw arrows
-  between individual nodes inside the group — that creates N×N crossing lines.
+- Place them with `grid()`/`row()` and wrap with `enclose()` — even spacing, an
+  auto-sized frame, zero coordinate math:
+  ```python
+  workers = s.grid([f"agent {i}" for i in range(9)], 900, 120, 3, fill="violet")
+  group   = s.enclose(workers, label="9 parallel sub-agents")
+  ```
+- Draw **one arrow in** to the frame (`s.arrow(dispatch, group)`), **one arrow
+  out** (`s.arrow(group, merge)`). Never draw arrows between individual nodes
+  inside the group — that creates N×N crossing lines.
 
 **Column gaps**
 
@@ -194,6 +200,10 @@ essentials:
 | `s.ellipse(text, x, y, w, h, …, container=…)` | a labelled ellipse |
 | `s.diamond(text, x, y, w, h, …)` | a labelled decision diamond |
 | `s.frame(x, y, w, h, dashed=False)` | a container drawn *behind* children (overlap-exempt) |
+| `s.row(items, x, y, gap=…, connect=…)` | place items left→right → list of ids (`connect=True` chains arrows) |
+| `s.column(items, x, y, gap=…, connect=…)` | place items top→down → list of ids |
+| `s.grid(items, x, y, cols, …)` | place items in a `cols`-wide grid → list of ids |
+| `s.enclose(ids, label=…, pad=…)` | auto-sized frame *behind* those nodes → frame id |
 | `s.title(text, x, y, size=28)` | a large free-standing heading |
 | `s.label(text, x, y, size=12)` | a small grey caption (e.g. "ONE AGENT") |
 | `s.arrow(src, dst, label=…, dashed=…, curve=…, start=…, end=…)` | a bound arrow node→node |
@@ -206,6 +216,12 @@ essentials:
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own
 stroke + light-fill pair, so diagrams look native.
+
+**Auto-layout** — prefer `row`/`column`/`grid` over hand-computing coordinates;
+they space evenly (so shapes never overlap) and return the ids in order. Each
+`items` entry is a `"text"` string, a `(text, fill)` pair, or a full dict of
+`box()` options. `enclose(ids, label=…)` then draws a correctly-sized frame
+behind them — no manual frame math.
 
 **Grouping pattern** (an "agent" that holds several voices/boxes): draw a
 `frame()` or `ellipse(..., container=True)` first, place the inner `box()`es on
