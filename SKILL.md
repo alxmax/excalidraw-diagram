@@ -125,6 +125,10 @@ modes), do NOT emit separate files. Stack the views as labelled regions in the
 `s.bounds()` (returns `(min_x, min_y, max_x, max_y)`) to find where the previous
 region ended, then start the next ~80px below `max_y`.
 
+This rule is **enforced by the builder**: calling `save()` twice on the same
+`Scene` raises a `RuntimeError` at runtime, so splitting into multiple scripts
+or multiple `save()` calls will fail immediately.
+
 **Expand, don't cram**
 
 The canvas is unlimited. When a diagram gets dense, spread it out — bigger gaps,
