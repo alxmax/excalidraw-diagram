@@ -110,6 +110,9 @@ class Scene:
         self._n = 0
         # registry of geometry so arrows can compute endpoints
         self._geom = {}  # id -> (x, y, w, h, shape)
+        # overlap bookkeeping: normal nodes are collision-checked at save()
+        self._nodes = []          # [(id, x, y, w, h, label)] to check
+        self._containers = set()  # frames + container=True shapes (exempt)
 
     # -- id helpers --------------------------------------------------------
     def _new_id(self, prefix):
@@ -179,10 +182,16 @@ class Scene:
     #  SHAPES WITH A CENTERED LABEL
     # ====================================================================
     def box(self, text, x, y, w=160, h=70, *, fill=None, stroke=None,
-            shape="rectangle", font_size=16, font_color=None, group=None):
+            shape="rectangle", font_size=16, font_color=None, group=None,
+            container=False):
         """A rectangle / ellipse / diamond carrying centered bound text.
 
-        Returns the container node id (use it in .arrow()).
+        Returns the node id (use it in .arrow()).
+
+        container=True marks this shape as a visual wrapper meant to hold other
+        shapes (e.g. an ellipse drawn around inner boxes, or a backing panel).
+        Containers are exempt from the save-time overlap check; frames always
+        are.
         """
         sc = _hex(stroke, _STROKE, _STROKE["black"])
         bg = _hex(fill, _FILL, "transparent")
@@ -205,6 +214,11 @@ class Scene:
             self.elements.append(cont)
 
         self._geom[cid] = (x, y, w, h, shape)
+        if container:
+            self._containers.add(cid)
+        else:
+            self._nodes.append((cid, x, y, w, h,
+                                (text or "").split("\n")[0] or shape))
         return cid
 
     def ellipse(self, text, x, y, w=170, h=110, **kw):
@@ -230,6 +244,7 @@ class Scene:
                         roundness={"type": 3}, group=group)
         self.elements.insert(0, el)          # behind everything so far
         self._geom[fid] = (x, y, w, h, "rectangle")
+        self._containers.add(fid)            # frames hold children — never flag
         return fid
 
     # ====================================================================
@@ -396,6 +411,38 @@ class Scene:
                          group=group)
 
     # ====================================================================
+    #  LAYOUT SANITY
+    # ====================================================================
+    def check_overlaps(self, min_px=1.0):
+        """Return [(label_a, label_b), ...] for every pair of non-container
+        nodes whose bounding boxes overlap by more than `min_px` in BOTH axes.
+
+        Containers (frames, and shapes created with container=True) are exempt,
+        because they are meant to sit behind their children."""
+        hits = []
+        nodes = self._nodes
+        for i in range(len(nodes)):
+            _, ax, ay, aw, ah, al = nodes[i]
+            for j in range(i + 1, len(nodes)):
+                _, bx, by, bw, bh, bl = nodes[j]
+                ox = min(ax + aw, bx + bw) - max(ax, bx)
+                oy = min(ay + ah, by + bh) - max(ay, by)
+                if ox > min_px and oy > min_px:
+                    hits.append((al, bl))
+        return hits
+
+    def bounds(self):
+        """(min_x, min_y, max_x, max_y) over every shape. Use it to stack
+        several diagrams in one scene: start the next region below max_y."""
+        if not self._geom:
+            return (0, 0, 0, 0)
+        x0 = min(g[0] for g in self._geom.values())
+        y0 = min(g[1] for g in self._geom.values())
+        x1 = max(g[0] + g[2] for g in self._geom.values())
+        y1 = max(g[1] + g[3] for g in self._geom.values())
+        return (x0, y0, x1, y1)
+
+    # ====================================================================
     #  SERIALISATION
     # ====================================================================
     def to_dict(self):
@@ -411,7 +458,14 @@ class Scene:
             "files": {},
         }
 
-    def save(self, basename, out_dir="."):
+    def save(self, basename, out_dir=".", allow_overlap=False):
+        hits = self.check_overlaps()
+        if hits and not allow_overlap:
+            pairs = "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits)
+            raise ValueError(
+                f"{len(hits)} overlapping shape(s): {pairs}. "
+                "Move the coordinates apart, wrap a grouping shape with "
+                "container=True, or pass allow_overlap=True if intentional.")
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")

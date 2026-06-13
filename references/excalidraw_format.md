@@ -91,20 +91,31 @@ Scene(hand_drawn=True, background="#ffffff")
 ```python
 s.box(text, x, y, w=160, h=70, *,
       fill=None, stroke=None, shape="rectangle",
-      font_size=16, font_color=None, group=None)
+      font_size=16, font_color=None, group=None, container=False)
 s.ellipse(text, x, y, w=170, h=110, **kw)   # shape="ellipse"
 s.diamond(text, x, y, w=160, h=90,  **kw)   # shape="diamond"
 ```
 - `fill` / `stroke` / `font_color`: hex (`"#a5d8ff"`) or palette name.
 - `text` may contain `\n`; the box does not auto-grow, so size `w/h` for it.
-- Returns the **container id** — pass it to `arrow()`.
+- `container=True` exempts the shape from the overlap check — use it for an
+  ellipse/box that wraps other shapes (e.g. an "agent" ellipse around inner
+  boxes).
+- Returns the **node id** — pass it to `arrow()`.
 
 ### Container frame — return a node id
 ```python
 s.frame(x, y, w, h, *, fill=None, stroke=None, dashed=False, group=None)
 ```
-Drawn behind everything added so far. Place child boxes on top at coordinates
-inside it.
+Drawn behind everything added so far; always exempt from the overlap check.
+Place child boxes on top at coordinates inside it.
+
+### Layout sanity
+```python
+s.check_overlaps(min_px=1.0)  # -> [(label_a, label_b), ...] for overlapping nodes
+s.bounds()                    # -> (min_x, min_y, max_x, max_y) over all shapes
+```
+`check_overlaps` ignores containers. `bounds` is handy for stacking several
+diagrams in one scene (start the next region below `max_y`).
 
 ### Free-standing text
 ```python
@@ -124,8 +135,10 @@ bound arrow (useful for a loop-back). `p0/p1` are `(x, y)` tuples.
 
 ### Save
 ```python
-s.save(basename, out_dir=".")  # -> (path.excalidraw, path.html)
+s.save(basename, out_dir=".", allow_overlap=False)  # -> (path.excalidraw, path.html)
 ```
+Raises `ValueError` if two non-container nodes overlap (lists the labels). Fix
+the layout, mark a wrapper `container=True`, or pass `allow_overlap=True`.
 
 ### Palette
 `grey, red, orange, yellow, green, teal, blue, indigo, violet, pink`

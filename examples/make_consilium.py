@@ -31,7 +31,7 @@ def agent(scene, x, y, w, h, voices, *, caption=None, vw=150, vh=56,
     if caption:
         scene.label(caption, x + w / 2, y - 28, size=13, color="grey",
                     align="center")
-    eid = scene.ellipse("", x, y, w, h)
+    eid = scene.ellipse("", x, y, w, h, container=True)
     n = len(voices)
     total = n * vw + (n - 1) * gap
     sx = x + (w - total) / 2
