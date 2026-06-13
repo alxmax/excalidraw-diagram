@@ -125,7 +125,7 @@ The canvas is unlimited. When a diagram gets dense, spread it out — bigger gap
 larger boxes, a fresh region below. Never shrink fonts or overlap shapes to make
 things fit. A large, airy diagram always reads better than a small, tight one.
 
-**Overlap is caught for you**
+**Overlap and crossings are caught for you**
 
 `save()` raises a `ValueError` if any two normal shapes overlap, naming the
 offending labels — fix the coordinates until it passes. A shape that is *meant*
@@ -133,6 +133,19 @@ to wrap others (an ellipse drawn around inner boxes, a backing panel behind a
 group) must be created with `container=True` so it is exempt; `frame()` is always
 exempt. As a last resort `save(..., allow_overlap=True)` skips the check, but
 prefer fixing the layout.
+
+`save()` also **prints a warning** when a bound arrow's straight path runs
+through an unrelated box (the automated form of the crossing rule above). It's a
+warning, not an error — reroute with `route_under()` or move the box until it's
+gone.
+
+**Centered captions anchor at the point.** `label(text, x, y)` and
+`title(..., align="center")` treat `x` as the *center* of the text (and
+`align="right"` as the right edge). Pass the coordinate you want the caption
+centered on — e.g. a frame's mid-x — not its left edge.
+
+**Committing the diagram?** Pass `Scene(seed=<int>)` so re-running produces a
+byte-identical file (no git churn from random seeds/timestamps).
 
 **Frame & group captions**
 
@@ -176,7 +189,7 @@ essentials:
 
 | Call | Draws |
 | --- | --- |
-| `Scene(font="normal", sketch=False, background="#ffffff")` | the canvas |
+| `Scene(font="normal", sketch=False, background="#ffffff", seed=None)` | the canvas (`seed=<int>` → byte-stable file for git) |
 | `s.box(text, x, y, w=160, h=70, fill=…, shape=…, font_size=…, container=…)` | a labelled rectangle (→ node id) |
 | `s.ellipse(text, x, y, w, h, …, container=…)` | a labelled ellipse |
 | `s.diamond(text, x, y, w, h, …)` | a labelled decision diamond |
@@ -187,7 +200,8 @@ essentials:
 | `s.free_arrow(p0, p1, …)` | an unbound arrow between two points |
 | `s.route_under(src, dst, drop=…, label=…)` | a connector routed below the row (feedback / backward) |
 | `s.bounds()` | `(min_x, min_y, max_x, max_y)` of all shapes — for stacking regions |
-| `s.save(basename, out_dir=".")` | writes both files; **raises if shapes overlap** (`allow_overlap=True` to skip) |
+| `s.check_arrow_crossings()` | `[(src, dst, crossed), …]` arrows running through an unrelated box |
+| `s.save(basename, out_dir=".")` | writes both files; **raises if shapes overlap**, warns on arrow crossings |
 
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own

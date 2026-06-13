@@ -79,13 +79,16 @@ be a reasonable initial straight line — the builder computes border-to-border
 points so it already looks right before any interaction.
 
 `focus` (−1..1) shifts where the arrow meets the shape; `gap` is the pixel gap.
-The builder uses `focus:0, gap:6`.
+The builder uses `focus:0` and an auto-clamped `gap` (≤14px, shrunk when the two
+shapes are close so the endpoints never cross).
 
 ## 4. Full builder API
 
 ```python
-Scene(hand_drawn=True, background="#ffffff")
+Scene(hand_drawn=True, background="#ffffff", seed=None)
 ```
+`seed=<int>` makes every id, seed, nonce and timestamp deterministic, so the same
+scene re-saves to a byte-identical file (use it when the diagram is committed).
 
 ### Shapes with a centered label — return a node id
 ```python
@@ -111,11 +114,13 @@ Place child boxes on top at coordinates inside it.
 
 ### Layout sanity
 ```python
-s.check_overlaps(min_px=1.0)  # -> [(label_a, label_b), ...] for overlapping nodes
-s.bounds()                    # -> (min_x, min_y, max_x, max_y) over all shapes
+s.check_overlaps(min_px=1.0)            # -> [(label_a, label_b), ...] overlapping nodes
+s.check_arrow_crossings(threshold=12)   # -> [(src, dst, crossed), ...] arrows over a box
+s.bounds()                              # -> (min_x, min_y, max_x, max_y) over all shapes
 ```
-`check_overlaps` ignores containers. `bounds` is handy for stacking several
-diagrams in one scene (start the next region below `max_y`).
+`check_overlaps` and `check_arrow_crossings` both ignore containers. `save()`
+calls both — overlaps raise, crossings print a warning. `bounds` is handy for
+stacking several diagrams in one scene (start the next region below `max_y`).
 
 ### Free-standing text
 ```python
