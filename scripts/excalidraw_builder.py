@@ -324,9 +324,15 @@ class Scene:
 
         if label:
             tw, th = self._text_wh(label, 14)
-            mid = el["points"][len(el["points"]) // 2]
-            lx = ax + mid[0] - tw / 2
-            ly = ay + mid[1] - th / 2
+            pts = el["points"]
+            # 2-point arrow: index 1 is the endpoint, not midpoint — average instead
+            if len(pts) == 2:
+                mx = (pts[0][0] + pts[1][0]) / 2
+                my = (pts[0][1] + pts[1][1]) / 2
+            else:
+                mx, my = pts[len(pts) // 2]
+            lx = ax + mx - tw / 2
+            ly = ay + my - th / 2
             tel = self._text_el(label, lx, ly, tw, th, size=14,
                                 color=_STROKE["grey"], container=aid,
                                 group=group)
@@ -364,7 +370,12 @@ class Scene:
         })
         self.elements.append(el)
         if label:
-            mid = points_abs[len(points_abs) // 2]
+            # 2-point path: index 1 is the endpoint — use true midpoint instead
+            if len(points_abs) == 2:
+                mid = ((points_abs[0][0] + points_abs[1][0]) / 2,
+                       (points_abs[0][1] + points_abs[1][1]) / 2)
+            else:
+                mid = points_abs[len(points_abs) // 2]
             tw, th = self._text_wh(label, 13)
             self.elements.append(
                 self._text_el(label, mid[0] - tw / 2, mid[1] + 8, tw, th,

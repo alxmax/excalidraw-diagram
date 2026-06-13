@@ -48,18 +48,65 @@ and emits both files in one `.save()` call.
    layout first so the diagram reflects the *actual* components and data flow,
    not a generic template. Identify: the nodes, the directed connections between
    them, any grouping (frames / "agents"), and the natural reading direction.
-2. **Pick a layout.** Left-to-right for pipelines and data flow; top-down for
+2. **Plan the layout on paper first** (see Layout rules below). List every
+   column, its x position, and all arrows. Verify no arrow crosses an unrelated
+   box before writing a single line of code.
+3. **Pick a layout.** Left-to-right for pipelines and data flow; top-down for
    hierarchies; grouped frames for "one box contains several things" (e.g. an
    agent that runs several sub-agents). Choose explicit coordinates — the
-   builder does not auto-layout. Keep ~90–120px gaps between boxes and put
-   frames *behind* their children (the builder handles z-order for `frame()`).
-3. **Write a short generator script** that imports the builder, declares the
+   builder does not auto-layout. Keep ≥80px gaps between columns and ≥30px
+   between boxes in the same column. Put frames *behind* their children (the
+   builder handles z-order for `frame()`).
+4. **Write a short generator script** that imports the builder, declares the
    shapes and arrows, and calls `.save(basename, out_dir)`. See
    `examples/make_consilium.py` for a complete, non-trivial example
    (pipeline + grouped agent frames + feedback loop + a modes section).
-4. **Run it**, then **present both files** (`.excalidraw` first, then `.html`).
+5. **Run it**, then **present both files** (`.excalidraw` first, then `.html`).
 5. If you want to sanity-check the layout before presenting, you can render a
    quick preview — but the `.excalidraw` itself is the source of truth.
+
+### Layout rules (apply before writing code)
+
+**Parallel groups — the most common source of spaghetti arrows**
+
+When N nodes run simultaneously (e.g. 9 senators, 3 agents, parallel workers):
+- Enclose them ALL in a single `frame()`.
+- Draw **one arrow in** to the frame, **one arrow out**. Never draw arrows
+  between individual nodes inside the group — that creates N×N crossing lines.
+
+**Column gaps**
+
+Every column must have ≥80px clearance on each side before the next column
+starts. Formula: `col_x[i+1] ≥ col_x[i] + col_width[i] + 80`.
+
+**Arrow crossing check** (do this before coding every arrow)
+
+Draw an imaginary straight line from source centre to target centre. If it
+passes through any box that is NOT the source or target, the layout is wrong —
+either restructure the columns or use `route_under()` for the arrow.
+
+**Backward / feedback arrows**
+
+Any arrow that goes right-to-left crosses the entire forward flow and will
+overlap everything. Always use `route_under()` (goes below the row, then back)
+or omit it and add a text `label()` noting the feedback.
+
+**Reference / legend columns**
+
+A column that only shows possible values (e.g. "Verdicts: GO / STOP / MODIFY")
+is a legend, not a pipeline stage. Do not draw a long arrow to it from across
+the diagram — that arrow will cross other columns. Either connect it with a
+short arrow from the nearest upstream node, or leave it unlabelled and add a
+`s.label()` caption above it.
+
+**Box sizing**
+
+Size boxes to fit their text; do not let text overflow:
+- Height: `h ≥ num_lines × font_size × 1.6 + 16`
+- Width:  `w ≥ max_line_length_chars × font_size × 0.65 + 20`
+
+Run the numbers before placing the box. A 2-line label at font_size 14 needs
+at least h=60; at font_size 13 with a 16-char line needs at least w=135.
 
 ### Minimal example
 
@@ -126,6 +173,12 @@ factors this into an `agent(...)` helper you can copy.
   not decoratively.
 - **Dashed arrows** for feedback / optional / skip paths; solid for the main
   flow.
+- **Parallel nodes → one frame, two arrows.** If N nodes do the same thing in
+  parallel, group them in a `frame()` and connect the frame — not each node.
+  This is the single biggest source of spaghetti diagrams.
+- **No arrow should cross an unrelated box.** If a straight line from A to B
+  passes through C (which it is not connected to), restructure the layout or
+  route around with `route_under()`.
 - **Reflect reality.** When diagramming a codebase, name the real files /
   scripts / functions so the picture is useful to someone reading the code.
 - **Font & style.** `Scene()` defaults to a normal font with clean outlines —
