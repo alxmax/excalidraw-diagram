@@ -48,6 +48,18 @@ and emits both files in one `.save()` call.
    layout first so the diagram reflects the *actual* components and data flow,
    not a generic template. Identify: the nodes, the directed connections between
    them, any grouping (frames / "agents"), and the natural reading direction.
+
+   **For architecture diagrams, audit all three layers before planning layout —
+   a diagram that only shows the internal flow is incomplete:**
+   - *Internal flow* — pipeline steps, algorithm, modes/variants, decision gates
+   - *Integration* — how the system is invoked (entry points, CLI, skill, API),
+     what external systems it touches (git, CI, databases, plugins, parent
+     orchestrators), feedback loops, and persistent state (files, logs, caches)
+   - *Distribution* — how the system reaches users (install, package, deploy,
+     marketplace)
+
+   Use `s.bounds()` to stack each layer as a separate labelled region below the
+   previous one rather than cramming all three into a single dense region.
 2. **Plan the layout on paper first** (see Layout rules below). List every
    column, its x position, and all arrows. Verify no arrow crosses an unrelated
    box before writing a single line of code.
@@ -61,6 +73,12 @@ and emits both files in one `.save()` call.
    shapes and arrows, and calls `.save(basename, out_dir)`. See
    `examples/make_consilium.py` for a complete, non-trivial example
    (pipeline + grouped agent frames + feedback loop + a modes section).
+
+   **Name the script by what it generates, not by the project it depicts.**
+   Use `make_diagram.py` or `make_architecture.py` — never
+   `make_<projectname>.py`. The project is already implicit from the directory
+   and from the `basename` you pass to `.save()`. A subject-specific filename
+   prevents reuse and is wrong when the script is moved or repurposed.
 5. **Run it.** `save()` raises if any shapes overlap — if it does, fix the
    coordinates and re-run until it passes. Then **present both files**
    (`.excalidraw` first, then `.html`).
