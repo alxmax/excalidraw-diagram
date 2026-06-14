@@ -96,8 +96,9 @@ and emits both files in one `.save()` call.
    builder handles z-order for `frame()`).
 4. **Write a short generator script** that imports the builder, declares the
    shapes and arrows, and calls `.save(basename, out_dir)`. See
-   `examples/make_consilium.py` for a complete, non-trivial example
-   (pipeline + grouped agent frames + feedback loop + a modes section).
+   `examples/gen_reqmap_workflow.py` for a complete, non-trivial example
+   (role-coloured regions + a `legend()` key + routed connectors, shipped with
+   `crossing_check="error"` so the layout gates stay enforced).
 
    **Name the script by what it generates, not by the project it depicts.**
    Use `make_diagram.py` or `make_architecture.py` — never
@@ -263,7 +264,8 @@ essentials:
 | `s.route_under(src, dst, drop=…, label=…)` | a connector routed below the row (feedback / backward) |
 | `s.bounds()` | `(min_x, min_y, max_x, max_y)` of all shapes — for stacking regions |
 | `s.check_arrow_crossings()` | `[(src, dst, crossed), …]` arrows running through an unrelated box |
-| `s.save(basename, out_dir=".", crossing_check="warn"\|"error")` | writes both files; **raises if shapes overlap**; warns on arrow crossings (or **raises** with `crossing_check="error"`) |
+| `s.check_legend_coverage()` | `[fill, …]` colours used by a node but absent from the `legend()` key (colour-SSOT); `[]` when clean or no legend |
+| `s.save(basename, out_dir=".", crossing_check="warn"\|"error", legend_check="warn"\|"error")` | writes both files; **raises if shapes overlap**; warns on arrow crossings and on unlegended fills (or **raises** with the matching `…="error"`) |
 
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own
@@ -279,16 +281,16 @@ behind them — no manual frame math.
 `frame()` or `ellipse(..., container=True)` first, place the inner `box()`es on
 top at coordinates inside it, and add a `label()` caption above. Mark the wrapper
 `container=True` (frames are automatic) so the overlap check ignores
-wrapper-vs-child. `examples/make_consilium.py` factors this into an `agent(...)`
-helper you can copy.
+wrapper-vs-child. Or let `enclose(ids, label=...)` auto-size a frame around
+boxes you have already placed (see the `excalidraw_builder.py` smoke test).
 
 ## Quality rules — make it understandable with no context (required)
 
 A diagram an outsider can read is not optional polish. Apply these to every
-diagram. The first rule is enforced mechanically by
+diagram. Rules 1 and 3 are enforced mechanically by
 `scripts/test_excalidraw.py`: every example must build with **zero overlapping
-shapes and zero arrow crossings** — that is the operational definition of a
-"clean" diagram, not a matter of taste.
+shapes, zero arrow crossings, and zero unlegended fills** — that is the
+operational definition of a "clean" diagram, not a matter of taste.
 
 1. **Zero overlaps, zero crossings.** `save()` already raises on overlap; for a
    crossing-free guarantee use `route_under()`/`path()` and, when you want it
@@ -299,7 +301,13 @@ shapes and zero arrow crossings** — that is the operational definition of a
 3. **Legend whenever colour means something.** If any `fill=` encodes a role,
    call `s.legend(...)` (or declare `Scene(roles=…)` then `s.legend()`). Colour
    is the single source of truth for role; the legend lists every colour used.
-   An undecodable palette turns the diagram into guesswork.
+   An undecodable palette turns the diagram into guesswork. **Enforced:** once a
+   `legend()` is rendered, `save()` warns on any fill used but missing from the
+   key (`check_legend_coverage()`), so an unlegended colour can't ship silently;
+   `save(..., legend_check="error")` makes it a hard failure. Build the key with
+   `legend()` — a hand-rolled row of `box()` swatches is invisible to this gate.
+   Give each *distinct meaning* its own colour: don't reuse a voice/role colour
+   for an unrelated box (e.g. a storage tier), or the legend decodes it wrong.
 4. **Label cross-role edges.** Any arrow whose endpoints are different roles (or
    is otherwise non-obvious) carries a short verb phrase (`label="validates"`,
    `"returns token"`). Self-evident same-role edges may stay unlabelled.

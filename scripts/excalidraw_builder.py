@@ -36,7 +36,10 @@ Public API (see method docstrings for detail)
     .arrow(src, dst, *, label=None, dashed=False, color=None,
            start="dot"/None, end="arrow")  -> arrow id
     .free_arrow((x1,y1),(x2,y2), ...)       -> arrow id  (unbound)
-    .save(basename, out_dir=".")            -> (path_excalidraw, path_html)
+    .legend(entries, x, y)                  -> frame id  (the colour-SSOT key)
+    .check_legend_coverage()                -> [unlegended fill, ...]
+    .save(basename, out_dir=".", crossing_check="warn", legend_check="warn")
+                                            -> (path_excalidraw, path_html)
 
 Colours accept either a hex string ("#a5d8ff") or a palette name:
     grey, red, orange, yellow, green, teal, blue, indigo, violet, pink.
@@ -103,6 +106,9 @@ class Scene:
         self.elements = []
         self.background = background
         self.roles = dict(roles or {})   # semantic role -> palette colour
+        # resolved hex fills declared by legend() — the colour-SSOT key. Empty
+        # until a legend is rendered, which is when coverage is enforced.
+        self._legend_colours = set()
         self.font = {"hand": _FONT_HAND, "normal": _FONT_NORMAL,
                      "code": 3}.get(font, _FONT_NORMAL)
         self.roughness = 1 if sketch else 0
@@ -384,6 +390,10 @@ class Scene:
             cy += title_h
         for lbl, col in entries:
             self.box("", x + pad, cy, swatch, swatch, fill=col, container=True)
+            # record the resolved hex so check_legend_coverage() can assert that
+            # every semantic fill in the scene is explained by this key
+            self._legend_colours.add(
+                _hex(self.roles.get(col, col), _FILL, "transparent"))
             self.label(str(lbl), x + pad + swatch + 8,
                        cy + (swatch - font_size) / 2, size=font_size,
                        color="black", align="left")
@@ -777,6 +787,30 @@ class Scene:
                                  labels.get(nid, "?")))
         return hits
 
+    def check_legend_coverage(self):
+        """Colour-SSOT gate. Return the sorted list of fill colours used by real
+        (non-container) nodes that the legend does NOT explain — `[]` when the
+        legend covers every used fill, or when no `legend()` was rendered.
+
+        The documented rule is "colour is the single source of truth for role;
+        the legend lists every colour used." This is its mechanical form: once a
+        legend exists, a box filled with a colour absent from the key is a
+        silent inconsistency (a reader decoding by the legend gets the wrong
+        meaning), so save() flags it. transparent / white / the background fill
+        are neutral and never counted."""
+        if not self._legend_colours:
+            return []
+        neutral = {"transparent", "#ffffff", self.background}
+        shapes = {"rectangle", "ellipse", "diamond"}
+        used = set()
+        for el in self.elements:
+            if el["id"] in self._containers or el.get("type") not in shapes:
+                continue
+            bg = el.get("backgroundColor")
+            if bg and bg not in neutral:
+                used.add(bg)
+        return sorted(used - self._legend_colours)
+
     def bounds(self):
         """(min_x, min_y, max_x, max_y) over every shape AND every routed
         connector (path/route_under/free_arrow). Use it to stack several
@@ -810,13 +844,17 @@ class Scene:
         }
 
     def save(self, basename, out_dir=".", allow_overlap=False,
-             crossing_check="warn"):
+             crossing_check="warn", legend_check="warn"):
         """Write <basename>.excalidraw + .html. Always re-runs the overlap
         check first (so post-placement align()/distribute() can't ship a hidden
-        overlap). `crossing_check` controls arrow-crossing handling:
-        "warn" (default, prints) or "error" (raises — opt-in gate)."""
+        overlap). `crossing_check` controls arrow-crossing handling and
+        `legend_check` controls colour-SSOT handling: each is "warn" (default,
+        prints) or "error" (raises — opt-in gate). `legend_check` only fires
+        when a legend() was rendered (otherwise there is no key to enforce)."""
         if crossing_check not in ("warn", "error"):
             raise ValueError("crossing_check must be 'warn' or 'error'")
+        if legend_check not in ("warn", "error"):
+            raise ValueError("legend_check must be 'warn' or 'error'")
         hits = self.check_overlaps()
         if hits and not allow_overlap:
             pairs = "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits)
@@ -835,6 +873,17 @@ class Scene:
                     "pass crossing_check='warn' to downgrade to a warning.")
             print("WARNING: arrow(s) may run through an unrelated box — "
                   "reroute or move the box: " + detail)
+        uncovered = self.check_legend_coverage()
+        if uncovered:
+            detail = ", ".join(uncovered)
+            if legend_check == "error":
+                raise ValueError(
+                    "fill colour(s) used but missing from the legend: " + detail
+                    + ". Add a legend() entry for each, recolour the box to a "
+                    "legended colour, or pass legend_check='warn' to downgrade "
+                    "to a warning.")
+            print("WARNING: fill colour(s) used but not in the legend — a "
+                  "reader decoding by the key gets no meaning for: " + detail)
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
@@ -961,6 +1010,8 @@ if __name__ == "__main__":
     s.distribute(movers, "y", gap=20)
     assert not s.check_overlaps(), s.check_overlaps()
     assert not s.check_arrow_crossings(), s.check_arrow_crossings()
+    # colour-SSOT: every fill used (blue/violet/green) is in the legend above
+    assert not s.check_legend_coverage(), s.check_legend_coverage()
     pj, ph = s.save("smoke", out_dir=out)   # crossing_check defaults to "warn"
     # A7 opt-in gate: a deliberate crossing must raise under crossing_check="error"
     s2 = Scene(seed=2)

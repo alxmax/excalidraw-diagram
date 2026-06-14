@@ -56,6 +56,10 @@ def _make_case(path):
         self.assertEqual(
             scene.check_arrow_crossings(), [],
             f"{os.path.basename(path)} has arrow(s) crossing an unrelated box")
+        self.assertEqual(
+            scene.check_legend_coverage(), [],
+            f"{os.path.basename(path)} uses fill colour(s) absent from its "
+            f"legend (colour-SSOT)")
 
     return case
 
@@ -130,6 +134,48 @@ class TestBuilderUnits(unittest.TestCase):
         nid = s.box("T", 0, 0, fill="agent")
         el = next(e for e in s.elements if e["id"] == nid)
         self.assertEqual(el["backgroundColor"], eb._FILL["blue"])
+
+    def test_legend_coverage_clean_when_legend_covers_fills(self):
+        s = eb.Scene(seed=99)
+        s.box("a", 0, 0, fill="blue")
+        s.box("b", 0, 200, fill="green")
+        s.legend([("input", "blue"), ("output", "green")], x=400, y=0)
+        self.assertEqual(s.check_legend_coverage(), [])
+
+    def test_legend_coverage_flags_unlegended_fill(self):
+        s = eb.Scene(seed=99)
+        s.box("a", 0, 0, fill="blue")
+        s.box("b", 0, 200, fill="indigo")          # not in the legend below
+        s.legend([("input", "blue")], x=400, y=0)
+        self.assertEqual(s.check_legend_coverage(), [eb._FILL["indigo"]])
+
+    def test_legend_coverage_noop_without_legend(self):
+        s = eb.Scene(seed=99)
+        s.box("a", 0, 0, fill="indigo")            # no legend() -> nothing to enforce
+        self.assertEqual(s.check_legend_coverage(), [])
+
+    def test_save_legend_check_error_raises_on_uncovered_fill(self):
+        s = eb.Scene(seed=99)
+        s.box("a", 0, 0, fill="blue")
+        s.box("b", 0, 200, fill="violet")          # uncovered
+        s.legend([("input", "blue")], x=400, y=0)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, legend_check="error")
+
+    def test_save_legend_check_warn_default_does_not_raise(self):
+        s = eb.Scene(seed=99)
+        s.box("a", 0, 0, fill="blue")
+        s.box("b", 0, 200, fill="violet")          # uncovered, but warn-only
+        s.legend([("input", "blue")], x=400, y=0)
+        with tempfile.TemporaryDirectory() as d:
+            s.save("x", out_dir=d)                  # default "warn" — must not raise
+
+    def test_save_rejects_bad_legend_check(self):
+        s = eb.Scene(seed=99)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, legend_check="nope")
 
     def test_polyline_midpoint_edges(self):
         self.assertEqual(eb.Scene._polyline_midpoint([(3, 7)]), (3, 7))
