@@ -84,7 +84,7 @@ class Scene:
     """A drawing surface that accumulates elements and serialises them."""
 
     def __init__(self, hand_drawn=None, font="normal", sketch=False,
-                 background="#ffffff", seed=None):
+                 background="#ffffff", seed=None, roles=None):
         """A drawing surface.
 
         font  : "normal" (Helvetica), "hand" (Excalifont), or "code".
@@ -93,12 +93,16 @@ class Scene:
         seed: pass an int for byte-stable output (the same scene re-saves to an
               identical file — useful when the diagram is committed to git).
               Default None uses time + randomness, so every run differs.
+        roles: an optional {role_name: palette_colour} map so boxes can be
+              filled by meaning (fill="agent") and legend() can render the key
+              automatically. Also settable per-role with .role(name, colour).
         """
         if hand_drawn is not None:
             font = "hand" if hand_drawn else "normal"
             sketch = bool(hand_drawn)
         self.elements = []
         self.background = background
+        self.roles = dict(roles or {})   # semantic role -> palette colour
         self.font = {"hand": _FONT_HAND, "normal": _FONT_NORMAL,
                      "code": 3}.get(font, _FONT_NORMAL)
         self.roughness = 1 if sketch else 0
@@ -108,6 +112,9 @@ class Scene:
         # overlap bookkeeping: normal nodes are collision-checked at save()
         self._nodes = []          # [(id, x, y, w, h, label)] to check
         self._containers = set()  # frames + container=True shapes (exempt)
+        # abs (min_x, min_y, max_x, max_y) of each routed connector — so bounds()
+        # accounts for paths/route_under that dip outside the shapes' boxes
+        self._path_extents = []
         # randomness source — fixed when a seed is given (reproducible files)
         self._rng = random.Random(seed) if seed is not None else random
         self._fixed_time = 1_700_000_000_000 if seed is not None else None
@@ -200,7 +207,7 @@ class Scene:
         are.
         """
         sc = _hex(stroke, _STROKE, _STROKE["black"])
-        bg = _hex(fill, _FILL, "transparent")
+        bg = _hex(self.roles.get(fill, fill), _FILL, "transparent")  # role -> colour
         roundness = {"type": 3} if shape == "rectangle" else None
         cid = self._new_id(shape)
         cont = self._base(cid, shape, x, y, w, h, sc, bg,
@@ -341,6 +348,143 @@ class Scene:
         return fid
 
     # ====================================================================
+    #  LEGEND & SWIMLANE  (make colour meaning and grouping explicit)
+    # ====================================================================
+    def role(self, name, color):
+        """Declare a semantic role -> palette-colour alias, usable as a fill
+        (role('agent','violet') then box(fill='agent')) and as the source for
+        legend()."""
+        self.roles[name] = color
+        return self
+
+    def legend(self, entries=None, x=0, y=0, *, title="Legend",
+               swatch=18, gap=10, font_size=13, pad=14):
+        """A colour key mapping each fill to its meaning, so a reader with no
+        context can decode the diagram. `entries` is a list of (label, colour);
+        if omitted, the Scene's declared roles are used. Returns the frame id.
+
+        Use this whenever colour encodes a role — a coloured diagram without a
+        legend is not self-explanatory."""
+        if entries is None:
+            entries = list(self.roles.items())
+        if not entries:
+            raise ValueError("legend() needs entries or Scene(roles=...)")
+        row_h = max(swatch, font_size * 1.25) + gap
+        longest = max((len(str(lbl)) for lbl, _ in entries), default=1)
+        title_h = (font_size + 1) * 1.5 if title else 0
+        w = pad * 2 + swatch + 8 + int(longest * font_size * 0.62) + 6
+        if title:
+            w = max(w, pad * 2 + int(len(title) * (font_size + 1) * 0.62))
+        h = pad * 2 + title_h + row_h * len(entries)
+        fid = self.frame(x, y, w, h, fill="#ffffff")
+        cy = y + pad
+        if title:
+            self.label(title, x + pad, cy, size=font_size + 1, color="black",
+                       align="left")
+            cy += title_h
+        for lbl, col in entries:
+            self.box("", x + pad, cy, swatch, swatch, fill=col, container=True)
+            self.label(str(lbl), x + pad + swatch + 8,
+                       cy + (swatch - font_size) / 2, size=font_size,
+                       color="black", align="left")
+            cy += row_h
+        return fid
+
+    def lane(self, ids, label, *, pad=24, fill=None, stroke=None,
+             font_size=14, label_color="black"):
+        """Swimlane: a solid frame around `ids` with a prominent top-left
+        header. Thin wrapper over enclose() — use to group a stage or actor."""
+        fid = self.enclose(ids, pad=pad, dashed=False, fill=fill,
+                           stroke=stroke, label=None)
+        fx, fy, fw, fh, _ = self._geom[fid]
+        self.label(label, fx + 12, fy + 8, size=font_size, color=label_color,
+                   align="left")
+        return fid
+
+    # ====================================================================
+    #  POST-PLACEMENT ADJUSTMENT  (align / distribute already-placed nodes)
+    # ====================================================================
+    def _move_node(self, nid, new_x, new_y):
+        """Move a placed node (and its bound label) to (new_x, new_y), keeping
+        _geom and the overlap-check bookkeeping in sync — so a later save() still
+        validates the mutated layout and cannot silently reintroduce overlaps."""
+        x, y, w, h, shape = self._geom[nid]
+        dx, dy = new_x - x, new_y - y
+        if dx == 0 and dy == 0:
+            return
+        for el in self.elements:
+            if el["id"] == nid:
+                el["x"] = float(new_x)
+                el["y"] = float(new_y)
+                for be in el.get("boundElements", []):
+                    if be.get("type") == "text":
+                        for t in self.elements:
+                            if t["id"] == be["id"]:
+                                t["x"] += dx
+                                t["y"] += dy
+                                break
+                break
+        self._geom[nid] = (new_x, new_y, w, h, shape)
+        self._nodes = [
+            (i, new_x, new_y, aw, ah, lab) if i == nid
+            else (i, ax, ay, aw, ah, lab)
+            for (i, ax, ay, aw, ah, lab) in self._nodes
+        ]
+
+    def align(self, ids, axis="center_x"):
+        """Align already-placed nodes on a shared edge/axis:
+        left|right|center_x|top|bottom|center_y. Mutates positions in place and
+        keeps the overlap check honest. Returns ids."""
+        g = {i: self._geom[i] for i in ids}
+        if axis == "left":
+            t = min(v[0] for v in g.values())
+            for i in ids:
+                self._move_node(i, t, g[i][1])
+        elif axis == "right":
+            t = max(v[0] + v[2] for v in g.values())
+            for i in ids:
+                self._move_node(i, t - g[i][2], g[i][1])
+        elif axis == "center_x":
+            c = sum(v[0] + v[2] / 2 for v in g.values()) / len(g)
+            for i in ids:
+                self._move_node(i, c - g[i][2] / 2, g[i][1])
+        elif axis == "top":
+            t = min(v[1] for v in g.values())
+            for i in ids:
+                self._move_node(i, g[i][0], t)
+        elif axis == "bottom":
+            t = max(v[1] + v[3] for v in g.values())
+            for i in ids:
+                self._move_node(i, g[i][0], t - g[i][3])
+        elif axis == "center_y":
+            c = sum(v[1] + v[3] / 2 for v in g.values()) / len(g)
+            for i in ids:
+                self._move_node(i, g[i][0], c - g[i][3] / 2)
+        else:
+            raise ValueError(f"align: unknown axis {axis!r}")
+        return ids
+
+    def distribute(self, ids, axis="x", *, gap=40):
+        """Place nodes evenly along an axis ('x' or 'y'), in their current
+        positional order, separated by `gap`. Mutates positions in place."""
+        if axis not in ("x", "y"):
+            raise ValueError("distribute: axis must be 'x' or 'y'")
+        order = sorted(ids, key=lambda i: self._geom[i][0] if axis == "x"
+                       else self._geom[i][1])
+        cur = None
+        for i in order:
+            x, y, w, h, s = self._geom[i]
+            if cur is None:
+                cur = x if axis == "x" else y
+            if axis == "x":
+                self._move_node(i, cur, y)
+                cur += w + gap
+            else:
+                self._move_node(i, x, cur)
+                cur += h + gap
+        return ids
+
+    # ====================================================================
     #  FREE-STANDING TEXT (titles & small caption labels)
     # ====================================================================
     def title(self, text, x, y, *, size=28, color=None, align="left",
@@ -465,6 +609,25 @@ class Scene:
         return self.path([p0, p1], dashed=dashed, color=color, end=end,
                          start=start, label=label, group=group)
 
+    @staticmethod
+    def _polyline_midpoint(points):
+        """The point at half the total arc length along a polyline — the visual
+        middle of a routed connector, not a corner waypoint."""
+        if len(points) < 2:
+            return points[0]
+        segs = [(a, b, math.hypot(b[0] - a[0], b[1] - a[1]))
+                for a, b in zip(points, points[1:])]
+        total = sum(d for _, _, d in segs)
+        if total == 0:
+            return points[0]
+        half, acc = total / 2, 0.0
+        for a, b, d in segs:
+            if acc + d >= half:
+                t = (half - acc) / d if d else 0.0
+                return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+            acc += d
+        return points[-1]
+
     def path(self, points_abs, *, dashed=False, color=None, end="arrow",
              start=None, label=None, group=None):
         """An unbound multi-point connector through absolute (x, y) points.
@@ -478,6 +641,10 @@ class Scene:
         rel = [[p[0] - ax, p[1] - ay] for p in points_abs]
         xs = [p[0] for p in rel]
         ys = [p[1] for p in rel]
+        self._path_extents.append((min(p[0] for p in points_abs),
+                                   min(p[1] for p in points_abs),
+                                   max(p[0] for p in points_abs),
+                                   max(p[1] for p in points_abs)))
         el = self._base(aid, "arrow", ax, ay,
                         max(xs) - min(xs), max(ys) - min(ys),
                         sc, "transparent", roundness=None, group=group)
@@ -489,15 +656,20 @@ class Scene:
         })
         self.elements.append(el)
         if label:
-            # 2-point path: index 1 is the endpoint — use true midpoint instead
-            if len(points_abs) == 2:
-                mid = ((points_abs[0][0] + points_abs[1][0]) / 2,
-                       (points_abs[0][1] + points_abs[1][1]) / 2)
-            else:
-                mid = points_abs[len(points_abs) // 2]
+            # place the label at the polyline's arc-length midpoint (the visual
+            # middle of the routed line), never a corner waypoint
+            mid = self._polyline_midpoint(points_abs)
             tw, th = self._text_wh(label, 13)
+            lx, ly = mid[0] - tw / 2, mid[1] + 8
+            # A10: white knock-out panel so the (unbound) label reads cleanly
+            # over the line / boxes underneath it. Container-exempt (decorative).
+            bg = self._base(self._new_id("rectangle"), "rectangle",
+                            lx - 4, ly - 2, tw + 8, th + 4,
+                            "transparent", "#ffffff", roundness={"type": 3})
+            self.elements.append(bg)
+            self._containers.add(bg["id"])
             self.elements.append(
-                self._text_el(label, mid[0] - tw / 2, mid[1] + 8, tw, th,
+                self._text_el(label, lx, ly, tw, th,
                               size=13, color=_STROKE["grey"], group=group))
         return aid
 
@@ -606,15 +778,20 @@ class Scene:
         return hits
 
     def bounds(self):
-        """(min_x, min_y, max_x, max_y) over every shape. Use it to stack
-        several diagrams in one scene: start the next region below max_y."""
-        if not self._geom:
+        """(min_x, min_y, max_x, max_y) over every shape AND every routed
+        connector (path/route_under/free_arrow). Use it to stack several
+        diagrams in one scene: start the next region below max_y — including the
+        extents of feedback loops that dip beneath the row, so they don't
+        collide with the region below."""
+        xs0 = [g[0] for g in self._geom.values()] + [e[0] for e in self._path_extents]
+        ys0 = [g[1] for g in self._geom.values()] + [e[1] for e in self._path_extents]
+        xs1 = ([g[0] + g[2] for g in self._geom.values()]
+               + [e[2] for e in self._path_extents])
+        ys1 = ([g[1] + g[3] for g in self._geom.values()]
+               + [e[3] for e in self._path_extents])
+        if not xs0:
             return (0, 0, 0, 0)
-        x0 = min(g[0] for g in self._geom.values())
-        y0 = min(g[1] for g in self._geom.values())
-        x1 = max(g[0] + g[2] for g in self._geom.values())
-        y1 = max(g[1] + g[3] for g in self._geom.values())
-        return (x0, y0, x1, y1)
+        return (min(xs0), min(ys0), max(xs1), max(ys1))
 
     # ====================================================================
     #  SERIALISATION
@@ -632,7 +809,14 @@ class Scene:
             "files": {},
         }
 
-    def save(self, basename, out_dir=".", allow_overlap=False):
+    def save(self, basename, out_dir=".", allow_overlap=False,
+             crossing_check="warn"):
+        """Write <basename>.excalidraw + .html. Always re-runs the overlap
+        check first (so post-placement align()/distribute() can't ship a hidden
+        overlap). `crossing_check` controls arrow-crossing handling:
+        "warn" (default, prints) or "error" (raises — opt-in gate)."""
+        if crossing_check not in ("warn", "error"):
+            raise ValueError("crossing_check must be 'warn' or 'error'")
         hits = self.check_overlaps()
         if hits and not allow_overlap:
             pairs = "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits)
@@ -643,8 +827,14 @@ class Scene:
         crossings = self.check_arrow_crossings()
         if crossings:
             seen = sorted({f"{a}->{b} crosses '{c}'" for a, b, c in crossings})
+            detail = "; ".join(seen)
+            if crossing_check == "error":
+                raise ValueError(
+                    "arrow(s) run through an unrelated box: " + detail
+                    + ". Reroute with route_under()/path(), move the box, or "
+                    "pass crossing_check='warn' to downgrade to a warning.")
             print("WARNING: arrow(s) may run through an unrelated box — "
-                  "reroute or move the box: " + "; ".join(seen))
+                  "reroute or move the box: " + detail)
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
@@ -750,21 +940,49 @@ window.addEventListener("load", function(){
 
 
 if __name__ == "__main__":
-    # smoke test — also exercises the auto-layout helpers and sanity checks
+    # smoke test — exercises auto-layout, the new Phase-1 helpers, and checks
     import tempfile
     out = os.path.join(tempfile.gettempdir(), "excd")
-    s = Scene(seed=1)
+    s = Scene(seed=1, roles={"source": "blue", "worker": "violet"})
     s.title("demo", 0, -40, size=24)
-    stages = s.row(["ingest", "process", "store"], 0, 0, fill="blue",
-                   connect=True)
+    stages = s.row(["ingest", "process", "store"], 0, 0, fill="source",
+                   connect=True)            # role-colour fill (A4)
     workers = s.grid([f"n{i}" for i in range(9)], 0, 150, 3,
-                     w=120, h=60, fill="violet")
+                     w=120, h=60, fill="worker")
     s.enclose(workers, label="parallel workers")
     done = s.box("done", 620, 0, fill="green")
     s.arrow(stages[-1], done)
+    s.path([(0, 320), (620, 320)], label="feedback")   # A10 labelled path
+    s.legend([("source", "blue"), ("worker", "violet"), ("done", "green")],
+             x=760, y=150)                  # A2 legend
+    # A5 align/distribute must keep the overlap check honest
+    movers = s.column(["a", "b", "c"], 760, 360, w=80, h=40)
+    s.align(movers, "left")
+    s.distribute(movers, "y", gap=20)
     assert not s.check_overlaps(), s.check_overlaps()
     assert not s.check_arrow_crossings(), s.check_arrow_crossings()
-    pj, ph = s.save("smoke", out_dir=out)
+    pj, ph = s.save("smoke", out_dir=out)   # crossing_check defaults to "warn"
+    # A7 opt-in gate: a deliberate crossing must raise under crossing_check="error"
+    s2 = Scene(seed=2)
+    left = s2.box("L", 0, 0, w=80, h=40)
+    mid = s2.box("M", 200, 0, w=80, h=40)
+    right = s2.box("R", 400, 0, w=80, h=40)
+    s2.arrow(left, right)                    # straight line passes through M
+    try:
+        s2.save("smoke_err", out_dir=out, crossing_check="error")
+        raise SystemExit("FAIL: crossing_check='error' did not raise")
+    except ValueError:
+        pass
+    # routed-path label sits at the arc-length midpoint, not a corner waypoint
+    mid = Scene._polyline_midpoint([(0, 0), (0, 100), (200, 100), (200, 0)])
+    assert abs(mid[0] - 100) < 1 and abs(mid[1] - 100) < 1, mid
+    # bounds() includes a routed connector's extents (route_under's drop below)
+    sb = Scene(seed=3)
+    ba = sb.box("a", 0, 0, w=80, h=40)
+    bb = sb.box("b", 200, 0, w=80, h=40)
+    sb.route_under(ba, bb, drop=60)
+    assert sb.bounds()[3] >= 100, sb.bounds()
     print("wrote", pj, ph)
     print("overlaps:", s.check_overlaps(),
           "crossings:", s.check_arrow_crossings())
+    print("OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)")

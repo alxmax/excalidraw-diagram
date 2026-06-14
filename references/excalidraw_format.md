@@ -85,10 +85,12 @@ shapes are close so the endpoints never cross).
 ## 4. Full builder API
 
 ```python
-Scene(hand_drawn=True, background="#ffffff", seed=None)
+Scene(hand_drawn=True, background="#ffffff", seed=None, roles=None)
 ```
 `seed=<int>` makes every id, seed, nonce and timestamp deterministic, so the same
 scene re-saves to a byte-identical file (use it when the diagram is committed).
+`roles={"agent": "violet", …}` declares semantic fill aliases (see *Legend,
+swimlane & semantic roles* below).
 
 ### Shapes with a centered label — return a node id
 ```python
@@ -129,6 +131,34 @@ s.enclose(ids, *, pad=24, dashed=True, fill=None,
 - `enclose` measures the bounding box of `ids`, pads it, and draws a `frame()`
   behind them; call it *after* placing the nodes. Optional centered caption.
 
+### Legend, swimlane & semantic roles
+```python
+s.role(name, colour)                       # declare one semantic fill alias
+Scene(roles={"agent": "violet", ...})      # or declare them up-front
+s.legend(entries=None, x=0, y=0, *, title="Legend",
+         swatch=18, gap=10, font_size=13, pad=14)    # -> frame id
+s.lane(ids, label, *, pad=24, fill=None, stroke=None,
+       font_size=14, label_color="black")            # -> frame id
+```
+- A **role** maps a name to a palette colour, so `box(fill="agent")` resolves via
+  `roles` then the palette. Unknown names fall through to the palette unchanged,
+  so existing colour names keep working.
+- **`legend`** renders a colour key. Pass `entries=[(label, colour), …]`, or omit
+  it to use the Scene's `roles`. Required whenever colour encodes meaning, so a
+  reader with no context can decode the diagram.
+- **`lane`** is a thin `enclose()` wrapper drawing a solid frame with a top-left
+  header — a swimlane for one stage/actor.
+
+### Post-placement adjustment
+```python
+s.align(ids, axis="center_x")              # left|right|center_x|top|bottom|center_y
+s.distribute(ids, axis="x", *, gap=40)     # even spacing along "x" or "y"
+```
+Both mutate already-placed nodes in place (moving each shape *and* its bound
+label) and keep the overlap bookkeeping in sync, so a later `save()` still
+validates the adjusted layout. Use them to tidy a hand-placed cluster instead of
+recomputing coordinates.
+
 ### Layout sanity
 ```python
 s.check_overlaps(min_px=1.0)            # -> [(label_a, label_b), ...] overlapping nodes
@@ -136,8 +166,9 @@ s.check_arrow_crossings(threshold=12)   # -> [(src, dst, crossed), ...] arrows o
 s.bounds()                              # -> (min_x, min_y, max_x, max_y) over all shapes
 ```
 `check_overlaps` and `check_arrow_crossings` both ignore containers. `save()`
-calls both — overlaps raise, crossings print a warning. `bounds` is handy for
-stacking several diagrams in one scene (start the next region below `max_y`).
+calls both — overlaps raise; crossings print a warning, or raise when
+`crossing_check="error"`. `bounds` is handy for stacking several diagrams in one
+scene (start the next region below `max_y`).
 
 ### Free-standing text
 ```python
@@ -145,22 +176,37 @@ s.title(text, x, y, *, size=28, color=None, align="left")  # heading
 s.label(text, x, y, *, size=12, color="grey", align="center")  # caption
 ```
 
-### Arrows
+### Arrows & connectors
 ```python
 s.arrow(src, dst, *, label=None, dashed=False, color=None,
         start=None, end="arrow", curve=False)        # bound, node→node
 s.free_arrow(p0, p1, *, label=None, dashed=False,
              color=None, start=None, end="arrow")     # unbound, point→point
+s.path(points_abs, *, label=None, dashed=False, color=None,
+       start=None, end="arrow")                       # unbound polyline (waypoints)
+s.route_under(src, dst, *, drop=70, label=None,
+              color="grey", dashed=True)               # feedback: drop below the row
 ```
 Arrowheads: `None, "arrow", "dot", "triangle", "bar"`. `curve=True` bends a
-bound arrow (useful for a loop-back). `p0/p1` are `(x, y)` tuples.
+bound arrow (useful for a loop-back). `p0/p1` and each `points_abs` entry are
+`(x, y)` tuples.
+- **`path`** draws an unbound connector through explicit waypoints — use it for a
+  routed line that must avoid boxes (a feedback loop that goes down, across, and
+  back up). Its `label` gets a white knock-out panel so it reads cleanly over
+  whatever it crosses.
+- **`route_under`** is the common feedback case prebuilt: it leaves the bottom of
+  `src`, runs `drop` px below the row, and returns into the bottom of `dst`.
 
 ### Save
 ```python
-s.save(basename, out_dir=".", allow_overlap=False)  # -> (path.excalidraw, path.html)
+s.save(basename, out_dir=".", allow_overlap=False, crossing_check="warn")
+# -> (path.excalidraw, path.html)
 ```
-Raises `ValueError` if two non-container nodes overlap (lists the labels). Fix
-the layout, mark a wrapper `container=True`, or pass `allow_overlap=True`.
+Always re-runs `check_overlaps()` first (so a post-placement `align()`/
+`distribute()` can't ship a hidden overlap), then raises `ValueError` if two
+non-container nodes overlap (lists the labels). Arrow crossings print a warning
+by default; pass `crossing_check="error"` to raise on them instead. Fix the
+layout, mark a wrapper `container=True`, or pass `allow_overlap=True`.
 
 ### Palette
 `grey, red, orange, yellow, green, teal, blue, indigo, violet, pink`

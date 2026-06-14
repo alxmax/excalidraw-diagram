@@ -164,8 +164,9 @@ prefer fixing the layout.
 
 `save()` also **prints a warning** when a bound arrow's straight path runs
 through an unrelated box (the automated form of the crossing rule above). It's a
-warning, not an error — reroute with `route_under()` or move the box until it's
-gone.
+warning by default — reroute with `route_under()` or move the box until it's
+gone. Pass `save(..., crossing_check="error")` to make a crossing a hard failure
+(opt-in gate, mirroring the overlap check).
 
 **Centered captions anchor at the point.** `label(text, x, y)` and
 `title(..., align="center")` treat `x` as the *center* of the text (and
@@ -226,6 +227,10 @@ essentials:
 | `s.column(items, x, y, gap=…, connect=…)` | place items top→down → list of ids |
 | `s.grid(items, x, y, cols, …)` | place items in a `cols`-wide grid → list of ids |
 | `s.enclose(ids, label=…, pad=…)` | auto-sized frame *behind* those nodes → frame id |
+| `s.legend(entries, x, y, title=…)` | a colour→meaning key (`entries=[(label, colour),…]`, or omit to use `roles`) — **required when colour encodes a role** |
+| `s.lane(ids, label)` | a swimlane: solid frame around `ids` with a top-left header (thin `enclose` wrapper) |
+| `s.align(ids, axis)` / `s.distribute(ids, axis, gap=…)` | tidy already-placed nodes (`axis`: left/right/center_x/top/bottom/center_y; distribute `"x"`/`"y"`) |
+| `s.role(name, colour)` / `Scene(roles={…})` | declare a semantic fill so `box(fill="agent")` works and `legend()` renders the key |
 | `s.title(text, x, y, size=28)` | a large free-standing heading |
 | `s.label(text, x, y, size=12)` | a small grey caption (e.g. "ONE AGENT") |
 | `s.arrow(src, dst, label=…, dashed=…, curve=…, start=…, end=…)` | a bound arrow node→node |
@@ -233,7 +238,7 @@ essentials:
 | `s.route_under(src, dst, drop=…, label=…)` | a connector routed below the row (feedback / backward) |
 | `s.bounds()` | `(min_x, min_y, max_x, max_y)` of all shapes — for stacking regions |
 | `s.check_arrow_crossings()` | `[(src, dst, crossed), …]` arrows running through an unrelated box |
-| `s.save(basename, out_dir=".")` | writes both files; **raises if shapes overlap**, warns on arrow crossings |
+| `s.save(basename, out_dir=".", crossing_check="warn"\|"error")` | writes both files; **raises if shapes overlap**; warns on arrow crossings (or **raises** with `crossing_check="error"`) |
 
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own
@@ -251,6 +256,35 @@ top at coordinates inside it, and add a `label()` caption above. Mark the wrappe
 `container=True` (frames are automatic) so the overlap check ignores
 wrapper-vs-child. `examples/make_consilium.py` factors this into an `agent(...)`
 helper you can copy.
+
+## Quality rules — make it understandable with no context (required)
+
+A diagram an outsider can read is not optional polish. Apply these to every
+diagram. The first rule is enforced mechanically by
+`scripts/test_excalidraw.py`: every example must build with **zero overlapping
+shapes and zero arrow crossings** — that is the operational definition of a
+"clean" diagram, not a matter of taste.
+
+1. **Zero overlaps, zero crossings.** `save()` already raises on overlap; for a
+   crossing-free guarantee use `route_under()`/`path()` and, when you want it
+   enforced, `save(..., crossing_check="error")`.
+2. **Title + one-line subtitle.** Open with `s.title(...)` and a one-sentence
+   `s.label(...)` stating what the diagram shows and the reading direction
+   (e.g. "Left → right: a request enters at Client and exits at Auth").
+3. **Legend whenever colour means something.** If any `fill=` encodes a role,
+   call `s.legend(...)` (or declare `Scene(roles=…)` then `s.legend()`). Colour
+   is the single source of truth for role; the legend lists every colour used.
+   An undecodable palette turns the diagram into guesswork.
+4. **Label cross-role edges.** Any arrow whose endpoints are different roles (or
+   is otherwise non-obvious) carries a short verb phrase (`label="validates"`,
+   `"returns token"`). Self-evident same-role edges may stay unlabelled.
+5. **Real identifiers as node names.** Name the actual file / function /
+   component (`reqmap.py`, `check_overlaps()`), never "Service A" / "Module".
+6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
+   size (~14–16). Never go below font_size 12.
+7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into a
+   high-level overview region and a detail region below (stack with
+   `s.bounds()`); never cram 30 boxes into one region.
 
 ## Tips for good diagrams
 
@@ -278,7 +312,18 @@ helper you can copy.
 
 ## Output
 
-Always deliver **both** files and tell the user, briefly:
+**Pre-delivery checklist** (run before `save()` — the builder cannot catch these):
+- [ ] Title + one-line subtitle present
+- [ ] Legend present if colour encodes a role, and it lists every colour used
+- [ ] Every cross-role / non-obvious arrow is labelled
+- [ ] Node names are real identifiers, not placeholders
+- [ ] No region exceeds ~20 nodes
+
+Then deliver **both** files and tell the user in three short points:
+1. **What it shows** — one sentence.
+2. **How to read it** — the flow direction / how the regions stack.
+3. **Colour legend** — if colour is used.
+
 - `<name>.excalidraw` — drag onto excalidraw.com (or File → Open) to edit.
 - `<name>.html` — double-click to open in a browser; "Download .excalidraw"
   button is built in. The HTML loads Excalidraw from a CDN, so viewing it needs
