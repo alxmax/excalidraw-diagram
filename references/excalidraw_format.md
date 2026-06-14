@@ -192,8 +192,10 @@ bound arrow (useful for a loop-back). `p0/p1` and each `points_abs` entry are
 `(x, y)` tuples.
 - **`path`** draws an unbound connector through explicit waypoints — use it for a
   routed line that must avoid boxes (a feedback loop that goes down, across, and
-  back up). Its `label` gets a white knock-out panel so it reads cleanly over
-  whatever it crosses.
+  back up). Its `label` gets a white knock-out panel so it reads cleanly over the
+  line. That panel is **overlap-checked**: if the label lands on a box its white
+  fill would hide it, so `save()` raises just as for any overlapping shape —
+  shorten the label or move the waypoints until it sits in clear space.
 - **`route_under`** is the common feedback case prebuilt: it leaves the bottom of
   `src`, runs `drop` px below the row, and returns into the bottom of `dst`.
 

@@ -672,12 +672,19 @@ class Scene:
             tw, th = self._text_wh(label, 13)
             lx, ly = mid[0] - tw / 2, mid[1] + 8
             # A10: white knock-out panel so the (unbound) label reads cleanly
-            # over the line / boxes underneath it. Container-exempt (decorative).
+            # over the LINE it sits on. The panel is overlap-CHECKED (added to
+            # _nodes, not _containers): a routed label that lands on a box is a
+            # real overlap — its white fill hides the box — so check_overlaps()
+            # must catch it. It is left out of _geom so it is NOT treated as an
+            # arrow-crossing obstacle (the path's own line legitimately runs
+            # under it, and bound arrows elsewhere must not false-positive on it).
+            lw, lh = tw + 8, th + 4
             bg = self._base(self._new_id("rectangle"), "rectangle",
-                            lx - 4, ly - 2, tw + 8, th + 4,
+                            lx - 4, ly - 2, lw, lh,
                             "transparent", "#ffffff", roundness={"type": 3})
             self.elements.append(bg)
-            self._containers.add(bg["id"])
+            self._nodes.append((bg["id"], lx - 4, ly - 2, lw, lh,
+                                f'label "{label.splitlines()[0][:24]}"'))
             self.elements.append(
                 self._text_el(label, lx, ly, tw, th,
                               size=13, color=_STROKE["grey"], group=group))
@@ -1001,7 +1008,7 @@ if __name__ == "__main__":
     s.enclose(workers, label="parallel workers")
     done = s.box("done", 620, 0, fill="green")
     s.arrow(stages[-1], done)
-    s.path([(0, 320), (620, 320)], label="feedback")   # A10 labelled path
+    s.path([(0, 460), (620, 460)], label="feedback")   # A10 labelled path (clear of the grid)
     s.legend([("source", "blue"), ("worker", "violet"), ("done", "green")],
              x=760, y=150)                  # A2 legend
     # A5 align/distribute must keep the overlap check honest
