@@ -151,6 +151,16 @@ s.path([(760, 940), (760, 1010), (1655, 1010), (1655, 752)],
        color="orange", dashed=True, end="arrow",
        label="consumer CI runs Action @v1")
 
+# ── Glossary — decode the jargon (a term→meaning key, below the diagram) ──────
+s.glossary(
+    [("SSOT", "single source of truth — one .md per capability"),
+     ("dogfood", "the engine runs on its own requirements"),
+     ("CI action", "GitHub Action running the gate on every push / PR"),
+     ("seed / init", "copy reqmap.py into a repo and scaffold it"),
+     ("drift gate", "fails if requirements no longer match the code"),
+     ("@v1", "the published action's pinned version tag")],
+    40, 1060, title="Glossary")
+
 # ════════════════════════════════════════════════════════════════════════════
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
 pj, ph = s.save("reqmap_workflow", out_dir=out_dir,

@@ -191,6 +191,20 @@ class TestBuilderUnits(unittest.TestCase):
         s.path([(0, 300), (200, 300)], label="clear")   # well below the box
         self.assertEqual(s.check_overlaps(), [])
 
+    def test_glossary_renders_and_is_overlap_checked(self):
+        s = eb.Scene(seed=99)
+        s.glossary([("SSOT", "single source of truth"),
+                    ("dogfood", "runs on its own requirements")], 0, 0)
+        # the glossary box is registered as checkable content
+        self.assertTrue(any("glossary" in lab for *_, lab in s._nodes))
+        # a box dropped on top of it must be flagged
+        s.box("X", 10, 10, 80, 40, fill="blue")
+        self.assertNotEqual(s.check_overlaps(), [])
+
+    def test_glossary_empty_raises(self):
+        with self.assertRaises(ValueError):
+            eb.Scene(seed=99).glossary([], 0, 0)
+
     def test_polyline_midpoint_edges(self):
         self.assertEqual(eb.Scene._polyline_midpoint([(3, 7)]), (3, 7))
         self.assertEqual(eb.Scene._polyline_midpoint([(0, 0), (0, 0)]), (0, 0))

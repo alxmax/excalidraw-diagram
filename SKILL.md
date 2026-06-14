@@ -254,6 +254,7 @@ essentials:
 | `s.grid(items, x, y, cols, …)` | place items in a `cols`-wide grid → list of ids |
 | `s.enclose(ids, label=…, pad=…)` | auto-sized frame *behind* those nodes → frame id |
 | `s.legend(entries, x, y, title=…)` | a colour→meaning key (`entries=[(label, colour),…]`, or omit to use `roles`) — **required when colour encodes a role** |
+| `s.glossary(entries, x, y, title=…)` | a term→meaning key (`entries=[(term, meaning),…]`) — decode jargon/acronyms; overlap-checked content |
 | `s.lane(ids, label)` | a swimlane: solid frame around `ids` with a top-left header (thin `enclose` wrapper) |
 | `s.align(ids, axis)` / `s.distribute(ids, axis, gap=…)` | tidy already-placed nodes (`axis`: left/right/center_x/top/bottom/center_y; distribute `"x"`/`"y"`) |
 | `s.role(name, colour)` / `Scene(roles={…})` | declare a semantic fill so `box(fill="agent")` works and `legend()` renders the key |
@@ -311,8 +312,12 @@ operational definition of a "clean" diagram, not a matter of taste.
 4. **Label cross-role edges.** Any arrow whose endpoints are different roles (or
    is otherwise non-obvious) carries a short verb phrase (`label="validates"`,
    `"returns token"`). Self-evident same-role edges may stay unlabelled.
-5. **Real identifiers as node names.** Name the actual file / function /
-   component (`reqmap.py`, `check_overlaps()`), never "Service A" / "Module".
+5. **Real identifiers as node names, jargon in a glossary.** Name the actual
+   file / function / component (`reqmap.py`, `check_overlaps()`), never
+   "Service A" / "Module". When a label must use an acronym or project term a
+   newcomer can't decode (`SSOT`, `dogfood`, `CI action`, `@v1`), add a
+   `s.glossary([(term, meaning), …])` box next to the legend (bottom, outside the
+   main region) so every term is explained on the canvas.
 6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
    size (~14–16). Never go below font_size 12.
 7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into a
