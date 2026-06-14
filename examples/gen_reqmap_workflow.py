@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Build the requirement-manager whole-project poster.
 
-A non-trivial, real-world example for the excalidraw-diagram skill: it draws
-how the ENTIRE requirement-manager project works, as a modular poster.
+A non-trivial, real-world example for the excalidraw-diagram skill. It shows how
+the ENTIRE requirement-manager project works, as a modular poster, and doubles
+as a showcase of the role-colour + legend pattern: fills are declared by meaning
+(Scene(roles=…)) and a legend() renders the key, so a reader with no context can
+decode every colour. save(crossing_check="error") enforces a crossing-free scene.
 
 Left -> right journey:  the plugin repo (modules)  ->  marketplace  ->
-Claude Code install  ->  a consumer repo where it runs.  Plus the dogfood
-loop and the published CI action. One big poster; each subsystem is a module.
+Claude Code install  ->  a consumer repo where it runs.  Plus the dogfood loop
+and the published CI action.
 
 Run from the repo root so the output lands in ./docs:
     python plugin/skills/excalidraw-diagram/examples/gen_reqmap_workflow.py
-    python .../gen_reqmap_workflow.py <out_dir>   # optional explicit out dir
 """
 import os
 import sys
@@ -18,7 +20,18 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from excalidraw_builder import Scene
 
-s = Scene(seed=11)
+# Colour by ROLE, not decoratively — declared once, rendered as a legend below.
+ROLES = {
+    "disk":   "grey",    # files on disk (inputs, seeded copies, manifests)
+    "skill":  "blue",    # the skill, Claude Code, and the SSOT model
+    "engine": "teal",    # the reqmap.py engine + its commands
+    "output": "indigo",  # the viewer and generated artifacts
+    "gate":   "orange",  # the CI gate and the published action
+    "dist":   "yellow",  # marketplace / packaging (distribution)
+    "meta":   "green",   # self-coherence: dogfood requirements, tests
+}
+
+s = Scene(seed=11, roles=ROLES)
 
 
 def module(title, x, y, w, h):
@@ -43,49 +56,58 @@ s.label("THE PLUGIN REPO  (this project)", 54, 96, size=16, color="black", align
 
 # M-SKILL ---------------------------------------------------------------------
 module("SKILL  (plugin/skills/)", 70, 160, 350, 210)
-s.box("requirement-\nmanager", 84, 220, 150, 60, fill="blue", font_size=12)
-s.box("quality-\nreview",      244, 220, 158, 60, fill="blue", font_size=12)
-s.box("excalidraw-\ndiagram",   84, 295, 318, 56, fill="blue", font_size=12)
+s.box("requirement-\nmanager", 84, 220, 150, 60, fill="skill", font_size=12)
+s.box("quality-\nreview",      244, 220, 158, 60, fill="skill", font_size=12)
+s.box("excalidraw-\ndiagram",   84, 295, 318, 56, fill="skill", font_size=12)
 
 # M-ENGINE --------------------------------------------------------------------
 module("ENGINE  reqmap.py  (stdlib, 1 file)", 450, 160, 350, 210)
-e1 = s.box("parse /\nscan", 462, 225, 74, 58, fill="teal", font_size=12)
-e2 = s.box("model",        548, 225, 64, 58, fill="teal", font_size=12)
-e3 = s.box("commands",     624, 225, 86, 58, fill="teal", font_size=12)
-e4 = s.box("outputs",      722, 225, 66, 58, fill="teal", font_size=12)
+e1 = s.box("parse /\nscan", 462, 225, 74, 58, fill="engine", font_size=12)
+e2 = s.box("model",        548, 225, 64, 58, fill="engine", font_size=12)
+e3 = s.box("commands",     624, 225, 86, 58, fill="engine", font_size=12)
+e4 = s.box("outputs",      722, 225, 66, 58, fill="engine", font_size=12)
 s.arrow(e1, e2); s.arrow(e2, e3); s.arrow(e3, e4)
-s.box("test_reqmap.py", 462, 300, 200, 46, fill="grey", font_size=12)
+s.box("test_reqmap.py", 462, 300, 200, 46, fill="meta", font_size=12)
 
 # M-VIEWER --------------------------------------------------------------------
 module("VIEWER APP  (app/  Vite + React)", 70, 430, 350, 210)
-v1 = s.box("App.jsx ·\nviews · lib", 84, 490, 150, 60, fill="indigo", font_size=12)
-v2 = s.box("npm run\nbuild:viewer",  244, 490, 158, 60, fill="indigo", font_size=12)
-s.box("_map_viewer.html  (template)", 84, 565, 318, 50, fill="indigo", font_size=12)
+v1 = s.box("App.jsx ·\nviews · lib", 84, 490, 150, 60, fill="output", font_size=12)
+v2 = s.box("npm run\nbuild:viewer",  244, 490, 158, 60, fill="output", font_size=12)
+s.box("_map_viewer.html  (template)", 84, 565, 318, 50, fill="output", font_size=12)
 s.arrow(v1, v2)
 
 # M-ACTION --------------------------------------------------------------------
 module("CI ACTION  (check/action.yml)", 450, 430, 350, 210)
-a1 = s.box("check/action.yml", 462, 495, 210, 50, fill="orange", font_size=12)
-a2 = s.box("published tag  @v1", 462, 570, 210, 50, fill="orange", font_size=12)
+a1 = s.box("check/action.yml", 462, 495, 210, 50, fill="gate", font_size=12)
+a2 = s.box("published tag  @v1", 462, 570, 210, 50, fill="gate", font_size=12)
 s.arrow(a1, a2)
 
 # M-PACKAGING -----------------------------------------------------------------
 module("PACKAGING", 70, 700, 350, 210)
-p1 = s.box("plugin.json\n(manifest)",     84, 760, 150, 60, fill="grey", font_size=12)
-p2 = s.box("marketplace.json", 244, 760, 158, 60, fill="grey", font_size=12)
+s.box("plugin.json\n(manifest)",  84, 760, 150, 60, fill="dist", font_size=12)
+s.box("marketplace.json",        244, 760, 158, 60, fill="dist", font_size=12)
 
 # M-SELF ----------------------------------------------------------------------
 module("SELF-COHERENCE  (dogfood)", 450, 700, 350, 210)
-sf1 = s.box("plugin/\nrequirements/*", 462, 760, 150, 60, fill="green", font_size=12)
-s.box("check_versions.py", 622, 760, 168, 44, fill="green", font_size=12)
-s.box("pre-commit · CI · tests", 462, 838, 328, 46, fill="green", font_size=12)
+s.box("plugin/\nrequirements/*", 462, 760, 150, 60, fill="meta", font_size=12)
+s.box("check_versions.py", 622, 760, 168, 44, fill="meta", font_size=12)
+s.box("pre-commit · CI · tests", 462, 838, 328, 46, fill="meta", font_size=12)
+
+# ════════════════════════════════════════════════════════════════════════════
+# COLOUR LEGEND  (fills the empty pocket below ZONE 2, between the three zones)
+# ════════════════════════════════════════════════════════════════════════════
+s.legend(
+    [("On disk", "disk"), ("Skill / SSOT", "skill"), ("Engine (reqmap)", "engine"),
+     ("Outputs / viewer", "output"), ("CI gate / action", "gate"),
+     ("Distribution", "dist"), ("Dogfood / tests", "meta")],
+    920, 600, title="What the colours mean")
 
 # ════════════════════════════════════════════════════════════════════════════
 # ZONE 2 — SHIP & INSTALL  (the bridge)
 # ════════════════════════════════════════════════════════════════════════════
 s.label("SHIP & INSTALL", 900, 270, size=16, color="black", align="left")
-mkt = s.box("Marketplace\nmarketplace.json", 900, 300, 260, 90, fill="yellow", font_size=14)
-cc  = s.box("Claude Code\ninstall plugin →\nskill available", 900, 440, 260, 120, fill="blue", font_size=14)
+mkt = s.box("Marketplace\nmarketplace.json", 900, 300, 260, 90, fill="dist", font_size=14)
+cc  = s.box("Claude Code\ninstall plugin →\nskill available", 900, 440, 260, 120, fill="skill", font_size=14)
 s.arrow(mkt, cc, label="install")
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -95,14 +117,14 @@ z3 = s.frame(1240, 180, 820, 610)
 s.label("A CONSUMER REPO  (any project)", 1254, 156, size=16, color="black", align="left")
 
 seeded = s.box("Seeded by the skill\nscripts/reqmap.py · _map_viewer.html · .reqmapignore",
-               1290, 220, 470, 90, fill="grey", font_size=12)
+               1290, 220, 470, 90, fill="disk", font_size=12)
 loop   = s.box("requirements/*.md   ⇄   source code\nSSOT   ↔   # implements: tags",
-               1290, 360, 470, 90, fill="blue", font_size=13)
+               1290, 360, 470, 90, fill="skill", font_size=13)
 cmds   = s.box("reqmap commands\ninit · check · map · next · health · …",
-               1290, 500, 470, 90, fill="teal", font_size=13)
-outs   = s.box("_map.html viewer\n_findings.md", 1820, 500, 220, 90, fill="indigo", font_size=12)
+               1290, 500, 470, 90, fill="engine", font_size=13)
+outs   = s.box("_map.html viewer\n_findings.md", 1820, 500, 220, 90, fill="output", font_size=12)
 gate   = s.box("GATE on every commit\npre-commit hook   +   GitHub Action @v1",
-               1290, 650, 750, 100, fill="orange", font_size=13)
+               1290, 650, 750, 100, fill="gate", font_size=13)
 
 s.arrow(seeded, loop)
 s.arrow(loop, cmds)
@@ -129,7 +151,7 @@ s.path([(760, 940), (760, 1010), (1655, 1010), (1655, 752)],
 
 # ════════════════════════════════════════════════════════════════════════════
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
-pj, ph = s.save("reqmap_workflow", out_dir=out_dir)
+pj, ph = s.save("reqmap_workflow", out_dir=out_dir, crossing_check="error")
 print("elements:", len(s.elements))
 print("overlaps:", s.check_overlaps())
 print("crossings:", s.check_arrow_crossings())

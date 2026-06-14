@@ -60,6 +60,31 @@ and emits both files in one `.save()` call.
 
    Use `s.bounds()` to stack each layer as a separate labelled region below the
    previous one rather than cramming all three into a single dense region.
+
+   **Large repo? Fan out the exploration (optional).** Sequential reading is
+   slow on a big codebase. After the README pass, count source files with a
+   `Glob` over the scan extensions (excluding `node_modules/`, `.git/`,
+   `__pycache__/`):
+   - **≤ 80 source files, or the `Agent` tool is unavailable** → explore
+     sequentially yourself; do not spawn subagents (the overhead isn't worth it).
+   - **> 80 source files** → dispatch read-only `Explore` subagents **in
+     parallel** (3 by default — one per lens; split a lens for a very large repo,
+     never more than 5), then synthesise their results and draw. Assign the model
+     per lens — **Sonnet only for the analytical lens, Haiku for the mechanical
+     ones** (the reasoning gap is real only where flow must be inferred):
+
+     | Lens (subagent) | Model | Gathers |
+     |---|---|---|
+     | structure + entry-points | **haiku** | source dirs; entry points (`main`/`run`/`app`/`index`/`cli`); package manifests (`setup.py`, `package.json`, `go.mod`, `Cargo.toml`) |
+     | data-flow + integration | **sonnet** | imports/calls between modules, real vs test deps, external touch-points (APIs, DBs, queues, CI) — the lens that must *reason* about flow |
+     | distribution + packaging | **haiku** | CI/deploy/packaging files (`.github/*.yml`, `Dockerfile`, `*.tf`, manifests) and what the repo publishes to / depends on at deploy |
+
+     Each subagent returns a compact JSON (**≤ 60 lines**): `components`
+     (real file/module names — never placeholders like "ServiceA"), directed
+     `edges` (`{src, dst, label}` with a verb like calls/imports/reads/deploys),
+     and its `group`. The main agent merges the outputs, **dedups by id**, then
+     proceeds to layout. Cost guards: never exceed 5 subagents, ≤ 60 lines each,
+     and don't re-read files a subagent already covered.
 2. **Plan the layout on paper first** (see Layout rules below). List every
    column, its x position, and all arrows. Verify no arrow crosses an unrelated
    box before writing a single line of code.
