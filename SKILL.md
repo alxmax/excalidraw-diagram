@@ -42,6 +42,27 @@ You **never hand-write Excalidraw JSON.** Use the bundled builder
 nonces, two-way arrow bindings, bound-text back-references) behind a small API,
 and emits both files in one `.save()` call.
 
+## Commands (CLI)
+
+The authoring path is **always Python** — you write (or scaffold) a generator
+script against the `Scene` API and run it. There is intentionally **no
+declarative `build <spec>` verb**: a second authoring format would diverge from
+the builder API. The CLI has two helper verbs plus the self-test:
+
+| Command | What it does | When to pick it |
+|---|---|---|
+| `python scripts/excalidraw_builder.py` | run the builder self-test (smoke test) | verifying the builder still works |
+| `python scripts/excalidraw_builder.py render <scene.excalidraw> [out_dir]` | rebuild the self-contained `.html` viewer from an **existing** scene file | you edited a `.excalidraw` on excalidraw.com and want a fresh viewer (no generator script to re-run) |
+| `python scripts/excalidraw_builder.py discover <repo> [out.py]` | scan a repo → emit a **runnable Python generator stub** (one box per top-level component, no overlaps, `TODO`s for edges/grouping) | starting a repo-architecture diagram — scaffold, then fill in the real arrows and run it |
+
+**Menu (how to start a diagram):**
+- **New diagram (from a description)** — write a Python generator against the `Scene` API (the Workflow below), then run it.
+- **From a repo** — `discover <repo>` to scaffold `make_diagram.py`, refine the arrows/grouping/legend, then run it.
+- **Re-render** — `render <scene.excalidraw>` to regenerate the `.html` for a scene edited elsewhere.
+
+`discover` only scaffolds the *components* it can see; inferring the real data flow
+and grouping stays your job (the same judgement the Workflow below describes).
+
 ### Workflow
 
 1. **Understand the thing to draw.** If it's a repo, read its README / file
