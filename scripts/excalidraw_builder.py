@@ -1039,13 +1039,16 @@ def render_html(scene_path, out_dir=None):
     scene file — e.g. one edited on excalidraw.com, for which there is no
     generator script to re-run. Writes <basename>.html beside the scene unless
     out_dir is given. Returns the .html path. Raises ValueError if the file is
-    not a valid Excalidraw scene (a JSON object carrying an 'elements' list)."""
+    not a valid Excalidraw scene (a JSON object carrying an 'elements' list of
+    element objects)."""
     with open(scene_path, encoding="utf-8") as f:
         scene = json.load(f)                      # JSONDecodeError (a ValueError) on bad JSON
-    if not isinstance(scene, dict) or not isinstance(scene.get("elements"), list):
+    elements = scene.get("elements") if isinstance(scene, dict) else None
+    if not isinstance(scene, dict) or not isinstance(elements, list) \
+            or not all(isinstance(e, dict) for e in elements):
         raise ValueError(
             f"{scene_path}: not a valid Excalidraw scene "
-            "(expected a JSON object with an 'elements' list)")
+            "(expected a JSON object with an 'elements' list of element objects)")
     base = os.path.splitext(os.path.basename(scene_path))[0]
     out_dir = out_dir or (os.path.dirname(os.path.abspath(scene_path)))
     os.makedirs(out_dir, exist_ok=True)

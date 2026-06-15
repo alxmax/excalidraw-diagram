@@ -56,9 +56,11 @@ the builder API. The CLI has two helper verbs plus the self-test:
 | `python scripts/excalidraw_builder.py discover <repo> [out.py]` | scan a repo → emit a **runnable Python generator stub** (one box per top-level component, no overlaps, `TODO`s for edges/grouping) | starting a repo-architecture diagram — scaffold, then fill in the real arrows and run it |
 
 **Menu (how to start a diagram):**
-- **New diagram (from a description)** — write a Python generator against the `Scene` API (the Workflow below), then run it.
-- **From a repo** — `discover <repo>` to scaffold `make_diagram.py`, refine the arrows/grouping/legend, then run it.
-- **Re-render** — `render <scene.excalidraw>` to regenerate the `.html` for a scene edited elsewhere.
+- **New diagram (from a description)** — write a Python generator against the `Scene` API (the Workflow below), then run it. *When you know the system and want full control over the layout.*
+- **Scaffold from a repo** — `discover <repo>` to emit `make_diagram.py` pre-seeded with one box per top-level component; refine the arrows/grouping/legend, then run it. *When the subject is an existing codebase.*
+- **Re-run / extend your generator** — re-execute (or edit, then re-execute) the existing `make_diagram.py`. *When you already have the generator and want to update or grow the diagram — the source of truth is the Python script, not the `.excalidraw`.*
+- **Re-render the viewer only** — `render <scene.excalidraw>` to regenerate the `.html` for a scene edited elsewhere (e.g. on excalidraw.com), with no generator script to re-run. *When you hand-edited the `.excalidraw` directly.*
+- **Self-test** — `python scripts/excalidraw_builder.py` with no args runs the builder smoke test. *When verifying the builder is healthy or before reporting a bug — this is the no-arg invocation CI depends on, so don't shadow it with a new default verb.*
 
 `discover` only scaffolds the *components* it can see; inferring the real data flow
 and grouping stays your job (the same judgement the Workflow below describes).

@@ -236,7 +236,8 @@ class TestCli(unittest.TestCase):
             out = eb.render_html(pj)
             self.assertEqual(out, os.path.join(d, "demo.html"))
             self.assertTrue(os.path.exists(out))
-            html = open(out, encoding="utf-8").read()
+            with open(out, encoding="utf-8") as f:
+                html = f.read()
             self.assertIn("excalidraw", html.lower())   # the embedded scene + viewer
             self.assertIn('"type":', html)              # scene JSON inlined
 
@@ -245,6 +246,14 @@ class TestCli(unittest.TestCase):
             bad = os.path.join(d, "bad.excalidraw")
             with open(bad, "w", encoding="utf-8") as f:
                 f.write('{"nope": 1}')               # valid JSON, but no "elements"
+            with self.assertRaises(ValueError):
+                eb.render_html(bad)
+
+    def test_render_rejects_non_dict_elements(self):
+        with tempfile.TemporaryDirectory() as d:
+            bad = os.path.join(d, "bad.excalidraw")
+            with open(bad, "w", encoding="utf-8") as f:
+                f.write('{"elements": [1, 2, 3]}')    # a list, but not element objects
             with self.assertRaises(ValueError):
                 eb.render_html(bad)
 
@@ -274,7 +283,8 @@ class TestCli(unittest.TestCase):
                 f.write("y = 2\n")
             stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
             self.assertTrue(os.path.exists(stub))
-            compile(open(stub, encoding="utf-8").read(), stub, "exec")  # syntactically valid
+            with open(stub, encoding="utf-8") as f:
+                compile(f.read(), stub, "exec")        # syntactically valid
             env = dict(os.environ, PYTHONPATH=HERE)      # so `from excalidraw_builder import Scene` resolves
             r = subprocess.run([sys.executable, "-X", "utf8", stub],
                                cwd=d, capture_output=True, text=True, env=env)
@@ -285,11 +295,29 @@ class TestCli(unittest.TestCase):
     def test_discover_empty_repo_stub_still_runs(self):
         with tempfile.TemporaryDirectory() as d:
             stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
-            compile(open(stub, encoding="utf-8").read(), stub, "exec")  # placeholders, still valid
+            with open(stub, encoding="utf-8") as f:
+                compile(f.read(), stub, "exec")        # placeholders, still valid
             env = dict(os.environ, PYTHONPATH=HERE)
             r = subprocess.run([sys.executable, "-X", "utf8", stub],
                                cwd=d, capture_output=True, text=True, env=env)
             self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_discover_stub_truncates_at_cap(self):
+        # a repo with more components than max_components emits the truncation
+        # NOTE and caps the component list to the first `max_components`.
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(25):
+                sub = os.path.join(d, "mod%02d" % i)
+                os.makedirs(sub)
+                with open(os.path.join(sub, "x.py"), "w") as f:
+                    f.write("x = 1\n")
+            stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"),
+                                    max_components=20)
+            with open(stub, encoding="utf-8") as f:
+                code = f.read()
+            self.assertIn("more components than the cap", code)  # truncation NOTE present
+            self.assertIn("mod00", code)                         # first component kept
+            self.assertNotIn("mod24", code)                      # 25th is past the cap of 20
 
     # --- the no-arg invocation must still be the smoke test (CI depends on it) ---
     def test_cli_no_args_runs_selftest(self):
