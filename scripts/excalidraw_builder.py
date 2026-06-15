@@ -215,9 +215,17 @@ class Scene:
         """
         sc = _hex(stroke, _STROKE, _STROKE["black"])
         bg = _hex(self.roles.get(fill, fill), _FILL, "transparent")  # role -> colour
-        roundness = {"type": 3} if shape == "rectangle" else None
-        cid = self._new_id(shape)
-        cont = self._base(cid, shape, x, y, w, h, sc, bg,
+
+        # ISO 5807 polygon symbols (data=parallelogram, preparation=hexagon) have
+        # no native Excalidraw primitive — drawn as a closed line + free label,
+        # with their bounding box registered for arrows/overlap.
+        if shape in self._ISO_POLYGON:
+            return self._iso_polygon(shape, text, x, y, w, h, sc, bg,
+                                     font_size, font_color, group, container)
+
+        etype, roundness, deco = self._resolve_native(shape)
+        cid = self._new_id(etype)
+        cont = self._base(cid, etype, x, y, w, h, sc, bg,
                           roundness=roundness, group=group)
 
         if text:
@@ -233,12 +241,17 @@ class Scene:
         else:
             self.elements.append(cont)
 
-        self._geom[cid] = (x, y, w, h, shape)
+        self._geom[cid] = (x, y, w, h, etype)
         if container:
             self._containers.add(cid)
         else:
             self._nodes.append((cid, x, y, w, h,
                                 (text or "").split("\n")[0] or shape))
+        # ISO 5807 predefined-process: two vertical bars inset from the sides
+        if deco == "predefined":
+            bar = min(12.0, w * 0.12)
+            for bx in (x + bar, x + w - bar):
+                self.elements.append(self._vline(bx, y, h, sc, group))
         return cid
 
     def ellipse(self, text, x, y, w=170, h=110, **kw):
@@ -246,6 +259,224 @@ class Scene:
 
     def diamond(self, text, x, y, w=160, h=90, **kw):
         return self.box(text, x, y, w, h, shape="diamond", **kw)
+
+    # ====================================================================
+    #  ISO 5807 FLOWCHART SHAPES (process/decision/terminator/data/...)
+    # ====================================================================
+    # The two true polygons have no native Excalidraw primitive; the rest map
+    # onto native shapes (sharp vs rounded rectangle, diamond, circle).
+    _ISO_POLYGON = {"data", "preparation"}
+
+    @staticmethod
+    def _resolve_native(shape):
+        """Map a shape name to (excalidraw_type, roundness, decoration).
+
+        ISO 5807 names render on native primitives:
+        process -> sharp rectangle, terminator -> rounded rectangle (start/end),
+        decision -> diamond, connector -> circle, predefined_process -> rectangle
+        with two side bars. Unknown names raise."""
+        iso = {
+            "process":            ("rectangle", None, None),         # sharp box
+            "terminator":         ("rectangle", {"type": 3}, None),  # rounded ends
+            "decision":           ("diamond", None, None),
+            "connector":          ("ellipse", None, None),           # on-page conn.
+            "predefined_process": ("rectangle", None, "predefined"),
+        }
+        if shape in iso:
+            return iso[shape]
+        if shape in ("rectangle", "ellipse", "diamond"):
+            return (shape, {"type": 3} if shape == "rectangle" else None, None)
+        raise ValueError(f"unknown shape: {shape!r}")
+
+    def _vline(self, x, y, h, sc, group=None):
+        """A bare vertical line element (decoration, not a tracked node)."""
+        el = self._base(self._new_id("line"), "line", x, y, 0.0, float(h),
+                        sc, "transparent", roundness=None, group=group)
+        el.update({"points": [[0.0, 0.0], [0.0, float(h)]],
+                   "lastCommittedPoint": None,
+                   "startBinding": None, "endBinding": None,
+                   "startArrowhead": None, "endArrowhead": None})
+        return el
+
+    def _iso_polygon(self, shape, text, x, y, w, h, sc, bg,
+                     font_size, font_color, group, container):
+        """Draw an ISO 5807 polygon (parallelogram/hexagon) as a closed line
+        with a free centered label; register the bounding box as the node."""
+        if shape == "data":            # parallelogram — input / output
+            sk = min(w * 0.18, 26.0)
+            pts = [(sk, 0), (w, 0), (w - sk, h), (0, h), (sk, 0)]
+        elif shape == "preparation":   # hexagon — setup / initialisation
+            ins = min(w * 0.18, h * 0.5, 30.0)
+            pts = [(0, h / 2), (ins, 0), (w - ins, 0), (w, h / 2),
+                   (w - ins, h), (ins, h), (0, h / 2)]
+        else:
+            raise ValueError(f"unknown ISO polygon shape: {shape!r}")
+        pid = self._new_id(shape)
+        el = self._base(pid, "line", x, y, w, h, sc, bg,
+                        roundness=None, group=group)
+        el.update({"points": [[float(px), float(py)] for px, py in pts],
+                   "lastCommittedPoint": None,
+                   "startBinding": None, "endBinding": None,
+                   "startArrowhead": None, "endArrowhead": None,
+                   "polygon": True})
+        self.elements.append(el)
+        if text:
+            tcolor = _hex(font_color, _STROKE, _STROKE["black"])
+            tw, th = self._text_wh(text, font_size)
+            self.elements.append(
+                self._text_el(text, x + (w - tw) / 2, y + (h - th) / 2, tw, th,
+                              size=font_size, color=tcolor, group=group))
+        self._geom[pid] = (x, y, w, h, "rectangle")   # bbox for arrows/overlap
+        if container:
+            self._containers.add(pid)
+        else:
+            self._nodes.append((pid, x, y, w, h,
+                                (text or "").split("\n")[0] or shape))
+        return pid
+
+    # -- ISO 5807 convenience aliases (readable generators) ----------------
+    def process(self, text, x, y, w=170, h=64, **kw):
+        return self.box(text, x, y, w, h, shape="process", **kw)
+
+    def terminator(self, text, x, y, w=170, h=54, **kw):
+        return self.box(text, x, y, w, h, shape="terminator", **kw)
+
+    def decision(self, text, x, y, w=180, h=100, **kw):
+        return self.box(text, x, y, w, h, shape="decision", **kw)
+
+    def data(self, text, x, y, w=190, h=66, **kw):
+        return self.box(text, x, y, w, h, shape="data", **kw)
+
+    def predefined_process(self, text, x, y, w=185, h=66, **kw):
+        return self.box(text, x, y, w, h, shape="predefined_process", **kw)
+
+    def preparation(self, text, x, y, w=200, h=82, **kw):
+        return self.box(text, x, y, w, h, shape="preparation", **kw)
+
+    def connector(self, text, x, y, w=46, h=46, **kw):
+        return self.box(text, x, y, w, h, shape="connector", **kw)
+
+    # ====================================================================
+    #  C4 MODEL (person shape + standard element labelling)
+    # ====================================================================
+    def person(self, text, x, y, w=200, h=92, *, fill=None, stroke=None,
+               font_size=13, font_color=None, group=None, container=False):
+        """A C4 'person' element: a labelled rounded body with a circular head
+        on top. The whole (x, y, w, h) box is the node; the head is decoration."""
+        sc = _hex(stroke, _STROKE, _STROKE["black"])
+        bg = _hex(self.roles.get(fill, fill), _FILL, "transparent")
+        d = min(34.0, h * 0.36, w * 0.4)            # head diameter
+        body_y = y + d * 0.55
+        body_h = h - d * 0.55
+        head = self._base(self._new_id("ellipse"), "ellipse",
+                          x + w / 2 - d / 2, y, d, d, sc, bg,
+                          roundness=None, group=group)
+        bid = self._new_id("rectangle")
+        body = self._base(bid, "rectangle", x, body_y, w, body_h, sc, bg,
+                          roundness={"type": 3}, group=group)
+        self.elements.append(head)
+        if text:
+            tcolor = _hex(font_color, _STROKE, _STROKE["black"])
+            tw, th = self._text_wh(text, font_size)
+            tel = self._text_el(text, x + (w - tw) / 2,
+                                body_y + (body_h - th) / 2, tw, th,
+                                size=font_size, color=tcolor, container=bid,
+                                group=group)
+            body["boundElements"].append({"type": "text", "id": tel["id"]})
+            self.elements.append(body)
+            self.elements.append(tel)
+        else:
+            self.elements.append(body)
+        self._geom[bid] = (x, y, w, h, "rectangle")   # full bbox incl. head
+        if container:
+            self._containers.add(bid)
+        else:
+            self._nodes.append((bid, x, y, w, h,
+                                (text or "").split("\n")[0] or "person"))
+        return bid
+
+    def c4(self, name, x, y, *, kind="System", tech=None, desc=None,
+           person=False, w=220, h=104, font_size=13, **kw):
+        """A C4 element with the standard three-line label:
+            <name>
+            [<kind>] or [<kind>: <tech>]
+            <description>
+        Pass person=True for a person element, fill=<role> for the C4 colour
+        (in-scope vs external). Routes to person()/box()."""
+        stereo = f"[{kind}: {tech}]" if tech else f"[{kind}]"
+        label = name + "\n" + stereo + (("\n" + desc) if desc else "")
+        if person:
+            return self.person(label, x, y, w=w, h=h, font_size=font_size, **kw)
+        return self.box(label, x, y, w, h, font_size=font_size, **kw)
+
+    # ====================================================================
+    #  POSTER HELPERS (stacked sections + a horizontal workflow pipeline)
+    # ====================================================================
+    def section(self, title, *, x=40, gap=70, size=18, color="black"):
+        """Open a stacked section: place a left-aligned heading below ALL existing
+        content (shapes, connectors, and text) and return the y at which to place
+        this section's shapes. Removes the manual y-band bookkeeping when stacking
+        regions top -> bottom."""
+        bottom = max((e.get("y", 0) + e.get("height", 0) for e in self.elements),
+                     default=0)
+        top = bottom + gap
+        self.label(title, x, top, size=size, color=color, align="left")
+        return top + size * 1.6 + 10
+
+    _PIPE_WH = {
+        "terminator": (120, 48), "process": (150, 64), "decision": (180, 92),
+        "data": (170, 64), "predefined_process": (180, 64),
+        "preparation": (190, 78), "connector": (46, 46), "box": (160, 70),
+    }
+
+    def pipeline(self, steps, x, y, *, gap=44, row_h=None, font_size=14,
+                 connect=True):
+        """Lay out a horizontal flowchart pipeline left -> right and (by default)
+        chain bound arrows between consecutive steps. Steps are vertically centred
+        on a common midline so terminators/processes/decisions align.
+
+        Each step is a string, a (text, kind) or (text, kind, fill) tuple, or a
+        dict of {text, kind, fill, w, h, label, font_size}. `kind` is any ISO/C4
+        shape verb: process (default), decision, terminator, data,
+        predefined_process, preparation, connector, box. A step's `label` becomes
+        the arrow label leaving it. Returns the list of node ids (index them for
+        route_under() feedback loops)."""
+        method = {
+            "terminator": self.terminator, "process": self.process,
+            "decision": self.diamond, "data": self.data,
+            "predefined_process": self.predefined_process,
+            "preparation": self.preparation, "connector": self.connector,
+            "box": self.box,
+        }
+        norm = []
+        for st in steps:
+            if isinstance(st, str):
+                d = {"text": st}
+            elif isinstance(st, (tuple, list)):
+                d = {"text": st[0]}
+                if len(st) > 1:
+                    d["kind"] = st[1]
+                if len(st) > 2:
+                    d["fill"] = st[2]
+            else:
+                d = dict(st)
+            d.setdefault("kind", "process")
+            dw, dh = self._PIPE_WH.get(d["kind"], (150, 64))
+            d.setdefault("w", dw)
+            d.setdefault("h", dh)
+            norm.append(d)
+        band = row_h or max(d["h"] for d in norm)
+        mid = y + band / 2
+        cx = x
+        for d in norm:
+            fn = method.get(d["kind"], self.process)
+            d["_id"] = fn(d["text"], cx, mid - d["h"] / 2, w=d["w"], h=d["h"],
+                          fill=d.get("fill"), font_size=d.get("font_size", font_size))
+            cx += d["w"] + gap
+        if connect:
+            for a, b in zip(norm, norm[1:]):
+                self.arrow(a["_id"], b["_id"], label=a.get("label"))
+        return [d["_id"] for d in norm]
 
     # ====================================================================
     #  FRAME / GROUPING CONTAINER (a big rounded rectangle, drawn behind)

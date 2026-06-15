@@ -119,12 +119,12 @@ and grouping stays your job (the same judgement the Workflow below describes).
    builder handles z-order for `frame()`).
 4. **Write a short generator script** that imports the builder, declares the
    shapes and arrows, and calls `.save(basename, out_dir)`. See
-   `examples/gen_reqmap_workflow.py` for a complete, non-trivial example
-   (role-coloured regions + a `legend()` key + routed connectors, shipped with
-   `crossing_check="error"` so the layout gates stay enforced).
+   `examples/make_full_architecture.py` for a complete, non-trivial example
+   (role-coloured stacked sections + a `legend()` key + glossary, shipped with
+   `crossing_check="error"`/`legend_check="error"` so the layout gates stay enforced).
 
    **Name the script by what it generates, not by the project it depicts.**
-   Use `make_diagram.py` or `make_architecture.py` — never
+   Use `make_diagram.py` or `make_full_architecture.py` — never
    `make_<projectname>.py`. The project is already implicit from the directory
    and from the `basename` you pass to `.save()`. A subject-specific filename
    prevents reuse and is wrong when the script is moved or repurposed.
