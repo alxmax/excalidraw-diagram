@@ -13,6 +13,7 @@ disk) and asserts on the in-memory scene.
 import glob
 import os
 import runpy
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -217,6 +218,102 @@ class TestBuilderUnits(unittest.TestCase):
         s = eb.Scene(seed=99)
         s.path([(10, 20), (100, 200)])
         self.assertEqual(s.bounds(), (10, 20, 100, 200))
+
+
+class TestCli(unittest.TestCase):
+    """The render + discover CLI verbs, and the preserved no-arg smoke test."""
+
+    BUILDER = os.path.join(HERE, "excalidraw_builder.py")
+
+    # --- render: rebuild the .html viewer from an existing .excalidraw scene ---
+    def test_render_rebuilds_html_from_scene(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=7)
+            s.box("A", 0, 0)
+            s.box("B", 0, 120)
+            pj, ph = s.save("demo", out_dir=d)
+            os.remove(ph)                          # delete html so render must recreate it
+            out = eb.render_html(pj)
+            self.assertEqual(out, os.path.join(d, "demo.html"))
+            self.assertTrue(os.path.exists(out))
+            html = open(out, encoding="utf-8").read()
+            self.assertIn("excalidraw", html.lower())   # the embedded scene + viewer
+            self.assertIn('"type":', html)              # scene JSON inlined
+
+    def test_render_rejects_non_scene(self):
+        with tempfile.TemporaryDirectory() as d:
+            bad = os.path.join(d, "bad.excalidraw")
+            with open(bad, "w", encoding="utf-8") as f:
+                f.write('{"nope": 1}')               # valid JSON, but no "elements"
+            with self.assertRaises(ValueError):
+                eb.render_html(bad)
+
+    # --- discover: scan a repo -> a runnable Python generator stub ---
+    def test_discover_components_prunes_and_sorts(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "core"))
+            with open(os.path.join(d, "core", "engine.py"), "w") as f:
+                f.write("x = 1\n")
+            with open(os.path.join(d, "app.py"), "w") as f:
+                f.write("y = 2\n")
+            os.makedirs(os.path.join(d, "node_modules"))     # must be pruned
+            with open(os.path.join(d, "node_modules", "z.js"), "w") as f:
+                f.write("zz\n")
+            comps = eb.discover_components(d)
+            self.assertIn("core", comps)
+            self.assertIn("app.py", comps)
+            self.assertNotIn("node_modules", comps)
+            self.assertEqual(comps, sorted(comps))           # deterministic
+
+    def test_discover_stub_is_runnable(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "core"))
+            with open(os.path.join(d, "core", "engine.py"), "w") as f:
+                f.write("x = 1\n")
+            with open(os.path.join(d, "app.py"), "w") as f:
+                f.write("y = 2\n")
+            stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
+            self.assertTrue(os.path.exists(stub))
+            compile(open(stub, encoding="utf-8").read(), stub, "exec")  # syntactically valid
+            env = dict(os.environ, PYTHONPATH=HERE)      # so `from excalidraw_builder import Scene` resolves
+            r = subprocess.run([sys.executable, "-X", "utf8", stub],
+                               cwd=d, capture_output=True, text=True, env=env)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(glob.glob(os.path.join(d, "*.excalidraw")),
+                            "stub ran but saved no scene")
+
+    def test_discover_empty_repo_stub_still_runs(self):
+        with tempfile.TemporaryDirectory() as d:
+            stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
+            compile(open(stub, encoding="utf-8").read(), stub, "exec")  # placeholders, still valid
+            env = dict(os.environ, PYTHONPATH=HERE)
+            r = subprocess.run([sys.executable, "-X", "utf8", stub],
+                               cwd=d, capture_output=True, text=True, env=env)
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+    # --- the no-arg invocation must still be the smoke test (CI depends on it) ---
+    def test_cli_no_args_runs_selftest(self):
+        env = dict(os.environ, PYTHONPATH=HERE)
+        r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("OK smoke test", r.stdout)
+
+    def test_cli_render_subcommand(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=8)
+            s.box("X", 0, 0)
+            pj, ph = s.save("scene", out_dir=d)
+            os.remove(ph)
+            r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "render", pj],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(os.path.exists(os.path.join(d, "scene.html")))
+
+    def test_cli_unknown_verb_exits_nonzero(self):
+        r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "bogus"],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 2)
 
 
 if __name__ == "__main__":

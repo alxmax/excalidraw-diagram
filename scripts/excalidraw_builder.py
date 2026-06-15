@@ -49,6 +49,7 @@ import json
 import math
 import os
 import random
+import sys
 import time
 
 # ---------------------------------------------------------------------------
@@ -1028,7 +1029,134 @@ window.addEventListener("load", function(){
                 .replace("__TITLE__", title))
 
 
-if __name__ == "__main__":
+# ---------------------------------------------------------------------------
+# CLI verbs — render an existing scene, discover a repo into a generator stub
+# (the skill's only authoring path stays Python; `build` from a declarative
+# spec was deliberately not added — it would fork a second, divergent path.)
+# ---------------------------------------------------------------------------
+def render_html(scene_path, out_dir=None):
+    """Regenerate the self-contained .html viewer from an existing .excalidraw
+    scene file — e.g. one edited on excalidraw.com, for which there is no
+    generator script to re-run. Writes <basename>.html beside the scene unless
+    out_dir is given. Returns the .html path. Raises ValueError if the file is
+    not a valid Excalidraw scene (a JSON object carrying an 'elements' list)."""
+    with open(scene_path, encoding="utf-8") as f:
+        scene = json.load(f)                      # JSONDecodeError (a ValueError) on bad JSON
+    if not isinstance(scene, dict) or not isinstance(scene.get("elements"), list):
+        raise ValueError(
+            f"{scene_path}: not a valid Excalidraw scene "
+            "(expected a JSON object with an 'elements' list)")
+    base = os.path.splitext(os.path.basename(scene_path))[0]
+    out_dir = out_dir or (os.path.dirname(os.path.abspath(scene_path)))
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, base + ".html")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(_html_page(base, scene))
+    return out_path
+
+
+_DISCOVER_EXTS = (".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs",
+                  ".c", ".cpp", ".h", ".java", ".rb", ".php")
+_DISCOVER_PRUNE = {".git", "node_modules", "__pycache__", ".venv", "venv",
+                   "env", "dist", "build", "target", ".idea", ".vscode",
+                   ".pytest_cache", ".mypy_cache"}
+
+
+def _dir_has_source(d):
+    """True if directory d (recursively, minus pruned dirs) holds any source file."""
+    for dirpath, dirs, files in os.walk(d):
+        dirs[:] = [x for x in dirs if x not in _DISCOVER_PRUNE and not x.startswith(".")]
+        if any(f.endswith(_DISCOVER_EXTS) for f in files):
+            return True
+    return False
+
+
+def discover_components(repo):
+    """Scan a repo and return its top-level 'components', sorted: each immediate
+    child directory that (recursively) contains source, plus each top-level
+    source file. Deterministic and cross-platform (sorted, pruned). A heuristic
+    scaffold only — the human/LLM refines the real edges + grouping in the stub."""
+    repo = os.path.abspath(repo)
+    comps = []
+    for entry in sorted(os.listdir(repo)):
+        if entry in _DISCOVER_PRUNE or entry.startswith("."):
+            continue
+        full = os.path.join(repo, entry)
+        if os.path.isdir(full):
+            if _dir_has_source(full):
+                comps.append(entry)
+        elif entry.endswith(_DISCOVER_EXTS):
+            comps.append(entry)
+    return comps
+
+
+def _render_stub(repo_name, comps, truncated):
+    """Render the text of a runnable Python generator stub from the components."""
+    items = comps or ["component-a", "component-b"]
+    items_repr = ", ".join(repr(c) for c in items)
+    cols = min(4, max(1, len(items)))
+    notes = []
+    if not comps:
+        notes.append("# NOTE: no source components auto-detected — placeholders shown; replace them.")
+    if truncated:
+        notes.append("# NOTE: repo had more components than the cap; only the first are shown.")
+    note_block = ("\n".join(notes) + "\n") if notes else ""
+    return f'''#!/usr/bin/env python3
+"""Diagram generator for {repo_name} — scaffolded by `excalidraw_builder.py discover`.
+
+This places one box per discovered top-level component on a non-overlapping grid.
+FILL IT IN: add the real arrows (data flow / calls), group related boxes with
+enclose(), and add a legend() if colour encodes a role. Then run this file to
+emit {repo_name}.excalidraw + {repo_name}.html.
+"""
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # ensure excalidraw_builder is importable
+from excalidraw_builder import Scene
+
+s = Scene()
+s.title({repo_name!r}, 0, -50, size=28)
+{note_block}# Components discovered in the repo (auto-placed, no overlaps):
+nodes = s.grid([{items_repr}], 0, 0, {cols})
+
+# TODO: connect real relationships, e.g.  s.arrow(nodes[0], nodes[1], label="calls")
+# TODO: group related nodes, e.g.         s.enclose([nodes[0], nodes[1]], label="subsystem")
+# TODO: if colour encodes a role, declare roles + a legend().
+
+s.save({repo_name!r})
+print("wrote {repo_name}.excalidraw + .html")
+'''
+
+
+def discover_stub(repo, out_path=None, max_components=20):
+    """Emit a runnable Python generator stub (default: ./make_diagram.py) seeded
+    from a repo scan — one box per discovered component on a no-overlap grid, with
+    TODO markers for the edges/grouping the author adds. Returns the stub path.
+    Running the stub produces a valid (if skeletal) .excalidraw + .html."""
+    comps = discover_components(repo)
+    truncated = len(comps) > max_components
+    if truncated:
+        comps = comps[:max_components]
+    repo_name = os.path.basename(os.path.abspath(repo)) or "repo"
+    out_path = out_path or os.path.join(os.getcwd(), "make_diagram.py")
+    os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(_render_stub(repo_name, comps, truncated))
+    return out_path
+
+
+_USAGE = """usage: excalidraw_builder.py [<command>]
+
+  (no command)                         run the builder self-test (smoke test)
+  render <scene.excalidraw> [out_dir]  rebuild the .html viewer from an existing scene
+  discover <repo> [out.py]             scan a repo -> a runnable Python generator stub
+
+The skill's authoring path is Python: write (or `discover`-scaffold) a generator
+script against the Scene API, then run it. `render` re-emits the viewer for a scene
+edited elsewhere (e.g. excalidraw.com)."""
+
+
+def _selftest():
     # smoke test — exercises auto-layout, the new Phase-1 helpers, and checks
     import tempfile
     out = os.path.join(tempfile.gettempdir(), "excd")
@@ -1077,3 +1205,41 @@ if __name__ == "__main__":
     print("overlaps:", s.check_overlaps(),
           "crossings:", s.check_arrow_crossings())
     print("OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)")
+
+
+def _main(argv):
+    """CLI dispatch. No command -> self-test (so `python excalidraw_builder.py`
+    stays the smoke test CI relies on). Returns a process exit code."""
+    if not argv:
+        _selftest()
+        return 0
+    verb = argv[0]
+    if verb in ("-h", "--help", "help"):
+        print(_USAGE)
+        return 0
+    if verb == "selftest":
+        _selftest()
+        return 0
+    try:
+        if verb == "render":
+            if len(argv) < 2:
+                print("usage: excalidraw_builder.py render <scene.excalidraw> [out_dir]", file=sys.stderr)
+                return 2
+            print("wrote", render_html(argv[1], argv[2] if len(argv) > 2 else None))
+            return 0
+        if verb == "discover":
+            if len(argv) < 2:
+                print("usage: excalidraw_builder.py discover <repo> [out.py]", file=sys.stderr)
+                return 2
+            print("wrote", discover_stub(argv[1], argv[2] if len(argv) > 2 else None))
+            return 0
+    except (OSError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"unknown command: {verb!r} — use render, discover, or no command for the self-test",
+          file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(_main(sys.argv[1:]))
