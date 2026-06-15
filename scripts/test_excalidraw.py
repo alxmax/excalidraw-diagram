@@ -310,6 +310,12 @@ class TestCli(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertTrue(os.path.exists(os.path.join(d, "scene.html")))
 
+    def test_render_stub_handles_hostile_repo_name(self):
+        # a repo dir name with quotes/triple-quotes must not break the generated
+        # stub's docstring or string literals (FS-independent: call _render_stub direct)
+        code = eb._render_stub('a"""b\'c"d', ["x"], False)
+        compile(code, "<stub>", "exec")            # must not raise SyntaxError
+
     def test_cli_unknown_verb_exits_nonzero(self):
         r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "bogus"],
                            capture_output=True, text=True)

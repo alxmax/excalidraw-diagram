@@ -1095,6 +1095,10 @@ def _render_stub(repo_name, comps, truncated):
     items = comps or ["component-a", "component-b"]
     items_repr = ", ".join(repr(c) for c in items)
     cols = min(4, max(1, len(items)))
+    # Sanitize the repo name before it lands in the generated stub: a name with a
+    # quote (or `"""`) would otherwise break the stub's docstring / string literals
+    # on filesystems that allow such characters. Also keeps the saved filename sane.
+    safe = "".join(c if (c.isalnum() or c in " _-.") else "_" for c in repo_name) or "diagram"
     notes = []
     if not comps:
         notes.append("# NOTE: no source components auto-detected — placeholders shown; replace them.")
@@ -1102,12 +1106,12 @@ def _render_stub(repo_name, comps, truncated):
         notes.append("# NOTE: repo had more components than the cap; only the first are shown.")
     note_block = ("\n".join(notes) + "\n") if notes else ""
     return f'''#!/usr/bin/env python3
-"""Diagram generator for {repo_name} — scaffolded by `excalidraw_builder.py discover`.
+"""Diagram generator for {safe} — scaffolded by `excalidraw_builder.py discover`.
 
 This places one box per discovered top-level component on a non-overlapping grid.
 FILL IT IN: add the real arrows (data flow / calls), group related boxes with
 enclose(), and add a legend() if colour encodes a role. Then run this file to
-emit {repo_name}.excalidraw + {repo_name}.html.
+emit {safe}.excalidraw + {safe}.html.
 """
 import os
 import sys
@@ -1115,7 +1119,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # ensure excalid
 from excalidraw_builder import Scene
 
 s = Scene()
-s.title({repo_name!r}, 0, -50, size=28)
+s.title({safe!r}, 0, -50, size=28)
 {note_block}# Components discovered in the repo (auto-placed, no overlaps):
 nodes = s.grid([{items_repr}], 0, 0, {cols})
 
@@ -1123,8 +1127,8 @@ nodes = s.grid([{items_repr}], 0, 0, {cols})
 # TODO: group related nodes, e.g.         s.enclose([nodes[0], nodes[1]], label="subsystem")
 # TODO: if colour encodes a role, declare roles + a legend().
 
-s.save({repo_name!r})
-print("wrote {repo_name}.excalidraw + .html")
+s.save({safe!r})
+print("wrote {safe}.excalidraw + .html")
 '''
 
 
