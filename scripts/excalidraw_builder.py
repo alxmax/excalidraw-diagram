@@ -198,6 +198,30 @@ class Scene:
         h = len(lines) * size * 1.25
         return w, h
 
+    @staticmethod
+    def fit_text(text, *, font=14, max_chars=20, min_w=120, min_h=48):
+        """Word-wrap `text` to <=max_chars per line and return (wrapped, w, h)
+        sized so the text never overflows its box. Use it for boxes whose label
+        length is not known in advance (extracted/generated names): call it and
+        pass the returned w/h to box()/pipeline(). The engine does NOT auto-size
+        box() by default — changing that default would re-flow every existing
+        layout — so sizing-to-text is this opt-in helper. The width margin is
+        wider than _text_wh's factor, so a box sized here always clears
+        check_text_overflow()."""
+        words, lines, cur = text.split(), [], ""
+        for w in words:
+            if not cur or len(cur) + 1 + len(w) <= max_chars:
+                cur = (cur + " " + w).strip()
+            else:
+                lines.append(cur)
+                cur = w
+        if cur:
+            lines.append(cur)
+        longest = max((len(ln) for ln in lines), default=1)
+        width = max(min_w, int(longest * font * 0.6) + 24)
+        height = max(min_h, int(len(lines) * font * 1.6) + 18)
+        return "\n".join(lines), width, height
+
     # ====================================================================
     #  SHAPES WITH A CENTERED LABEL
     # ====================================================================
@@ -1083,6 +1107,54 @@ class Scene:
                 used.add(bg)
         return sorted(used - self._legend_colours)
 
+    def check_text_overflow(self, tol=2.0):
+        """Return [(label, text_w, box_w, text_h, box_h), ...] for every bound
+        text whose rendered size exceeds its container SHAPE by more than `tol`
+        px in either axis — a label too big for its box. The text then spills
+        outside the box onto its neighbours, a silent failure the shape-overlap
+        check cannot see (the shapes themselves do not overlap). Text bound to an
+        arrow is ignored: arrow labels float on the connector by design."""
+        shapes = {"rectangle", "ellipse", "diamond"}
+        by_id = {e["id"]: e for e in self.elements}
+        hits = []
+        for e in self.elements:
+            if e.get("type") != "text" or not e.get("containerId"):
+                continue
+            cont = by_id.get(e["containerId"])
+            if not cont or cont.get("type") not in shapes:
+                continue
+            tw, th = e.get("width", 0), e.get("height", 0)
+            cw, ch = cont.get("width", 0), cont.get("height", 0)
+            if tw - cw > tol or th - ch > tol:
+                label = (e.get("text") or "").split("\n")[0]
+                hits.append((label, round(tw, 1), round(cw, 1),
+                             round(th, 1), round(ch, 1)))
+        return hits
+
+    def check_text_overlaps(self, tol=2.0):
+        """Return [(text_a, text_b), ...] for pairs of FREE (unbound) text
+        elements whose bounding boxes overlap by more than `tol` px in BOTH axes.
+        Free text = a title()/section()/label() caption (containerId is None);
+        bound text — labels inside a box or on an arrow — is excluded, so
+        legend/glossary row labels never false-fire. Catches a caption colliding
+        with a section header or another caption: invisible to check_overlaps()
+        because that only inspects shapes."""
+        free = [e for e in self.elements
+                if e.get("type") == "text" and not e.get("containerId")]
+        hits = []
+        for i in range(len(free)):
+            ax, ay = free[i]["x"], free[i]["y"]
+            aw, ah = free[i].get("width", 0), free[i].get("height", 0)
+            for j in range(i + 1, len(free)):
+                bx, by = free[j]["x"], free[j]["y"]
+                bw, bh = free[j].get("width", 0), free[j].get("height", 0)
+                ox = min(ax + aw, bx + bw) - max(ax, bx)
+                oy = min(ay + ah, by + bh) - max(ay, by)
+                if ox > tol and oy > tol:
+                    hits.append(((free[i].get("text") or "")[:40],
+                                 (free[j].get("text") or "")[:40]))
+        return hits
+
     def bounds(self):
         """(min_x, min_y, max_x, max_y) over every shape AND every routed
         connector (path/route_under/free_arrow). Use it to stack several
@@ -1116,17 +1188,27 @@ class Scene:
         }
 
     def save(self, basename, out_dir=".", allow_overlap=False,
-             crossing_check="warn", legend_check="warn"):
+             crossing_check="warn", legend_check="warn",
+             overflow_check="warn", text_overlap_check="warn"):
         """Write <basename>.excalidraw + .html. Always re-runs the overlap
         check first (so post-placement align()/distribute() can't ship a hidden
-        overlap). `crossing_check` controls arrow-crossing handling and
-        `legend_check` controls colour-SSOT handling: each is "warn" (default,
-        prints) or "error" (raises — opt-in gate). `legend_check` only fires
-        when a legend() was rendered (otherwise there is no key to enforce)."""
-        if crossing_check not in ("warn", "error"):
-            raise ValueError("crossing_check must be 'warn' or 'error'")
-        if legend_check not in ("warn", "error"):
-            raise ValueError("legend_check must be 'warn' or 'error'")
+        overlap). `crossing_check`, `legend_check`, `overflow_check` and
+        `text_overlap_check` each take "warn" (default, prints) or "error"
+        (raises — opt-in gate):
+          - crossing_check     — a bound arrow runs through an unrelated box.
+          - legend_check       — a fill colour is missing from the legend (only
+            fires when a legend() was rendered).
+          - overflow_check     — bound text is bigger than its box (the label
+            spills outside the shape). Shapes don't overlap, so check_overlaps()
+            misses it.
+          - text_overlap_check — two free captions/headers overlap each other.
+            Also invisible to check_overlaps(), which only inspects shapes."""
+        for name, val in (("crossing_check", crossing_check),
+                          ("legend_check", legend_check),
+                          ("overflow_check", overflow_check),
+                          ("text_overlap_check", text_overlap_check)):
+            if val not in ("warn", "error"):
+                raise ValueError(f"{name} must be 'warn' or 'error'")
         hits = self.check_overlaps()
         if hits and not allow_overlap:
             pairs = "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits)
@@ -1156,6 +1238,27 @@ class Scene:
                     "to a warning.")
             print("WARNING: fill colour(s) used but not in the legend — a "
                   "reader decoding by the key gets no meaning for: " + detail)
+        overflows = self.check_text_overflow()
+        if overflows:
+            detail = "; ".join(f"'{lab}' (text {tw}px in {cw}px box)"
+                               for lab, tw, cw, _th, _ch in overflows)
+            if overflow_check == "error":
+                raise ValueError(
+                    "bound text overflows its box: " + detail
+                    + ". Widen the box (or wrap the label with fit_text()), or "
+                    "pass overflow_check='warn' to downgrade to a warning.")
+            print("WARNING: bound text is bigger than its box — the label spills "
+                  "outside the shape: " + detail)
+        text_overlaps = self.check_text_overlaps()
+        if text_overlaps:
+            detail = "; ".join(f"'{a}' overlaps '{b}'" for a, b in text_overlaps)
+            if text_overlap_check == "error":
+                raise ValueError(
+                    "free text label(s) overlap: " + detail
+                    + ". Move the caption/header apart, or pass "
+                    "text_overlap_check='warn' to downgrade to a warning.")
+            print("WARNING: free text label(s) overlap (a caption/header sits on "
+                  "another): " + detail)
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")

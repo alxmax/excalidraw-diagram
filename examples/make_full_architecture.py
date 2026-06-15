@@ -81,7 +81,7 @@ plugin = s.c4("requirement-manager", 600, y, kind="Software System",
 target = s.c4("target repo", 880, y, kind="Software System",
               desc="seeded reqmap.py", fill="external", w=190, h=86)
 gitci  = s.c4("git + CI", 600, y + 140, kind="Software System", tech="action @v1",
-              desc="runs the gate", fill="external", w=210, h=80)
+              desc="runs the gate", fill="external", w=236, h=80)
 market = s.c4("Plugin marketplace", 880, y + 140, kind="Software System",
               desc="distributes it", fill="external", w=190, h=80)
 s.arrow(dev, claude, label="uses")
@@ -134,5 +134,6 @@ s.glossary([
 ], 620, ly, title="Glossary")
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
-s.save("full_architecture", out_dir=out_dir, crossing_check="error", legend_check="error")
+s.save("full_architecture", out_dir=out_dir, crossing_check="error",
+       legend_check="error", overflow_check="error", text_overlap_check="error")
 print("wrote full_architecture.excalidraw + .html")

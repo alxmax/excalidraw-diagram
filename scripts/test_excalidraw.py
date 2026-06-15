@@ -61,6 +61,14 @@ def _make_case(path):
             scene.check_legend_coverage(), [],
             f"{os.path.basename(path)} uses fill colour(s) absent from its "
             f"legend (colour-SSOT)")
+        self.assertEqual(
+            scene.check_text_overflow(), [],
+            f"{os.path.basename(path)} has bound text bigger than its box "
+            f"(label spills outside the shape)")
+        self.assertEqual(
+            scene.check_text_overlaps(), [],
+            f"{os.path.basename(path)} has free text label(s) overlapping "
+            f"(a caption/header sits on another)")
 
     return case
 
@@ -177,6 +185,69 @@ class TestBuilderUnits(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d, legend_check="nope")
+
+    # -- text-overflow gate (label bigger than its box) -------------------
+    def test_check_text_overflow_detects_oversized_label(self):
+        s = eb.Scene(seed=99)
+        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        self.assertTrue(s.check_text_overflow(),
+                        "bound text wider than its box must be flagged")
+
+    def test_check_text_overflow_clean_when_box_fits(self):
+        s = eb.Scene(seed=99)
+        s.box("ok", 0, 0, 160, 70, fill="blue")
+        self.assertEqual(s.check_text_overflow(), [])
+
+    def test_fit_text_box_clears_overflow_check(self):
+        s = eb.Scene(seed=99)
+        wrapped, w, h = eb.Scene.fit_text("a label far too wide for one line",
+                                          font=14, max_chars=16)
+        s.box(wrapped, 0, 0, w, h, fill="blue")
+        self.assertEqual(s.check_text_overflow(), [],
+                         "a box sized by fit_text must clear the overflow check")
+
+    def test_save_overflow_check_error_raises(self):
+        s = eb.Scene(seed=99)
+        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, overflow_check="error")
+
+    def test_save_overflow_check_warn_default_does_not_raise(self):
+        s = eb.Scene(seed=99)
+        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        with tempfile.TemporaryDirectory() as d:
+            s.save("x", out_dir=d)                  # default "warn" — must not raise
+
+    # -- free-text-overlap gate (caption colliding with header) -----------
+    def test_check_text_overlaps_detects_overlapping_captions(self):
+        s = eb.Scene(seed=99)
+        s.label("a caption sitting right here", 100, 100, size=14)
+        s.label("another caption on top of it", 100, 103, size=14)
+        self.assertTrue(s.check_text_overlaps(),
+                        "two overlapping free captions must be flagged")
+
+    def test_check_text_overlaps_ignores_bound_labels(self):
+        s = eb.Scene(seed=99)
+        s.box("one", 0, 0, 160, 70, fill="blue")
+        s.box("two", 0, 100, 160, 70, fill="green")
+        s.legend([("input", "blue"), ("output", "green")], x=400, y=0)
+        self.assertEqual(s.check_text_overlaps(), [],
+                         "bound labels (box + legend rows) must not be flagged")
+
+    def test_save_text_overlap_check_error_raises(self):
+        s = eb.Scene(seed=99)
+        s.label("caption one is here", 100, 100, size=14)
+        s.label("caption two is here", 100, 103, size=14)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, text_overlap_check="error")
+
+    def test_save_rejects_bad_overflow_check(self):
+        s = eb.Scene(seed=99)
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, overflow_check="nope")
 
     def test_path_label_overlapping_a_box_is_detected(self):
         s = eb.Scene(seed=99)

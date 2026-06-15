@@ -74,7 +74,7 @@ px = 60
 for name, role, desc in parts:
     nid = s.box(name, px, y, w=220, h=58, fill=role)
     s.label(desc, px + 110, y + 70, size=12)
-    px += 250
+    px += 340          # pitch > widest caption (~313px) so captions never overlap
 
 # ════════════════════ 4 · WHERE IT RUNS ═══════════════════════════════════
 y = s.section("4 - WHERE IT RUNS")
@@ -111,5 +111,6 @@ s.glossary([
 ], 620, ly, title="Glossary — every special word, in plain English")
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
-s.save("explainer", out_dir=out_dir, crossing_check="error", legend_check="error")
+s.save("explainer", out_dir=out_dir, crossing_check="error",
+       legend_check="error", overflow_check="error", text_overlap_check="error")
 print("wrote explainer.excalidraw + .html")
