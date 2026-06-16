@@ -390,6 +390,24 @@ class TestCli(unittest.TestCase):
             self.assertIn("mod00", code)                         # first component kept
             self.assertNotIn("mod24", code)                      # 25th is past the cap of 20
 
+    def test_discover_stub_is_multilayer_poster(self):
+        # the stub scaffolds the adaptive multi-layer poster (live STRUCTURE +
+        # commented optional layers) and carries the portable fallback import so
+        # it runs from any repo, not only next to the builder / on PYTHONPATH.
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "app.py"), "w") as f:
+                f.write("x = 1\n")
+            stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
+            with open(stub, encoding="utf-8") as f:
+                code = f.read()
+        for layer in ("STRUCTURE", "WORKFLOW", "INTEGRATION", "MODES",
+                      "MODEL", "DATA"):
+            self.assertIn(layer, code, f"stub missing the {layer} layer scaffold")
+        self.assertIn("s.section(", code)              # uses the poster helper
+        self.assertIn("except ModuleNotFoundError", code)   # portable fallback import
+        self.assertIn("plugins", code)                 # cache resolver present
+        self.assertIn('overflow_check="error"', code)  # ships gates at error
+
     # --- the no-arg invocation must still be the smoke test (CI depends on it) ---
     def test_cli_no_args_runs_selftest(self):
         env = dict(os.environ, PYTHONPATH=HERE)

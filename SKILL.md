@@ -75,11 +75,11 @@ the builder API. The CLI has two helper verbs plus the self-test:
 |---|---|---|
 | `python scripts/excalidraw_builder.py` | run the builder self-test (smoke test) | verifying the builder still works |
 | `python scripts/excalidraw_builder.py render <scene.excalidraw> [out_dir]` | rebuild the self-contained `.html` viewer from an **existing** scene file | you edited a `.excalidraw` on excalidraw.com and want a fresh viewer (no generator script to re-run) |
-| `python scripts/excalidraw_builder.py discover <repo> [out.py]` | scan a repo → emit a **runnable Python generator stub** (one box per top-level component, no overlaps, `TODO`s for edges/grouping) | starting a repo-architecture diagram — scaffold, then fill in the real arrows and run it |
+| `python scripts/excalidraw_builder.py discover <repo> [out.py]` | scan a repo → emit a **runnable multi-layer poster stub** (live STRUCTURE layer + commented scaffolds for WORKFLOW / INTEGRATION / MODES / MODEL / DATA to keep or delete) | starting a repo-architecture diagram — scaffold the layers, fill in the real content, run it |
 
 **Menu (how to start a diagram):**
 - **New diagram (from a description)** — write a Python generator against the `Scene` API (the Workflow below), then run it. *When you know the system and want full control over the layout.*
-- **Scaffold from a repo** — `discover <repo>` to emit `make_diagram.py` pre-seeded with one box per top-level component; refine the arrows/grouping/legend, then run it. *When the subject is an existing codebase.*
+- **Scaffold from a repo** — `discover <repo>` to emit `make_diagram.py` pre-seeded as a multi-layer poster (live STRUCTURE + commented WORKFLOW/INTEGRATION/MODES/MODEL/DATA layers); keep the layers the repo needs, fill in the real content, then run it. *When the subject is an existing codebase.*
 - **Re-run / extend your generator** — re-execute (or edit, then re-execute) the existing `make_diagram.py`. *When you already have the generator and want to update or grow the diagram — the source of truth is the Python script, not the `.excalidraw`.*
 - **Re-render the viewer only** — `render <scene.excalidraw>` to regenerate the `.html` for a scene edited elsewhere (e.g. on excalidraw.com), with no generator script to re-run. *When you hand-edited the `.excalidraw` directly.*
 - **Self-test** — `python scripts/excalidraw_builder.py` with no args runs the builder smoke test. *When verifying the builder is healthy or before reporting a bug — this is the no-arg invocation CI depends on, so don't shadow it with a new default verb.*
@@ -159,29 +159,37 @@ and grouping stays your job (the same judgement the Workflow below describes).
 ### Diagramming a repo's architecture (the canonical recipe)
 
 When the task is "diagram this repo / how this system works," do **not** invent a
-layout from scratch — follow the template in
-[`examples/make_full_architecture.py`](examples/make_full_architecture.py). It is
-a single-scene poster of **stacked sections**, one per layer, each opened with
-`s.section(title)` (which auto-stacks below everything drawn so far — no `bounds()`
-math):
+layout from scratch and do **not** emit several files. Produce **ONE** scene of
+**stacked layers**, each opened with `s.section(title)` (which auto-stacks below
+everything drawn so far — no `bounds()` math). The template is
+[`examples/make_full_architecture.py`](examples/make_full_architecture.py).
 
-1. **STRUCTURE** — the system's top-level components as role-coloured `box()`es,
-   wrapped in one `enclose()` frame. *What the pieces are.*
-2. **WORKFLOW** — the run-order pipeline via `s.pipeline([...], x, y)` using the
-   ISO shapes (`terminator` → `process` → `decision` → …). A `route_under()` adds
-   any feedback/retry edge. *How data flows through it.*
-3. **INTEGRATION** — how it is invoked (entry point / skill / CLI), the external
-   systems it touches (git, CI, marketplace, target repo), and persistent state.
-   *How it connects to the world.*
-4. **MODEL / DATA** (optional) — the core data model or layering if the system
-   has one. *The shape of its data.*
+**You decide which layers this repo needs — and how many.** Not every repo has
+modes or a schema; a CLI tool may be three layers, a multi-agent system six.
+After exploring the repo (Workflow step 1), include a layer **only when its
+condition holds**, in this order, all in the one scene:
 
-Close with one `s.legend(...)` (colour = role) and one `s.glossary(...)`
-(decode every acronym/project term), then `s.save(..., crossing_check="error",
-legend_check="error", overflow_check="error", text_overlap_check="error")`.
-Populate it from the real repo (Workflow step 1 — read the README, audit the
-three layers, fan out subagents if it's large). The result is the same shape as
-the example but with *this* repo's real files, flow, and integration.
+| Layer | Include when… | Build it with |
+|---|---|---|
+| **1. STRUCTURE** | always | role-coloured `box()`es + one `enclose()` |
+| **2. WORKFLOW** | the repo has a pipeline / run-order / algorithm | `s.pipeline([...])` (ISO shapes) + `route_under()` for feedback |
+| **3. INTEGRATION** | it is invoked by / connects to external systems, CI, or has a loop | `box()`es + labelled `arrow()`s; entry points, external systems, state |
+| **4. MODES / VARIANTS** | it has modes / strategies / variants of the same flow | one self-contained `column()`+`enclose()` per mode |
+| **5. MODEL / RUNNERS** | parts run on different models / workers / runtimes | group → `arrow()` → a runtime/model box |
+| **6. DATA / SCHEMA** | it produces a core record / output shape | a record `box()` + enum/annotation satellites |
+
+Then **one** `s.legend(...)` (colour = role) and **one** `s.glossary(...)` decode
+the *whole* poster, and `s.save(..., crossing_check="error", legend_check="error",
+overflow_check="error", text_overlap_check="error")`.
+
+**Colour discipline across layers:** the single legend must decode every layer, so
+give each *distinct* meaning its own colour — do not let two layers reuse one
+colour for different roles (e.g. an "engine" script and a "model" must differ).
+With ≤10 palette colours, merge only genuinely-equivalent roles.
+
+**Fast start:** `discover <repo>` emits exactly this skeleton — a live STRUCTURE
+layer plus commented scaffolds for layers 2-6. Delete the layers the repo doesn't
+need, fill in the rest from the real code, and run it.
 
 ### Layout rules (apply before writing code)
 
