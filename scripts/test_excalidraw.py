@@ -404,6 +404,7 @@ class TestCli(unittest.TestCase):
                       "MODEL", "DATA"):
             self.assertIn(layer, code, f"stub missing the {layer} layer scaffold")
         self.assertIn("s.section(", code)              # uses the poster helper
+        self.assertIn("s.lane(", code)                 # per-tool sub-workflow hint
         self.assertIn("except ModuleNotFoundError", code)   # portable fallback import
         self.assertIn("plugins", code)                 # cache resolver present
         self.assertIn('overflow_check="error"', code)  # ships gates at error

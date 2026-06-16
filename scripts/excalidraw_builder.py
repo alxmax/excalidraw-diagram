@@ -1472,6 +1472,12 @@ y = s.section("1 - STRUCTURE   the components")
 # y = s.section("2 - WORKFLOW   run order (left -> right)")
 # s.pipeline([("Start", "terminator"), ("step", "process"),
 #             ("ok?", "decision"), ("Done", "terminator")], 40, y)
+# Multi-tool repo (bundles 2+ skills/services with distinct flows)? Do NOT hide
+# them in one pipeline — give each its own labelled lane (single-tool: skip this):
+# t1 = s.pipeline([("step1", "process"), ("step2", "process")], 120, y + 40)
+# s.lane(t1, "tool-one - one-line role")
+# t2 = s.pipeline([("step1", "process"), ("step2", "process")], 120, y + 210)
+# s.lane(t2, "tool-two - one-line role")
 
 # ---- 3 - INTEGRATION (optional: entry points, external systems, loops) ------
 # y = s.section("3 - INTEGRATION   how it is invoked and what it touches")
