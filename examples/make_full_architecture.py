@@ -9,7 +9,8 @@ Four stacked sections, top -> bottom (modeled on a complete-architecture poster)
 
 Uses the builder's poster helpers: s.section() auto-stacks each region, and
 s.pipeline() lays out + chains the workflow band. Colour = role (single legend);
-a glossary decodes the jargon. Exercises c4()/person() and the ISO 5807 diamond.
+a glossary decodes the jargon. The workflow band uses the ISO 5807 shapes
+(terminator / process / decision).
 
 Run from the repo root, writing into the regenerable diagrams/ dir:
     python plugin/skills/excalidraw-diagram/examples/make_full_architecture.py diagrams
@@ -38,18 +39,18 @@ s.label("A Claude Code plugin: a single source of truth between intent and code 
 
 # ═══════════════════════════ 1 · STRUCTURE ════════════════════════════════
 y = s.section("1 - STRUCTURE   the plugin's containers")
-skills = s.c4("Skills", 80, y, kind="Container", tech="skill",
-              desc="3x SKILL.md", fill="skill", w=220, h=92)
-engine = s.c4("reqmap.py", 340, y, kind="Container", tech="Python",
-              desc="parse-scan-gate-map", fill="engine", w=240, h=92)
-specs  = s.c4("Requirement specs", 620, y, kind="Container", tech="Markdown",
-              desc="29 specs - the SSOT", fill="ssot", w=230, h=92)
-arts   = s.c4("Generated artifacts", 890, y, kind="Container", tech="JSON/MD",
-              desc="_map.*, _reqlock", fill="artifact", w=230, h=92)
-viewer = s.c4("Map viewer", 1160, y, kind="Container", tech="React/Vite",
-              desc="_map.html", fill="viewer", w=210, h=92)
+skills = s.box("Skills\n3x SKILL.md", 80, y, w=220, h=92,
+               fill="skill", font_size=13)
+engine = s.box("reqmap.py\nparse-scan-gate-map", 340, y, w=240, h=92,
+               fill="engine", font_size=13)
+specs  = s.box("Requirement specs\n29 specs - the SSOT", 620, y, w=230, h=92,
+               fill="ssot", font_size=13)
+arts   = s.box("Generated artifacts\n_map.*, _reqlock", 890, y, w=230, h=92,
+               fill="artifact", font_size=13)
+viewer = s.box("Map viewer\nReact - _map.html", 1160, y, w=210, h=92,
+               fill="viewer", font_size=13)
 s.enclose([skills, engine, specs, arts, viewer],
-          label="requirement-manager plugin   [Software System]")
+          label="requirement-manager plugin")
 s.arrow(skills, engine, label="runs [CLI]")
 s.arrow(engine, specs, label="reads / writes")
 s.arrow(viewer, arts, label="reads _map.json")
@@ -72,18 +73,18 @@ s.label("dogfood: reqmap runs the gate on its own requirements/", 600, y + 128, 
 
 # ═══════════════════════════ 3 · INTEGRATION ══════════════════════════════
 y = s.section("3 - INTEGRATION   how it is invoked, gated and shipped")
-dev    = s.c4("Developer / AI agent", 80, y, kind="Person",
-              desc="authors specs, runs gate", person=True, fill="person", w=200, h=86)
-claude = s.c4("Claude Code", 340, y, kind="Software System",
-              desc="hosts the skill", fill="external", w=200, h=86)
-plugin = s.c4("requirement-manager", 600, y, kind="Software System",
-              desc="the skill + engine", fill="skill", w=210, h=86)
-target = s.c4("target repo", 880, y, kind="Software System",
-              desc="seeded reqmap.py", fill="external", w=190, h=86)
-gitci  = s.c4("git + CI", 600, y + 140, kind="Software System", tech="action @v1",
-              desc="runs the gate", fill="external", w=236, h=80)
-market = s.c4("Plugin marketplace", 880, y + 140, kind="Software System",
-              desc="distributes it", fill="external", w=190, h=80)
+dev    = s.box("Developer / AI agent\nauthors specs, runs gate", 80, y,
+               w=200, h=86, fill="person", font_size=13)
+claude = s.box("Claude Code\nhosts the skill", 340, y,
+               w=200, h=86, fill="external", font_size=13)
+plugin = s.box("requirement-manager\nthe skill + engine", 600, y,
+               w=210, h=86, fill="skill", font_size=13)
+target = s.box("target repo\nseeded reqmap.py", 880, y,
+               w=190, h=86, fill="external", font_size=13)
+gitci  = s.box("git + CI\naction @v1 - runs the gate", 600, y + 140,
+               w=236, h=80, fill="external", font_size=13)
+market = s.box("Plugin marketplace\ndistributes it", 880, y + 140,
+               w=190, h=80, fill="external", font_size=13)
 s.arrow(dev, claude, label="uses")
 s.arrow(claude, plugin, label="invokes [skill]")
 s.arrow(plugin, target, label="seeds reqmap.py")
@@ -92,12 +93,12 @@ s.arrow(market, plugin, label="distributes")
 
 # ═══════════════════════════ 4 · REQUIREMENT MODEL ════════════════════════
 y = s.section("4 - REQUIREMENT MODEL   layers, code tags, drift lock")
-need = s.c4("need", 80, y, kind="Layer", desc="NEED-* stakeholder need",
-            fill="ssot", w=240, h=80)
-feat = s.c4("feature", 360, y, kind="Layer", desc="gate/sync/map/draft/...",
-            fill="skill", w=240, h=80)
-bus  = s.c4("bus", 640, y, kind="Layer", desc="config/parse/scan/drift",
-            fill="engine", w=240, h=80)
+need = s.box("need\nNEED-* stakeholder need", 80, y,
+             fill="ssot", w=240, h=80, font_size=13)
+feat = s.box("feature\ngate/sync/map/draft/...", 360, y,
+             fill="skill", w=240, h=80, font_size=13)
+bus  = s.box("bus\nconfig/parse/scan/drift", 640, y,
+             fill="engine", w=240, h=80, font_size=13)
 s.arrow(need, feat, label="satisfied-by")
 s.arrow(feat, bus, label="depends-on")
 code = s.box("tagged source code\n# implements: / # tested-by:",

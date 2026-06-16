@@ -13,7 +13,7 @@ describe:
 
     from excalidraw_builder import Scene
 
-    s = Scene(hand_drawn=True)
+    s = Scene()
     a = s.box("User prompt",     120,  40, fill="blue")
     b = s.box("Consilium skill", 120, 180, fill="indigo")
     s.arrow(a, b, label="activates")
@@ -25,20 +25,34 @@ The .excalidraw file imports cleanly into excalidraw.com (drag & drop) and the
 component, read-only, with edit/export still available.
 
 Public API (see method docstrings for detail)
-    Scene(hand_drawn=True, background="#ffffff")
+    Scene(font="normal", sketch=False, hand_drawn=None, background="#ffffff",
+          seed=None, roles=None)
     .box(text, x, y, w=160, h=70, *, fill=None, stroke=None, shape="rectangle",
-         font_size=16, group=None)        -> node id
+         font_size=16, group=None, container=False)   -> node id
     .ellipse(text, x, y, w, h, ...)        -> node id   (shape="ellipse")
     .diamond(text, x, y, w, h, ...)        -> node id   (shape="diamond")
     .frame(x, y, w, h, *, fill=None, dashed=False, group=None) -> node id
-    .label(text, x, y, *, size=12, color=None, align="center", italic-ish caps)
-    .title(text, x, y, *, size=28, color=None)
+    # ISO 5807 flowchart shapes (thin box() aliases):
+    .process / .terminator / .decision / .data / .predefined_process
+    / .preparation / .connector (text, x, y, ...)      -> node id
+    .row / .column / .grid(items, x, y, ...)           -> [node id, ...]
+    .enclose(ids, *, label=None) / .lane(ids, label)   -> frame id
+    .section(title) -> y          # stack a labelled region below all content
+    .pipeline(steps, x, y, *, gap=44, connect=True)    -> [node id, ...]
+    .align(ids, axis) / .distribute(ids, axis, gap=40)
+    .label(text, x, y, *, size=12, color=None, align="center")
+    .title(text, x, y, *, size=28, color=None, align="left")
     .arrow(src, dst, *, label=None, dashed=False, color=None,
-           start="dot"/None, end="arrow")  -> arrow id
+           start=None, end="arrow", curve=False, gap=14) -> arrow id
     .free_arrow((x1,y1),(x2,y2), ...)       -> arrow id  (unbound)
-    .legend(entries, x, y)                  -> frame id  (the colour-SSOT key)
-    .check_legend_coverage()                -> [unlegended fill, ...]
-    .save(basename, out_dir=".", crossing_check="warn", legend_check="warn")
+    .path(points, *, label=None, ...)       -> arrow id  (multi-point connector)
+    .route_under(src, dst, *, drop=70, label=None)      -> arrow id  (feedback)
+    .role(name, colour) / .legend(entries, x, y) / .glossary(entries, x, y)
+    .check_overlaps() / .check_arrow_crossings()
+    .check_legend_coverage() / .check_text_overflow() / .check_text_overlaps()
+    .bounds() -> (min_x, min_y, max_x, max_y)
+    .save(basename, out_dir=".", *, allow_overlap=False, crossing_check="warn",
+          legend_check="warn", overflow_check="warn", text_overlap_check="warn")
                                             -> (path_excalidraw, path_html)
 
 Colours accept either a hex string ("#a5d8ff") or a palette name:
@@ -379,59 +393,6 @@ class Scene:
 
     def connector(self, text, x, y, w=46, h=46, **kw):
         return self.box(text, x, y, w, h, shape="connector", **kw)
-
-    # ====================================================================
-    #  C4 MODEL (person shape + standard element labelling)
-    # ====================================================================
-    def person(self, text, x, y, w=200, h=92, *, fill=None, stroke=None,
-               font_size=13, font_color=None, group=None, container=False):
-        """A C4 'person' element: a labelled rounded body with a circular head
-        on top. The whole (x, y, w, h) box is the node; the head is decoration."""
-        sc = _hex(stroke, _STROKE, _STROKE["black"])
-        bg = _hex(self.roles.get(fill, fill), _FILL, "transparent")
-        d = min(34.0, h * 0.36, w * 0.4)            # head diameter
-        body_y = y + d * 0.55
-        body_h = h - d * 0.55
-        head = self._base(self._new_id("ellipse"), "ellipse",
-                          x + w / 2 - d / 2, y, d, d, sc, bg,
-                          roundness=None, group=group)
-        bid = self._new_id("rectangle")
-        body = self._base(bid, "rectangle", x, body_y, w, body_h, sc, bg,
-                          roundness={"type": 3}, group=group)
-        self.elements.append(head)
-        if text:
-            tcolor = _hex(font_color, _STROKE, _STROKE["black"])
-            tw, th = self._text_wh(text, font_size)
-            tel = self._text_el(text, x + (w - tw) / 2,
-                                body_y + (body_h - th) / 2, tw, th,
-                                size=font_size, color=tcolor, container=bid,
-                                group=group)
-            body["boundElements"].append({"type": "text", "id": tel["id"]})
-            self.elements.append(body)
-            self.elements.append(tel)
-        else:
-            self.elements.append(body)
-        self._geom[bid] = (x, y, w, h, "rectangle")   # full bbox incl. head
-        if container:
-            self._containers.add(bid)
-        else:
-            self._nodes.append((bid, x, y, w, h,
-                                (text or "").split("\n")[0] or "person"))
-        return bid
-
-    def c4(self, name, x, y, *, kind="System", tech=None, desc=None,
-           person=False, w=220, h=104, font_size=13, **kw):
-        """A C4 element with the standard three-line label:
-            <name>
-            [<kind>] or [<kind>: <tech>]
-            <description>
-        Pass person=True for a person element, fill=<role> for the C4 colour
-        (in-scope vs external). Routes to person()/box()."""
-        stereo = f"[{kind}: {tech}]" if tech else f"[{kind}]"
-        label = name + "\n" + stereo + (("\n" + desc) if desc else "")
-        if person:
-            return self.person(label, x, y, w=w, h=h, font_size=font_size, **kw)
-        return self.box(label, x, y, w, h, font_size=font_size, **kw)
 
     # ====================================================================
     #  POSTER HELPERS (stacked sections + a horizontal workflow pipeline)

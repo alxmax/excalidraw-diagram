@@ -23,6 +23,28 @@ screenshot. The `.excalidraw` file drag-and-drops into
 [excalidraw.com](https://excalidraw.com); the `.html` embeds the same scene and
 renders it with the official Excalidraw component.
 
+## The goal (read this first)
+
+**Produce a schematic an outsider can understand with no prior context** — one
+that shows *how the system actually works*: its real components, the data flow /
+workflow between them, how it is invoked, and how it ships. When the subject is a
+repo, the diagram must reflect *that repo's* real files and flow, not a generic
+template. Pretty-but-shallow fails the goal; accurate-and-readable passes it.
+
+Three things make a diagram pass:
+1. **Substance** — real identifiers (`reqmap.py`, `check_overlaps()`), the actual
+   workflow, and all three layers (internal flow → integration → distribution).
+2. **Readability** — title + one-line subtitle, a legend when colour means a
+   role, a glossary for jargon, one reading direction, zero overlaps/crossings.
+3. **Enforcement** — the builder's gates (`save(..., crossing_check="error",
+   legend_check="error", overflow_check="error", text_overlap_check="error")`)
+   turn those rules into hard failures so a sloppy diagram can't ship.
+
+The canonical worked example of all three is
+[`examples/make_full_architecture.py`](examples/make_full_architecture.py) —
+treat it as the template when asked to "diagram this repo." See **Worked
+examples** at the bottom for ❌ → ✅ variants of the common cases.
+
 ## When to use
 
 - "Make an Excalidraw / whiteboard / hand-drawn diagram of …"
@@ -134,6 +156,33 @@ and grouping stays your job (the same judgement the Workflow below describes).
 6. If you want to sanity-check the layout before presenting, you can render a
    quick preview — but the `.excalidraw` itself is the source of truth.
 
+### Diagramming a repo's architecture (the canonical recipe)
+
+When the task is "diagram this repo / how this system works," do **not** invent a
+layout from scratch — follow the template in
+[`examples/make_full_architecture.py`](examples/make_full_architecture.py). It is
+a single-scene poster of **stacked sections**, one per layer, each opened with
+`s.section(title)` (which auto-stacks below everything drawn so far — no `bounds()`
+math):
+
+1. **STRUCTURE** — the system's top-level components as role-coloured `box()`es,
+   wrapped in one `enclose()` frame. *What the pieces are.*
+2. **WORKFLOW** — the run-order pipeline via `s.pipeline([...], x, y)` using the
+   ISO shapes (`terminator` → `process` → `decision` → …). A `route_under()` adds
+   any feedback/retry edge. *How data flows through it.*
+3. **INTEGRATION** — how it is invoked (entry point / skill / CLI), the external
+   systems it touches (git, CI, marketplace, target repo), and persistent state.
+   *How it connects to the world.*
+4. **MODEL / DATA** (optional) — the core data model or layering if the system
+   has one. *The shape of its data.*
+
+Close with one `s.legend(...)` (colour = role) and one `s.glossary(...)`
+(decode every acronym/project term), then `s.save(..., crossing_check="error",
+legend_check="error", overflow_check="error", text_overlap_check="error")`.
+Populate it from the real repo (Workflow step 1 — read the README, audit the
+three layers, fan out subagents if it's large). The result is the same shape as
+the example but with *this* repo's real files, flow, and integration.
+
 ### Layout rules (apply before writing code)
 
 **Parallel groups — the most common source of spaghetti arrows**
@@ -176,12 +225,17 @@ short arrow from the nearest upstream node, or leave it unlabelled and add a
 
 **Box sizing**
 
-Size boxes to fit their text; do not let text overflow:
+Size boxes to fit their text; do not let text overflow. The builder *catches*
+overflow for you — `save(..., overflow_check="error")` raises when bound text
+spills outside its shape, and `check_text_overflow()` lists the offenders — so
+you don't have to eyeball it. Use these starting estimates, then let the gate
+confirm:
 - Height: `h ≥ num_lines × font_size × 1.6 + 16`
 - Width:  `w ≥ max_line_length_chars × font_size × 0.65 + 20`
 
-Run the numbers before placing the box. A 2-line label at font_size 14 needs
-at least h=60; at font_size 13 with a 16-char line needs at least w=135.
+A 2-line label at font_size 14 needs at least h=60; at font_size 13 with a
+16-char line needs at least w=135. Keep labels short (2–3 words) and push detail
+into a `label()` caption to stay well clear of the gate.
 
 **One file, many diagrams**
 
@@ -217,6 +271,20 @@ warning by default — reroute with `route_under()` or move the box until it's
 gone. Pass `save(..., crossing_check="error")` to make a crossing a hard failure
 (opt-in gate, mirroring the overlap check).
 
+**Four `save()` gates — turn them all to `"error"` for a ship-quality diagram.**
+Each defaults to `"warn"` (prints) and becomes a hard failure at `"error"`:
+- `crossing_check` — a bound arrow runs through an unrelated box.
+- `legend_check` — a fill colour is used but missing from the `legend()` (fires
+  only once a legend is rendered; the colour-SSOT guarantee).
+- `overflow_check` — bound text is bigger than its box (spills outside). Shapes
+  don't overlap, so the overlap check misses this — it's a separate gate.
+- `text_overlap_check` — two captions / labels overlap each other.
+
+The canonical examples ship with all four at `"error"`:
+`s.save("name", out_dir, crossing_check="error", legend_check="error",
+overflow_check="error", text_overlap_check="error")`. Do the same — it is the
+operational definition of "an outsider can read this."
+
 **Centered captions anchor at the point.** `label(text, x, y)` and
 `title(..., align="center")` treat `x` as the *center* of the text (and
 `align="right"` as the right edge). Pass the coordinate you want the caption
@@ -232,11 +300,64 @@ never on the border line. Keep free-floating explanatory `label()` text ≥16px
 clear of every shape and arrowhead — text under an arrowhead or on a box edge is
 the other common overlap.
 
-### Minimal example
+### Importing the builder
+
+**Inside the plugin** (e.g. an `examples/` script): use a relative path.
 
 ```python
 import sys, os
-sys.path.insert(0, "scripts")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+from excalidraw_builder import Scene
+```
+
+**In an external repo** (a generator script that lives in your own project,
+not inside the plugin directory): use the dynamic resolver below. It scans
+the plugin cache, picks the **highest installed semver**, and imports from
+there. This survives any plugin update without ever needing to edit the script.
+
+```python
+import sys, os, glob, re
+
+def _builder_path():
+    cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
+                         "cache", "requirement-manager", "requirement-manager")
+    hits = glob.glob(os.path.join(cache, "*", "skills",
+                                  "excalidraw-diagram", "scripts"))
+    if not hits:
+        raise RuntimeError(
+            "excalidraw-diagram skill not found — run: /plugin install requirement-manager"
+        )
+    def _ver(p):
+        m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)
+        return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+    return max(hits, key=_ver)
+
+sys.path.insert(0, _builder_path())
+from excalidraw_builder import Scene
+```
+
+**Never hardcode a version number** (e.g. `1.32.0`) in the path — the plugin
+cache keeps every version ever installed and the script will silently keep
+using the old, limited API after any update.
+
+### Minimal example
+
+```python
+import sys, os, glob, re
+
+def _builder_path():
+    cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
+                         "cache", "requirement-manager", "requirement-manager")
+    hits = glob.glob(os.path.join(cache, "*", "skills",
+                                  "excalidraw-diagram", "scripts"))
+    if not hits:
+        raise RuntimeError("excalidraw-diagram skill not found")
+    def _ver(p):
+        m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)
+        return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+    return max(hits, key=_ver)
+
+sys.path.insert(0, _builder_path())
 from excalidraw_builder import Scene
 
 s = Scene()                       # normal font, clean lines (the readable default)
@@ -267,29 +388,41 @@ essentials:
 
 | Call | Draws |
 | --- | --- |
-| `Scene(font="normal", sketch=False, background="#ffffff", seed=None)` | the canvas (`seed=<int>` → byte-stable file for git) |
+| `Scene(font="normal", sketch=False, background="#ffffff", seed=None, roles=None)` | the canvas (`seed=<int>` → byte-stable file for git; `roles={name:colour}` → semantic fills). `font="hand", sketch=True` for the whiteboard look |
 | `s.box(text, x, y, w=160, h=70, fill=…, shape=…, font_size=…, container=…)` | a labelled rectangle (→ node id) |
 | `s.ellipse(text, x, y, w, h, …, container=…)` | a labelled ellipse |
 | `s.diamond(text, x, y, w, h, …)` | a labelled decision diamond |
 | `s.frame(x, y, w, h, dashed=False)` | a container drawn *behind* children (overlap-exempt) |
+| **ISO 5807 flowchart shapes** (thin `box` aliases, sized for flowcharts) | |
+| `s.process(text, x, y)` / `s.terminator(...)` / `s.decision(...)` | rectangle / stadium (start-end) / diamond |
+| `s.data(...)` / `s.predefined_process(...)` / `s.preparation(...)` / `s.connector(...)` | parallelogram / framed box / hexagon / small circle |
+| **Auto-layout & grouping** | |
 | `s.row(items, x, y, gap=…, connect=…)` | place items left→right → list of ids (`connect=True` chains arrows) |
 | `s.column(items, x, y, gap=…, connect=…)` | place items top→down → list of ids |
 | `s.grid(items, x, y, cols, …)` | place items in a `cols`-wide grid → list of ids |
 | `s.enclose(ids, label=…, pad=…)` | auto-sized frame *behind* those nodes → frame id |
-| `s.legend(entries, x, y, title=…)` | a colour→meaning key (`entries=[(label, colour),…]`, or omit to use `roles`) — **required when colour encodes a role** |
-| `s.glossary(entries, x, y, title=…)` | a term→meaning key (`entries=[(term, meaning),…]`) — decode jargon/acronyms; overlap-checked content |
-| `s.lane(ids, label)` | a swimlane: solid frame around `ids` with a top-left header (thin `enclose` wrapper) |
+| `s.lane(ids, label)` | a swimlane: solid frame around `ids` with a top-left header |
 | `s.align(ids, axis)` / `s.distribute(ids, axis, gap=…)` | tidy already-placed nodes (`axis`: left/right/center_x/top/bottom/center_y; distribute `"x"`/`"y"`) |
+| **Poster helpers** (for "how a repo works" diagrams) | |
+| `s.section(title) → y` | stack a left-aligned heading *below all existing content*; returns the y to place this region's shapes (no manual `bounds()` math) |
+| `s.pipeline(steps, x, y, gap=44, connect=True) → [ids]` | lay out a horizontal flowchart band and chain arrows. Each step is `"text"`, `(text, kind)`, `(text, kind, fill)`, or a dict; `kind` is any ISO shape verb; a step's `label` becomes its outgoing arrow label |
+| **Roles, captions, arrows** | |
 | `s.role(name, colour)` / `Scene(roles={…})` | declare a semantic fill so `box(fill="agent")` works and `legend()` renders the key |
-| `s.title(text, x, y, size=28)` | a large free-standing heading |
+| `s.legend(entries=None, x, y, title=…)` | colour→meaning key (`entries=[(label, colour),…]`, or omit to use `roles`) — **required when colour encodes a role** |
+| `s.glossary(entries, x, y, title=…)` | term→meaning key (`entries=[(term, meaning),…]`) — decode jargon/acronyms; overlap-checked |
+| `s.title(text, x, y, size=28, align="left")` | a large free-standing heading |
 | `s.label(text, x, y, size=12)` | a small grey caption (e.g. "ONE AGENT") |
-| `s.arrow(src, dst, label=…, dashed=…, curve=…, start=…, end=…)` | a bound arrow node→node |
+| `s.arrow(src, dst, label=…, dashed=…, curve=…, start=…, end="arrow", gap=14)` | a bound arrow node→node |
 | `s.free_arrow(p0, p1, …)` | an unbound arrow between two points |
-| `s.route_under(src, dst, drop=…, label=…)` | a connector routed below the row (feedback / backward) |
+| `s.path(points, label=…, dashed=…, end="arrow")` | an unbound multi-point connector through absolute `(x,y)` points (crossing-free routing) |
+| `s.route_under(src, dst, drop=70, label=…, color="grey", dashed=True)` | a connector routed below the row (feedback / backward) |
+| **Inspection & save** | |
 | `s.bounds()` | `(min_x, min_y, max_x, max_y)` of all shapes — for stacking regions |
 | `s.check_arrow_crossings()` | `[(src, dst, crossed), …]` arrows running through an unrelated box |
-| `s.check_legend_coverage()` | `[fill, …]` colours used by a node but absent from the `legend()` key (colour-SSOT); `[]` when clean or no legend |
-| `s.save(basename, out_dir=".", crossing_check="warn"\|"error", legend_check="warn"\|"error")` | writes both files; **raises if shapes overlap**; warns on arrow crossings and on unlegended fills (or **raises** with the matching `…="error"`) |
+| `s.check_legend_coverage()` | `[fill, …]` colours used but absent from the `legend()` key (colour-SSOT); `[]` when clean |
+| `s.check_text_overflow()` | `[(id, …), …]` boxes whose bound text spills outside the shape |
+| `s.check_text_overlaps()` | `[(a, b), …]` captions/labels that overlap each other |
+| `s.save(basename, out_dir=".", crossing_check=…, legend_check=…, overflow_check=…, text_overlap_check=…)` | writes both files; **raises if shapes overlap**; each `*_check` is `"warn"` (default, prints) or `"error"` (raises). Use all four at `"error"` for a ship-quality diagram |
 
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own
@@ -371,13 +504,126 @@ operational definition of a "clean" diagram, not a matter of taste.
   is wanted. Arrows already start and end a few pixels *outside* each box, so
   heads and tails never touch the shapes.
 
+## Worked examples — ❌ → ✅ variants
+
+For each common case, the ❌ shows the mistake that makes a diagram unreadable;
+the ✅ is what to do instead. The ✅ is always the smaller amount of code *and*
+the clearer picture.
+
+### 1 · Repo architecture ("diagram how this repo works")
+
+❌ One dense region: 30 boxes of every file, arrows everywhere, no legend, no
+subtitle. An outsider can't tell entry points from internals, and it trips the
+overlap/crossing gates.
+
+```python
+# ❌ everything jammed into one region
+for f in all_files: s.box(f, rand_x(), rand_y())   # spaghetti, no story
+```
+
+✅ Stacked **sections** (one per layer), role colours, one legend + glossary, all
+gates on. This is `make_full_architecture.py`.
+
+```python
+# ✅ a layered poster — structure / workflow / integration
+y = s.section("1 - STRUCTURE   the components")
+parts = [s.box("reqmap.py\nparse-scan-gate", 80, y, fill="engine"), ...]
+s.enclose(parts, label="requirement-manager plugin")
+y = s.section("2 - WORKFLOW   run order (left -> right)")
+s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
+y = s.section("3 - INTEGRATION   invoked, gated, shipped")
+# ... external systems + arrows ...
+s.legend(...); s.glossary(...)
+s.save("full_architecture", out_dir, crossing_check="error",
+       legend_check="error", overflow_check="error", text_overlap_check="error")
+```
+
+### 2 · Pipeline / data flow
+
+❌ Hand-placed boxes with guessed x-coordinates that drift into overlaps, arrows
+added one by one.
+
+```python
+a = s.box("ingest", 0, 0); b = s.box("process", 150, 0)   # gaps by eye -> overlap
+s.arrow(a, b); s.arrow(b, c)                               # tedious + error-prone
+```
+
+✅ `row(..., connect=True)` (or `pipeline()` for a flowchart band) — even spacing,
+arrows auto-chained, returns the ids.
+
+```python
+ids = s.row(["ingest", "process", "store"], 0, 0, connect=True, fill="source")
+# many steps / a poster band? use the ISO pipeline instead:
+ids = s.pipeline([("Start","terminator"),("parse","process"),("Done","terminator")], 80, y)
+```
+
+### 3 · Parallel agents / sub-agents (the #1 spaghetti source)
+
+❌ N nodes with arrows between each → N×N crossing lines, unreadable.
+
+```python
+for w in workers:            # ❌ every dispatch drawn individually
+    s.arrow(dispatch, w); s.arrow(w, merge)
+```
+
+✅ `grid()` + `enclose()`, then **one arrow in, one arrow out** of the frame.
+
+```python
+workers = s.grid([f"agent {i}" for i in range(9)], 900, 120, 3, fill="worker")
+group   = s.enclose(workers, label="9 parallel sub-agents")
+s.arrow(dispatch, group); s.arrow(group, merge)   # 2 arrows, not 18
+```
+
+### 4 · Decision / branch flow
+
+❌ A plain rectangle for the choice and unlabelled branches — the reader can't
+tell which arrow is "yes" vs "no".
+
+```python
+q = s.box("valid?", x, y)                 # ❌ looks like a step, not a decision
+s.arrow(q, ok); s.arrow(q, err)           # which branch is which?
+```
+
+✅ A `diamond()` (or `decision` in a pipeline) with **labelled** branches; dashed
+for the failure path.
+
+```python
+q = s.diamond("token\nvalid?", x, y, fill="gate")
+s.arrow(q, ok,  label="yes")
+s.arrow(q, err, label="no", dashed=True)
+```
+
+### 5 · Feedback loop / backward edge
+
+❌ A right-to-left arrow drawn straight back across the whole flow — it overlaps
+every box in between.
+
+```python
+s.arrow(gate, resync)        # ❌ gate is downstream of resync -> crosses everything
+```
+
+✅ `route_under()` drops below the row and returns, clear of the forward flow;
+label it with the trigger.
+
+```python
+s.route_under(gate, resync, label="no - fix & re-sync", drop=70)
+```
+
 ## Output
 
-**Pre-delivery checklist** (run before `save()` — the builder cannot catch these):
-- [ ] Title + one-line subtitle present
+**Pre-delivery checklist:**
+
+*The builder enforces these — turn the gates to `"error"`:*
+- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error")` — no overlaps, crossings, unlegended fills, text overflow, or overlapping captions
+- [ ] `Scene(seed=<int>)` if the diagram is committed (byte-stable output)
+
+*You must check these (the builder can't):*
+- [ ] Title + one-line subtitle stating what it shows and the reading direction
 - [ ] Legend present if colour encodes a role, and it lists every colour used
+- [ ] Glossary present if any acronym / project term needs decoding
 - [ ] Every cross-role / non-obvious arrow is labelled
 - [ ] Node names are real identifiers, not placeholders
+- [ ] All three layers covered (internal flow / integration / distribution)
 - [ ] No region exceeds ~20 nodes
 
 Then deliver **both** files and tell the user in three short points:

@@ -60,7 +60,8 @@ Type-specific:
   elbowed`. `roundness: {type: 2}` makes a multi-point arrow curve.
 
 `roughness`: `1` = hand-drawn sketch, `0` = clean/architect. Set once via
-`Scene(hand_drawn=…)`.
+`Scene(sketch=True)` (or the back-compat `Scene(hand_drawn=True)`, which also
+switches the font to Excalifont).
 
 ## 3. Bindings
 
@@ -85,12 +86,15 @@ shapes are close so the endpoints never cross).
 ## 4. Full builder API
 
 ```python
-Scene(hand_drawn=True, background="#ffffff", seed=None, roles=None)
+Scene(font="normal", sketch=False, hand_drawn=None,
+      background="#ffffff", seed=None, roles=None)
 ```
-`seed=<int>` makes every id, seed, nonce and timestamp deterministic, so the same
-scene re-saves to a byte-identical file (use it when the diagram is committed).
-`roles={"agent": "violet", …}` declares semantic fill aliases (see *Legend,
-swimlane & semantic roles* below).
+`font`: `"normal"` (Helvetica), `"hand"` (Excalifont), or `"code"`. `sketch=True`
+gives rough/hand-drawn outlines. `hand_drawn=True` is a back-compat alias that
+sets `font="hand", sketch=True`. `seed=<int>` makes every id, seed, nonce and
+timestamp deterministic, so the same scene re-saves to a byte-identical file (use
+it when the diagram is committed). `roles={"agent": "violet", …}` declares
+semantic fill aliases (see *Legend, swimlane & semantic roles* below).
 
 ### Shapes with a centered label — return a node id
 ```python
@@ -113,6 +117,36 @@ s.frame(x, y, w, h, *, fill=None, stroke=None, dashed=False, group=None)
 ```
 Drawn behind everything added so far; always exempt from the overlap check.
 Place child boxes on top at coordinates inside it.
+
+### ISO 5807 flowchart shapes — return a node id
+Thin `box()` aliases pre-sized for flowcharts; each accepts the same kwargs as
+`box()` (`fill`, `font_size`, `w`, `h`, …):
+```python
+s.process(text, x, y)              # rectangle           — a step
+s.terminator(text, x, y)           # stadium             — start / end
+s.decision(text, x, y)             # diamond             — a branch
+s.data(text, x, y)                 # parallelogram       — input / output
+s.predefined_process(text, x, y)   # framed rectangle    — a sub-routine
+s.preparation(text, x, y)          # hexagon             — setup / init
+s.connector(text, x, y)            # small circle        — on-page connector
+```
+
+### Poster helpers — stacked sections + a workflow band
+```python
+s.section(title, *, x=40, gap=70, size=18) -> y    # heading below ALL content
+s.pipeline(steps, x, y, *, gap=44, row_h=None,
+           font_size=14, connect=True) -> [ids]    # horizontal flowchart band
+```
+- **`section`** places a left-aligned heading below everything drawn so far and
+  returns the `y` to start this region's shapes — removes manual `bounds()` math
+  when stacking regions top→bottom.
+- **`pipeline`** lays out steps left→right on a shared midline and (default)
+  chains bound arrows. Each `step` is `"text"`, `(text, kind)`,
+  `(text, kind, fill)`, or a dict `{text, kind, fill, w, h, label, font_size}`.
+  `kind` is any ISO shape verb (`process` default, `decision`, `terminator`,
+  `data`, `predefined_process`, `preparation`, `connector`, `box`). A step's
+  `label` becomes the label on its outgoing arrow. Returns node ids — index them
+  for `route_under()` feedback loops.
 
 ### Auto-layout — place groups without coordinate math
 ```python
@@ -137,6 +171,8 @@ s.role(name, colour)                       # declare one semantic fill alias
 Scene(roles={"agent": "violet", ...})      # or declare them up-front
 s.legend(entries=None, x=0, y=0, *, title="Legend",
          swatch=18, gap=10, font_size=13, pad=14)    # -> frame id
+s.glossary(entries, x, y, *, title="Glossary",
+           font_size=13, pad=14)                     # -> frame id
 s.lane(ids, label, *, pad=24, fill=None, stroke=None,
        font_size=14, label_color="black")            # -> frame id
 ```
@@ -146,6 +182,8 @@ s.lane(ids, label, *, pad=24, fill=None, stroke=None,
 - **`legend`** renders a colour key. Pass `entries=[(label, colour), …]`, or omit
   it to use the Scene's `roles`. Required whenever colour encodes meaning, so a
   reader with no context can decode the diagram.
+- **`glossary`** renders a term→meaning key (`entries=[(term, meaning), …]`) to
+  decode acronyms / project jargon; its content is overlap-checked like any box.
 - **`lane`** is a thin `enclose()` wrapper drawing a solid frame with a top-left
   header — a swimlane for one stage/actor.
 
@@ -163,12 +201,15 @@ recomputing coordinates.
 ```python
 s.check_overlaps(min_px=1.0)            # -> [(label_a, label_b), ...] overlapping nodes
 s.check_arrow_crossings(threshold=12)   # -> [(src, dst, crossed), ...] arrows over a box
+s.check_legend_coverage()               # -> [fill, ...] colours used but not in the legend
+s.check_text_overflow()                 # -> [...] boxes whose text spills outside the shape
+s.check_text_overlaps()                 # -> [(a, b), ...] captions/labels overlapping
 s.bounds()                              # -> (min_x, min_y, max_x, max_y) over all shapes
 ```
-`check_overlaps` and `check_arrow_crossings` both ignore containers. `save()`
-calls both — overlaps raise; crossings print a warning, or raise when
-`crossing_check="error"`. `bounds` is handy for stacking several diagrams in one
-scene (start the next region below `max_y`).
+All checks ignore containers. `save()` runs every one of them (see *Save* below):
+overlaps always raise; the other four print a warning by default and raise at
+`"error"`. `bounds` is handy for stacking several diagrams in one scene (start the
+next region below `max_y`).
 
 ### Free-standing text
 ```python
@@ -201,14 +242,23 @@ bound arrow (useful for a loop-back). `p0/p1` and each `points_abs` entry are
 
 ### Save
 ```python
-s.save(basename, out_dir=".", allow_overlap=False, crossing_check="warn")
+s.save(basename, out_dir=".", allow_overlap=False,
+       crossing_check="warn", legend_check="warn",
+       overflow_check="warn", text_overlap_check="warn")
 # -> (path.excalidraw, path.html)
 ```
 Always re-runs `check_overlaps()` first (so a post-placement `align()`/
 `distribute()` can't ship a hidden overlap), then raises `ValueError` if two
-non-container nodes overlap (lists the labels). Arrow crossings print a warning
-by default; pass `crossing_check="error"` to raise on them instead. Fix the
-layout, mark a wrapper `container=True`, or pass `allow_overlap=True`.
+non-container nodes overlap (lists the labels). The four `*_check` gates each take
+`"warn"` (default, prints) or `"error"` (raises):
+- `crossing_check` — a bound arrow runs through an unrelated box.
+- `legend_check` — a fill colour is used but missing from the `legend()` (fires
+  only once a legend is rendered).
+- `overflow_check` — bound text is bigger than its box (spills outside).
+- `text_overlap_check` — two captions / labels overlap each other.
+
+For a ship-quality diagram pass all four at `"error"`. Fix the layout, mark a
+wrapper `container=True`, or pass `allow_overlap=True` to bypass the overlap raise.
 
 ### Palette
 `grey, red, orange, yellow, green, teal, blue, indigo, violet, pink`
