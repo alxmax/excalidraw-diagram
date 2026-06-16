@@ -38,7 +38,7 @@ Public API (see method docstrings for detail)
     .row / .column / .grid(items, x, y, ...)           -> [node id, ...]
     .enclose(ids, *, label=None) / .lane(ids, label)   -> frame id
     .section(title) -> y          # stack a labelled region below all content
-    .pipeline(steps, x, y, *, gap=44, connect=True)    -> [node id, ...]
+    .pipeline(steps, x, y, *, gap=80, connect=True)    -> [node id, ...]
     .align(ids, axis) / .distribute(ids, axis, gap=40)
     .label(text, x, y, *, size=12, color=None, align="center")
     .title(text, x, y, *, size=28, color=None, align="left")
@@ -414,7 +414,7 @@ class Scene:
         "preparation": (190, 78), "connector": (46, 46), "box": (160, 70),
     }
 
-    def pipeline(self, steps, x, y, *, gap=44, row_h=None, font_size=14,
+    def pipeline(self, steps, x, y, *, gap=80, row_h=None, font_size=14,
                  connect=True):
         """Lay out a horizontal flowchart pipeline left -> right and (by default)
         chain bound arrows between consecutive steps. Steps are vertically centred
@@ -511,7 +511,7 @@ class Scene:
                         font_size=it.get("font_size", font_size),
                         container=it.get("container", False))
 
-    def row(self, items, x, y, *, w=160, h=70, gap=40, fill=None,
+    def row(self, items, x, y, *, w=160, h=70, gap=80, fill=None,
             font_size=16, shape="rectangle", connect=False):
         """Place items left→right starting at (x, y); return their ids.
         connect=True chains them with arrows (a quick pipeline)."""
@@ -524,7 +524,7 @@ class Scene:
                 self.arrow(a, b)
         return ids
 
-    def column(self, items, x, y, *, w=160, h=70, gap=30, fill=None,
+    def column(self, items, x, y, *, w=160, h=70, gap=60, fill=None,
                font_size=16, shape="rectangle", connect=False):
         """Place items top→down starting at (x, y); return their ids."""
         ids, cy = [], y
@@ -1548,7 +1548,7 @@ def _selftest():
     workers = s.grid([f"n{i}" for i in range(9)], 0, 150, 3,
                      w=120, h=60, fill="worker")
     s.enclose(workers, label="parallel workers")
-    done = s.box("done", 620, 0, fill="green")
+    done = s.box("done", 720, 0, fill="green")
     s.arrow(stages[-1], done)
     s.path([(0, 460), (620, 460)], label="feedback")   # A10 labelled path (clear of the grid)
     s.legend([("source", "blue"), ("worker", "violet"), ("done", "green")],
