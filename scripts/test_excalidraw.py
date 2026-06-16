@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# tested-by: REQ-EXCALIDRAW-030
+# tested-by: REQ-EXCALIDRAW-031
+# tested-by: REQ-EXCALIDRAW-032
 """Regression gate for the excalidraw-diagram skill.
 
 This is the operational definition of "professional / understandable" for a
