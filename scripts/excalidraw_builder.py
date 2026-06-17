@@ -453,6 +453,13 @@ class Scene:
             d.setdefault("w", dw)
             d.setdefault("h", dh)
             norm.append(d)
+        if connect and gap < 80 and any(d.get("label") for d in norm):
+            print(
+                f"excalidraw_builder: pipeline gap={gap}px with labeled arrows —"
+                f" labels may overlap (recommended: ≥80px; ≥100px for"
+                f" multi-word labels)",
+                file=sys.stderr,
+            )
         band = row_h or max(d["h"] for d in norm)
         mid = y + band / 2
         cx = x
@@ -517,7 +524,14 @@ class Scene:
     def row(self, items, x, y, *, w=160, h=70, gap=80, fill=None,
             font_size=16, shape="rectangle", connect=False):
         """Place items left→right starting at (x, y); return their ids.
-        connect=True chains them with arrows (a quick pipeline)."""
+        connect=True chains them with arrows (a quick pipeline).
+        Recommended gap: ≥80px when connect=True so arrows are visible."""
+        if connect and gap < 80:
+            print(
+                f"excalidraw_builder: row gap={gap}px with connect=True —"
+                f" arrows may be invisible (recommended: ≥80px)",
+                file=sys.stderr,
+            )
         ids, cx = [], x
         for it in self._norm(items):
             ids.append(self._place(it, cx, y, w, h, fill, font_size, shape))

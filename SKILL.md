@@ -430,7 +430,7 @@ essentials:
 | `s.align(ids, axis)` / `s.distribute(ids, axis, gap=…)` | tidy already-placed nodes (`axis`: left/right/center_x/top/bottom/center_y; distribute `"x"`/`"y"`) |
 | **Poster helpers** (for "how a repo works" diagrams) | |
 | `s.section(title) → y` | stack a left-aligned heading *below all existing content*; returns the y to place this region's shapes (no manual `bounds()` math) |
-| `s.pipeline(steps, x, y, gap=44, connect=True) → [ids]` | lay out a horizontal flowchart band and chain arrows. Each step is `"text"`, `(text, kind)`, `(text, kind, fill)`, or a dict; `kind` is any ISO shape verb; a step's `label` becomes its outgoing arrow label |
+| `s.pipeline(steps, x, y, gap=80, connect=True) → [ids]` | lay out a horizontal flowchart band and chain arrows. Each step is `"text"`, `(text, kind)`, `(text, kind, fill)`, or a dict; `kind` is any ISO shape verb; a step's `label` becomes its outgoing arrow label. **Recommended gap: ≥80px for labeled arrows, ≥100px for multi-word labels** (stderr warning if gap < 80 with labeled steps) |
 | **Roles, captions, arrows** | |
 | `s.role(name, colour)` / `Scene(roles={…})` | declare a semantic fill so `box(fill="agent")` works and `legend()` renders the key |
 | `s.legend(entries=None, x, y, title=…)` | colour→meaning key (`entries=[(label, colour),…]`, or omit to use `roles`) — **required when colour encodes a role** |

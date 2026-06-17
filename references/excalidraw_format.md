@@ -134,8 +134,9 @@ s.connector(text, x, y)            # small circle        — on-page connector
 ### Poster helpers — stacked sections + a workflow band
 ```python
 s.section(title, *, x=40, gap=70, size=18) -> y    # heading below ALL content
-s.pipeline(steps, x, y, *, gap=44, row_h=None,
+s.pipeline(steps, x, y, *, gap=80, row_h=None,
            font_size=14, connect=True) -> [ids]    # horizontal flowchart band
+# gap<80 with labeled steps prints a stderr warning (arrows may overlap)
 ```
 - **`section`** places a left-aligned heading below everything drawn so far and
   returns the `y` to start this region's shapes — removes manual `bounds()` math
@@ -150,8 +151,9 @@ s.pipeline(steps, x, y, *, gap=44, row_h=None,
 
 ### Auto-layout — place groups without coordinate math
 ```python
-s.row(items, x, y, *, w=160, h=70, gap=40, fill=None,
+s.row(items, x, y, *, w=160, h=70, gap=80, fill=None,
       font_size=16, shape="rectangle", connect=False)   # -> [ids] left→right
+# connect=True + gap<80 prints a stderr warning (arrows may be invisible)
 s.column(items, x, y, *, w=160, h=70, gap=30, ...)       # -> [ids] top→down
 s.grid(items, x, y, cols, *, w=160, h=70,
        gap_x=40, gap_y=30, ...)                          # -> [ids] cols-wide grid

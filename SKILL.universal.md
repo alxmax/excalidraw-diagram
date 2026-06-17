@@ -262,7 +262,7 @@ fonts or overlapping shapes.
 | `s.enclose(ids, label=…, pad=…)` | auto-sized frame *behind* those nodes |
 | `s.lane(ids, label)` | a swimlane with a top-left header |
 | `s.section(title) → y` | stack a heading below all existing content; returns the y to start this region |
-| `s.pipeline(steps, x, y, gap=44, connect=True) → [ids]` | horizontal flowchart band with chained arrows |
+| `s.pipeline(steps, x, y, gap=80, connect=True) → [ids]` | horizontal flowchart band with chained arrows. Recommended gap: ≥80px for labeled arrows, ≥100px for multi-word labels |
 | `s.legend(entries=None, x, y, title=…)` | colour→meaning key |
 | `s.glossary(entries, x, y, title=…)` | term→meaning key |
 | `s.title(text, x, y, size=28, align="left")` | a large free-standing heading |
