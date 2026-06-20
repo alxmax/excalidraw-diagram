@@ -47,21 +47,35 @@ s.label("Top -> bottom. ~80% ISO 5807 (shape = meaning) + colour by category for
         cx, -44, size=14)
 
 # ── main flow (top -> bottom) ─────────────────────────────────────────────
-start = s.terminator("Start", *at(150, 0), w=150, h=52, fill="startend")
-init  = s.preparation("init\n(scaffold + lock)", *at(240, 96), w=240, h=78, fill="init")
-inp   = s.data("requirements/*.md\n+ tagged code", *at(250, 220), w=250, h=64, fill="io")
-drc   = s.process("draft -> confirm", *at(220, 330), w=220, h=60, fill="step")
-sync  = s.process("sync\n(rescan + baseline)", *at(220, 436), w=220, h=60, fill="step")
-gate  = s.decision("gate:\ndrift & links\nclean?", *at(230, 542), w=230, h=120, fill="branch")
-mapc  = s.process("map\n(regen _map.*)", *at(220, 716), w=220, h=60, fill="step")
-outp  = s.data("_map.json / _map.md\n_reqlock.json", *at(250, 822), w=250, h=66, fill="io")
-nxt   = s.process("next\n(risk buckets)", *at(220, 934), w=220, h=60, fill="step")
-done  = s.terminator("Commit", *at(150, 1040), w=150, h=52, fill="startend")
+# Stack with >=70px of clear space between consecutive boxes so every vertical
+# connector renders as a visible line (the builder's short-arrow gate rejects a
+# tighter stack — a clamped near-zero arrow shows only its label).
+GAP_V = 96            # clear enough that even a labelled step ('yes') keeps line
+yc = 0
+def below(h):            # return the top y for a height-h box, then advance
+    global yc
+    top = yc
+    yc += h + GAP_V
+    return top
+
+start = s.terminator("Start", *at(150, below(52)), w=150, h=52, fill="startend")
+init  = s.preparation("init\n(scaffold + lock)", *at(240, below(78)), w=240, h=78, fill="init")
+inp   = s.data("requirements/*.md\n+ tagged code", *at(250, below(64)), w=250, h=64, fill="io")
+drc   = s.process("draft -> confirm", *at(220, below(60)), w=220, h=60, fill="step")
+sync  = s.process("sync\n(rescan + baseline)", *at(220, below(60)), w=220, h=60, fill="step")
+gate  = s.decision("gate:\ndrift & links\nclean?", *at(230, below(120)), w=230, h=120, fill="branch")
+mapc  = s.process("map\n(regen _map.*)", *at(220, below(60)), w=220, h=60, fill="step")
+outp  = s.data("_map.json / _map.md\n_reqlock.json", *at(250, below(66)), w=250, h=66, fill="io")
+nxt   = s.process("next\n(risk buckets)", *at(220, below(60)), w=220, h=60, fill="step")
+done  = s.terminator("Commit", *at(150, below(52)), w=150, h=52, fill="startend")
 
 # ── remediation branch (gate = no) ────────────────────────────────────────
-fix    = s.predefined_process("fix /\nsync --accept-drift", 600, 567, w=210, h=70, fill="sub")
-connA1 = s.connector("A", 682, 690, w=46, h=46, fill="conn")
-connA2 = s.connector("A", 150, 443, w=46, h=46, fill="conn")
+# gate spans y 664..784; place the fix beside it and the connectors with the
+# same >=70px clear so the branch arrows render too.
+gy = s._geom[gate][1]                     # gate's top y (layout-driven, not hand-counted)
+fix    = s.predefined_process("fix /\nsync --accept-drift", 620, gy, w=210, h=70, fill="sub")
+connA1 = s.connector("A", 702, gy + 140, w=46, h=46, fill="conn")
+connA2 = s.connector("A", 36, s._geom[sync][1] + 7, w=46, h=46, fill="conn")
 
 # ── arrows ────────────────────────────────────────────────────────────────
 s.arrow(start, init)
@@ -76,7 +90,7 @@ s.arrow(nxt, done)
 s.arrow(gate, fix, label="no")
 s.arrow(fix, connA1)
 s.arrow(connA2, sync, label="resume (A)")
-s.label("on-page connector A: after fixing, resume at sync", 705, 748, size=12)
+s.label("on-page connector A: after fixing, resume at sync", 740, gy + 200, size=12)
 
 # ── shape key (ISO 5807 symbol + colour → meaning) ────────────────────────
 kx, ky = 920, 40
@@ -102,7 +116,7 @@ s.glossary([
     ("drift", "content hash of a spec vs _reqlock.json baseline"),
     ("gate", "pre-commit link-sync + drift + test-link check"),
     ("sync", "rescan + advance the drift baseline + regen the map"),
-], 235, 1120, title="Glossary")
+], 235, s.bounds()[3] + 60, title="Glossary")
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
 s.save("reqmap_command_flow_iso5807", out_dir=out_dir, crossing_check="error")

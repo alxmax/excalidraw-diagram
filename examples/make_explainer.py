@@ -32,10 +32,10 @@ s.label("A tool that stops a project's PLAN and its CODE from quietly drifting "
 # ════════════════════ 1 · THE PROBLEM IT SOLVES ═══════════════════════════
 y = s.section("1 - THE PROBLEM IT SOLVES")
 intent = s.box("What the project\nSHOULD do\n(the plan)", 120, y, w=230, h=84, fill="plan")
-code   = s.box("What the code\nACTUALLY does", 720, y, w=230, h=84, fill="outside")
+code   = s.box("What the code\nACTUALLY does", 880, y, w=230, h=84, fill="outside")
 s.arrow(intent, code, dashed=True, color="red", start="arrow", end="arrow",
         label="over time they silently disagree  =  'drift'")
-fix = s.box("requirement-manager", 420, y + 150, w=330, h=70, fill="tool")
+fix = s.box("requirement-manager", 460, y + 250, w=330, h=70, fill="tool")
 s.arrow(fix, intent, label="keeps ONE agreed plan")
 s.arrow(fix, code, label="checks code still matches")
 s.label("The fix: one source of truth (the plan files) + an automatic check that "
@@ -53,7 +53,7 @@ ids = s.pipeline([
     {"text": "map\n(the picture)", "kind": "process", "fill": "engine"},
     {"text": "next\n(what now?)", "kind": "process", "fill": "engine"},
     ("Commit", "terminator", "outside"),
-], 60, y, gap=40)
+], 60, y, gap=112)
 s.route_under(ids[5], ids[4], label="no -> fix the code, then re-check", drop=72)
 s.label("In words:  init = create the plan files  -  draft = auto-write a first "
         "version from existing code  -  confirm = mark a plan item as agreed  -  "
@@ -79,9 +79,9 @@ for name, role, desc in parts:
 # ════════════════════ 4 · WHERE IT RUNS ═══════════════════════════════════
 y = s.section("4 - WHERE IT RUNS")
 you   = s.box("You / an AI agent", 60, y, w=200, h=64, fill="outside")
-plug  = s.box("requirement-manager\n(a Claude Code plugin)", 340, y, w=240, h=64, fill="tool")
-gitci = s.box("git + CI", 660, y, w=180, h=64, fill="outside")
-mkt   = s.box("plugin marketplace", 340, y + 110, w=240, h=60, fill="outside")
+plug  = s.box("requirement-manager\n(a Claude Code plugin)", 600, y, w=240, h=64, fill="tool")
+gitci = s.box("git + CI", 1300, y, w=180, h=64, fill="outside")
+mkt   = s.box("plugin marketplace", 600, y + 170, w=240, h=60, fill="outside")
 s.arrow(you, plug, label="edit plan & code, run commands")
 s.arrow(plug, gitci, label="the gate runs before commit / on the server")
 s.arrow(mkt, plug, label="installs / updates it")

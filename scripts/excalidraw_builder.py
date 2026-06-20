@@ -1133,6 +1133,87 @@ class Scene:
                                  (free[j].get("text") or "")[:40]))
         return hits
 
+    def check_short_arrows(self, min_len=24.0):
+        """Return [(src_label, dst_label, length), ...] for every BOUND arrow
+        whose drawn length (distance between its first and last point) is below
+        `min_len` px — an arrow too short to render as a visible line.
+
+        Why this is its own check: when two shapes sit close but do NOT overlap,
+        arrow() clamps the per-side gap (g = min(gap, max(2, (dist-10)/2))) so the
+        connector collapses toward zero length (e.g. ~40px of clear space leaves a
+        ~12px arrow; <=4px leaves 0px). Excalidraw then draws no line — only the
+        arrow's bound text label floats in place, the 'text without arrow' defect.
+        check_overlaps() cannot see it (the boxes don't overlap), so this is its
+        non-overlapping sibling: the deterministic guardrail for a degenerate
+        connector. Only bound arrows (both endpoints bound to a shape) are checked
+        — unbound path()/free_arrow()/route_under() connectors are intentional
+        routed lines, not box-to-box links. `min_len` defaults to ~2x an
+        Excalidraw arrowhead (~12px): below that the line is essentially just the
+        head. Prior partial fixes (default-gap bump 4ea5f97, pipeline/row stderr
+        warning 08ea0aa) did not cover manual box()+arrow() placement; this does.
+        """
+        labels = {nid: lab for (nid, _x, _y, _w, _h, lab) in self._nodes}
+        hits = []
+        for el in self.elements:
+            if el.get("type") != "arrow":
+                continue
+            sb, eb = el.get("startBinding"), el.get("endBinding")
+            if not sb or not eb:
+                continue                          # unbound = intentional routed line
+            pts = el.get("points") or []
+            if len(pts) < 2:
+                continue
+            length = math.hypot(pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1])
+            if length < min_len:
+                hits.append((labels.get(sb.get("elementId"), "?"),
+                             labels.get(eb.get("elementId"), "?"),
+                             round(length, 1)))
+        return hits
+
+    def check_arrow_label_fit(self, min_stub=24.0):
+        """Return [(label, stub_px), ...] for every BOUND arrow whose text label
+        is too wide for the connector it sits on — leaving less than `min_stub`
+        px of visible line on each side of the label.
+
+        stub = (arrow_line_length - label_extent) / 2, where label_extent is the
+        label's bounding box projected onto the arrow's direction (so a wide label
+        eats a horizontal arrow, a tall label eats a vertical one). When the stub
+        is small the label crowds the arrowheads; when it is NEGATIVE the label is
+        longer than the whole arrow and spills onto the two boxes the arrow joins
+        — a real overlap that check_text_overflow() (box labels only) and
+        check_text_overlaps() (free captions only, bound labels excluded) both
+        miss by design. This is the arrow-label sibling of those checks: a
+        labelled connector reads cleanly only when its label fits between its ends
+        with line still showing. Widen the gap between the two shapes, or
+        shorten/wrap the label.
+        """
+        by_id = {e["id"]: e for e in self.elements}
+        hits = []
+        for el in self.elements:
+            if el.get("type") != "arrow":
+                continue
+            if not el.get("startBinding") or not el.get("endBinding"):
+                continue
+            lab = next((by_id.get(b["id"]) for b in (el.get("boundElements") or [])
+                        if b.get("type") == "text"), None)
+            if not lab:
+                continue
+            pts = el.get("points") or []
+            if len(pts) < 2:
+                continue
+            dx, dy = pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1]
+            line = math.hypot(dx, dy)
+            if line == 0:
+                continue                       # zero-length: check_short_arrows' job
+            ux, uy = dx / line, dy / line       # arrow direction (unit vector)
+            # extent of the (axis-aligned) label box along the arrow direction
+            extent = abs(lab.get("width", 0) * ux) + abs(lab.get("height", 0) * uy)
+            stub = (line - extent) / 2
+            if stub < min_stub:
+                label = (lab.get("text") or "").split("\n")[0]
+                hits.append((label, round(stub, 1)))
+        return hits
+
     def bounds(self):
         """(min_x, min_y, max_x, max_y) over every shape AND every routed
         connector (path/route_under/free_arrow). Use it to stack several
@@ -1166,12 +1247,18 @@ class Scene:
         }
 
     def save(self, basename, out_dir=".", allow_overlap=False,
+             allow_short_arrows=False,
              crossing_check="warn", legend_check="warn",
-             overflow_check="warn", text_overlap_check="warn"):
+             overflow_check="warn", text_overlap_check="warn",
+             label_fit_check="warn"):
         """Write <basename>.excalidraw + .html. Always re-runs the overlap
-        check first (so post-placement align()/distribute() can't ship a hidden
-        overlap). `crossing_check`, `legend_check`, `overflow_check` and
-        `text_overlap_check` each take "warn" (default, prints) or "error"
+        check AND the short-arrow check first (so post-placement
+        align()/distribute() or close manual placement can't ship a hidden
+        overlap or a degenerate, invisible connector). Both are hard checks that
+        RAISE by default — they are real defects, not readability heuristics; pass
+        `allow_overlap=True` / `allow_short_arrows=True` to ship one deliberately.
+        `crossing_check`, `legend_check`, `overflow_check`, `text_overlap_check`
+        and `label_fit_check` each take "warn" (default, prints) or "error"
         (raises — opt-in gate):
           - crossing_check     — a bound arrow runs through an unrelated box.
           - legend_check       — a fill colour is missing from the legend (only
@@ -1180,11 +1267,15 @@ class Scene:
             spills outside the shape). Shapes don't overlap, so check_overlaps()
             misses it.
           - text_overlap_check — two free captions/headers overlap each other.
-            Also invisible to check_overlaps(), which only inspects shapes."""
+            Also invisible to check_overlaps(), which only inspects shapes.
+          - label_fit_check    — an arrow's label is wider than the connector it
+            sits on, so it crowds the arrowheads or spills onto the joined
+            boxes. Bound arrow labels are excluded from the two checks above."""
         for name, val in (("crossing_check", crossing_check),
                           ("legend_check", legend_check),
                           ("overflow_check", overflow_check),
-                          ("text_overlap_check", text_overlap_check)):
+                          ("text_overlap_check", text_overlap_check),
+                          ("label_fit_check", label_fit_check)):
             if val not in ("warn", "error"):
                 raise ValueError(f"{name} must be 'warn' or 'error'")
         hits = self.check_overlaps()
@@ -1194,6 +1285,14 @@ class Scene:
                 f"{len(hits)} overlapping shape(s): {pairs}. "
                 "Move the coordinates apart, wrap a grouping shape with "
                 "container=True, or pass allow_overlap=True if intentional.")
+        shorts = self.check_short_arrows()
+        if shorts and not allow_short_arrows:
+            pairs = "; ".join(f"'{a}'->'{b}' ({ln:g}px)" for a, b, ln in shorts)
+            raise ValueError(
+                f"{len(shorts)} arrow(s) too short to render as a visible line "
+                f"(only the label would show): {pairs}. Move the shapes farther "
+                "apart (~60px+ of clear space), or pass allow_short_arrows=True "
+                "if intentional.")
         crossings = self.check_arrow_crossings()
         if crossings:
             seen = sorted({f"{a}->{b} crosses '{c}'" for a, b, c in crossings})
@@ -1237,6 +1336,19 @@ class Scene:
                     "text_overlap_check='warn' to downgrade to a warning.")
             print("WARNING: free text label(s) overlap (a caption/header sits on "
                   "another): " + detail)
+        label_fits = self.check_arrow_label_fit()
+        if label_fits:
+            detail = "; ".join(f"'{lab}' ({stub:g}px line each side)"
+                               for lab, stub in label_fits)
+            if label_fit_check == "error":
+                raise ValueError(
+                    "arrow label(s) too wide for their connector (the label "
+                    "crowds or spills onto the boxes): " + detail
+                    + ". Widen the gap between the shapes, shorten/wrap the "
+                    "label, or pass label_fit_check='warn' to downgrade to a "
+                    "warning.")
+            print("WARNING: arrow label(s) wider than their connector — the "
+                  "label crowds the arrowheads or spills onto a box: " + detail)
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
@@ -1578,6 +1690,21 @@ def _selftest():
     assert not s.check_arrow_crossings(), s.check_arrow_crossings()
     # colour-SSOT: every fill used (blue/violet/green) is in the legend above
     assert not s.check_legend_coverage(), s.check_legend_coverage()
+    # short-arrow gate: this clean scene has none; a close pair must be caught
+    # and save() must raise on it by default (the 'text without arrow' defect)
+    assert not s.check_short_arrows(), s.check_short_arrows()
+    sa = Scene(seed=4)
+    ca = sa.box("A", 0, 0, w=120, h=60)
+    cb = sa.box("B", 124, 0, w=120, h=60)   # 4px apart -> degenerate connector
+    sa.arrow(ca, cb, label="x")
+    assert sa.check_overlaps() == [], "close-but-not-touching boxes don't overlap"
+    assert len(sa.check_short_arrows()) == 1, sa.check_short_arrows()
+    try:
+        sa.save("smoke_short", out_dir=out)
+        raise SystemExit("FAIL: short-arrow gate did not raise by default")
+    except ValueError:
+        pass
+    sa.save("smoke_short", out_dir=out, allow_short_arrows=True)  # escape works
     pj, ph = s.save("smoke", out_dir=out)   # crossing_check defaults to "warn"
     # A7 opt-in gate: a deliberate crossing must raise under crossing_check="error"
     s2 = Scene(seed=2)

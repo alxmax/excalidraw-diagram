@@ -73,7 +73,7 @@ s.label("what it shows · how to read it · colour legend",
         PX, Y(7) + BH + 6, size=12, color="grey", align="left")
 
 # ── Right panel A: Exploration alternatives (aligned with EXPLORE) ─────────
-RX = PX + PW + 120   # = 820
+RX = PX + PW + 200   # = 900  (wide enough that the side-panel labels clear)
 
 # Small repo: Claude reads directly — same y as EXPLORE
 seq = s.box(

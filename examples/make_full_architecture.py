@@ -62,7 +62,7 @@ rm = s.pipeline([
     {"text": "gate:\ndrift?", "kind": "decision", "fill": "gate", "label": "clean"},
     ("map", "process", "skill"),
     ("_map.html", "terminator", "artifact"),
-], 120, row1, gap=46)
+], 120, row1, gap=120)
 s.lane(rm, "requirement-manager  -  core: SSOT + drift gate")
 s.route_under(rm[3], rm[2], label="no -> re-sync", drop=55)
 
@@ -92,10 +92,10 @@ s.label("dogfood: the requirement-manager skill runs its own gate on requirement
 y = s.section("3 - INTEGRATION   how it is invoked, gated, and shipped")
 yi = y + 30
 dev = s.box("Developer / AI", 80, yi, w=170, h=70, fill="external", font_size=13)
-cc  = s.box("Claude Code", 440, yi, w=180, h=70, fill="external", font_size=13)
-plug = s.box("requirement-manager\n(skill + engine)", 810, yi, w=210, h=70,
+cc  = s.box("Claude Code", 450, yi, w=180, h=70, fill="external", font_size=13)
+plug = s.box("requirement-manager\n(skill + engine)", 840, yi, w=210, h=70,
              fill="skill", font_size=13)
-tgt = s.box("target repo\nseeded reqmap.py", 1210, yi, w=190, h=70,
+tgt = s.box("target repo\nseeded reqmap.py", 1270, yi, w=190, h=70,
             fill="external", font_size=13)
 s.arrow(dev, cc, label="uses")
 s.arrow(cc, plug, label="invokes [skill]")
@@ -131,7 +131,7 @@ s.arrow(code, record, label="tags link to")
 s.arrow(gate, record, label="checks")
 mapj = s.box("_map.json\n{engine_version,\nnodes, edges}", 1050, ys + 20,
              w=240, h=84, fill="artifact", font_size=12)
-lock = s.box("_reqlock.json\ncontent-hash baseline", 1050, ys + 180, w=240, h=64,
+lock = s.box("_reqlock.json\ncontent-hash baseline", 1100, ys + 180, w=240, h=64,
              fill="artifact", font_size=12)
 s.arrow(record, mapj, label="map builds")
 s.arrow(record, lock, label="gate hashes")

@@ -72,6 +72,15 @@ def _make_case(path):
             scene.check_text_overlaps(), [],
             f"{os.path.basename(path)} has free text label(s) overlapping "
             f"(a caption/header sits on another)")
+        self.assertEqual(
+            scene.check_short_arrows(), [],
+            f"{os.path.basename(path)} has a bound arrow too short to render "
+            f"as a visible line (shapes placed too close — only the label "
+            f"would show)")
+        self.assertEqual(
+            scene.check_arrow_label_fit(), [],
+            f"{os.path.basename(path)} has an arrow label wider than its "
+            f"connector (the label crowds the arrowheads or spills onto a box)")
 
     return case
 
@@ -251,6 +260,90 @@ class TestBuilderUnits(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d, overflow_check="nope")
+
+    # -- short-arrow gate (shapes too close -> invisible connector) --------
+    def test_check_short_arrows_flags_close_boxes(self):
+        # 4px of clear space between borders -> arrow() clamps the connector to
+        # ~0px: Excalidraw draws no line, only the floating label. This is the
+        # exact "text without arrow" defect; the boxes do NOT overlap, so
+        # check_overlaps() is blind to it and check_short_arrows() must catch it.
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 124, 0, 120, 60)        # 4px gap
+        s.arrow(a, b, label="x")
+        self.assertEqual(s.check_overlaps(), [],
+                         "boxes 4px apart do not overlap")
+        hits = s.check_short_arrows()
+        self.assertEqual(len(hits), 1, f"degenerate arrow not flagged: {hits}")
+        self.assertLess(hits[0][2], 24.0)      # measured length below threshold
+
+    def test_check_short_arrows_clean_when_boxes_spaced(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 320, 0, 120, 60)        # 196px gap -> visible arrow
+        s.arrow(a, b, label="x")
+        self.assertEqual(s.check_short_arrows(), [])
+
+    def test_check_short_arrows_ignores_unbound_connectors(self):
+        # path()/free_arrow()/route_under() are intentional routed lines, not
+        # box-to-box bindings — never flagged even if short.
+        s = eb.Scene(seed=99)
+        s.path([(0, 0), (5, 0)])               # tiny unbound connector
+        self.assertEqual(s.check_short_arrows(), [])
+
+    def test_save_short_arrow_raises_by_default(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 124, 0, 120, 60)
+        s.arrow(a, b, label="x")
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d)         # hard gate — raises with no opt-out
+
+    def test_save_short_arrow_allow_escape(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 124, 0, 120, 60)
+        s.arrow(a, b, label="x")
+        with tempfile.TemporaryDirectory() as d:
+            s.save("x", out_dir=d, allow_short_arrows=True)   # opt-out: must not raise
+
+    # -- arrow-label-fit gate (label wider than its connector) -------------
+    def test_check_arrow_label_fit_flags_wide_label(self):
+        # boxes close together + a long label: the label is wider than the
+        # arrow, so it spills onto both boxes — invisible to the box/free-text
+        # checks, caught here.
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 240, 0, 120, 60)        # 120px gap
+        s.arrow(a, b, label="a very long label that is wider than the arrow")
+        hits = s.check_arrow_label_fit()
+        self.assertEqual(len(hits), 1, f"wide label not flagged: {hits}")
+        self.assertLess(hits[0][1], 24.0)
+
+    def test_check_arrow_label_fit_clean_when_spaced(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 600, 0, 120, 60)        # far apart -> short label fits
+        s.arrow(a, b, label="ok")
+        self.assertEqual(s.check_arrow_label_fit(), [])
+
+    def test_save_label_fit_error_raises(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 240, 0, 120, 60)
+        s.arrow(a, b, label="a very long label that is wider than the arrow")
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                s.save("x", out_dir=d, label_fit_check="error")
+
+    def test_save_label_fit_warn_default_does_not_raise(self):
+        s = eb.Scene(seed=99)
+        a = s.box("A", 0, 0, 120, 60)
+        b = s.box("B", 240, 0, 120, 60)
+        s.arrow(a, b, label="a very long label that is wider than the arrow")
+        with tempfile.TemporaryDirectory() as d:
+            s.save("x", out_dir=d)             # default "warn" — must not raise
 
     def test_path_label_overlapping_a_box_is_detected(self):
         s = eb.Scene(seed=99)
