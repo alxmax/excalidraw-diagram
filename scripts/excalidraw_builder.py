@@ -1078,7 +1078,12 @@ class Scene:
         shapes = {"rectangle", "ellipse", "diamond"}
         used = set()
         for el in self.elements:
-            if el["id"] in self._containers or el.get("type") not in shapes:
+            if el["id"] in self._containers:
+                continue
+            # native fillable shapes + ISO polygons (data/preparation): the latter
+            # are serialized as type "line" with polygon:True but carry a real fill,
+            # so their colour must also be explained by the legend
+            if el.get("type") not in shapes and not el.get("polygon"):
                 continue
             bg = el.get("backgroundColor")
             if bg and bg not in neutral:
@@ -1690,6 +1695,12 @@ def _selftest():
     assert not s.check_arrow_crossings(), s.check_arrow_crossings()
     # colour-SSOT: every fill used (blue/violet/green) is in the legend above
     assert not s.check_legend_coverage(), s.check_legend_coverage()
+    # ISO polygons (data/preparation) are serialized as type "line" + polygon but
+    # carry a real fill — an unexplained one must still be flagged by the gate
+    iso = Scene(seed=7)
+    iso.data("input", 0, 0, fill="blue")
+    iso.legend([("worker", "violet")], 0, 200)
+    assert iso.check_legend_coverage(), "unexplained ISO polygon fill must be flagged"
     # short-arrow gate: this clean scene has none; a close pair must be caught
     # and save() must raise on it by default (the 'text without arrow' defect)
     assert not s.check_short_arrows(), s.check_short_arrows()
