@@ -43,7 +43,7 @@ y = s.section("1 - STRUCTURE   the plugin's containers")
 parts = s.row([
     ("reqmap.py\nparse-scan-gate-map", "engine"),
     ("3 skills\n(SKILL.md)", "skill"),
-    ("requirements/*.md\n29 specs - SSOT", "ssot"),
+    ("requirements/*.md\n36 specs - SSOT", "ssot"),
     ("_map.* / _reqlock\ngenerated", "artifact"),
     ("app/ viewer\nReact", "viewer"),
 ], 80, y + 44, w=200, h=64, gap=28, font_size=13)
@@ -109,6 +109,16 @@ ci = s.box("git + CI\ncheck@v1 runs the gate", 840, yb, w=220, h=64,
 s.arrow(mkt, inst, label="lists")
 s.label("distribution (left) + CI gating (right): every push runs the drift gate.",
         80, yb + 84, size=12, align="left")
+# multi-platform (v2.7): usable beyond Claude Code via generated artifacts
+ym = yb + 150
+gen = s.box("generated artifacts\ntool_definition.json\n+ SKILL.universal.md", 80, ym,
+            w=230, h=80, fill="artifact", font_size=12)
+others = s.box("other AI assistants\nCopilot / Gemini / Codex", 560, ym,
+               w=230, h=80, fill="external", font_size=12)
+s.arrow(gen, others, label="run reqmap CLI")
+s.label("multi-platform: a command registry generates the schema + instructions other AIs "
+        "consume; reqmap.py is stdlib + tool-agnostic, drift-guarded in the gate.",
+        80, ym + 100, size=12, align="left")
 
 # ═══════════════════════ 6 · DATA SCHEMA ═════════════════════
 y = s.section("6 - DATA SCHEMA   the requirement record it maintains")
