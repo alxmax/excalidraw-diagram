@@ -258,8 +258,10 @@ non-container nodes overlap (lists the labels). The four `*_check` gates each ta
   only once a legend is rendered).
 - `overflow_check` — bound text is bigger than its box (spills outside).
 - `text_overlap_check` — two captions / labels overlap each other.
+- `label_fit_check` — a bound arrow's label is wider than the connector it sits
+  on, so it crowds the arrowheads or spills onto the joined boxes.
 
-For a ship-quality diagram pass all four at `"error"`. Fix the layout, mark a
+For a ship-quality diagram pass all five at `"error"`. Fix the layout, mark a
 wrapper `container=True`, or pass `allow_overlap=True` to bypass the overlap raise.
 
 ### Palette

@@ -170,5 +170,6 @@ s.glossary([
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "diagrams"
 pj, ph = s.save("full_architecture", out_dir=out_dir, crossing_check="error",
-                legend_check="error", overflow_check="error", text_overlap_check="error")
+                legend_check="error", overflow_check="error", text_overlap_check="error",
+                label_fit_check="error")
 print("wrote full_architecture.excalidraw + .html")

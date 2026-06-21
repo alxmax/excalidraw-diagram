@@ -41,8 +41,9 @@ Three things make a diagram pass:
 2. **Readability** — title + one-line subtitle, a legend when colour means a
    role, a glossary for jargon, one reading direction, zero overlaps/crossings.
 3. **Enforcement** — the builder's gates (`save(..., crossing_check="error",
-   legend_check="error", overflow_check="error", text_overlap_check="error")`)
-   turn those rules into hard failures so a sloppy diagram can't ship.
+   legend_check="error", overflow_check="error", text_overlap_check="error",
+   label_fit_check="error")`) turn those rules into hard failures so a sloppy
+   diagram can't ship.
 
 The canonical worked example of all three is
 [`examples/make_full_architecture.py`](examples/make_full_architecture.py) —
@@ -211,7 +212,7 @@ condition holds**, in this order, all in the one scene:
 
 Then **one** `s.legend(...)` and **one** `s.glossary(...)` decode the whole poster,
 and `s.save(..., crossing_check="error", legend_check="error", overflow_check="error",
-text_overlap_check="error")`.
+text_overlap_check="error", label_fit_check="error")`.
 
 ### Layout rules (apply before writing code)
 
@@ -240,11 +241,14 @@ request. If a system needs several views, stack them as labelled regions in the
 **Expand, don't cram**: the canvas is unlimited. Spread out rather than shrinking
 fonts or overlapping shapes.
 
-**Four `save()` gates — turn them all to `"error"` for a ship-quality diagram:**
+**Five `save()` gates — turn them all to `"error"` for a ship-quality diagram:**
 - `crossing_check` — a bound arrow runs through an unrelated box.
 - `legend_check` — a fill colour is used but missing from the `legend()`.
 - `overflow_check` — bound text is bigger than its box.
 - `text_overlap_check` — two captions / labels overlap each other.
+- `label_fit_check` — a bound arrow's label is wider than its connector (crowds
+  the arrowheads or spills onto the joined boxes); the dedicated gate for arrow
+  labels, which the two checks above exclude.
 
 ## Builder API (cheat-sheet)
 
@@ -289,7 +293,7 @@ fonts or overlapping shapes.
 **Pre-delivery checklist:**
 
 *Builder-enforced (turn gates to `"error"`):**
-- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error")`
+- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error", label_fit_check="error")`
 - [ ] `Scene(seed=<int>)` if the diagram is committed (byte-stable output)
 
 *You must check these:*

@@ -37,8 +37,9 @@ Three things make a diagram pass:
 2. **Readability** — title + one-line subtitle, a legend when colour means a
    role, a glossary for jargon, one reading direction, zero overlaps/crossings.
 3. **Enforcement** — the builder's gates (`save(..., crossing_check="error",
-   legend_check="error", overflow_check="error", text_overlap_check="error")`)
-   turn those rules into hard failures so a sloppy diagram can't ship.
+   legend_check="error", overflow_check="error", text_overlap_check="error",
+   label_fit_check="error")`) turn those rules into hard failures so a sloppy
+   diagram can't ship.
 
 The canonical worked example of all three is
 [`examples/make_full_architecture.py`](examples/make_full_architecture.py) —
@@ -180,7 +181,7 @@ condition holds**, in this order, all in the one scene:
 
 Then **one** `s.legend(...)` (colour = role) and **one** `s.glossary(...)` decode
 the *whole* poster, and `s.save(..., crossing_check="error", legend_check="error",
-overflow_check="error", text_overlap_check="error")`.
+overflow_check="error", text_overlap_check="error", label_fit_check="error")`.
 
 **Colour discipline across layers:** the single legend must decode every layer, so
 give each *distinct* meaning its own colour — do not let two layers reuse one
@@ -296,7 +297,7 @@ warning by default — reroute with `route_under()` or move the box until it's
 gone. Pass `save(..., crossing_check="error")` to make a crossing a hard failure
 (opt-in gate, mirroring the overlap check).
 
-**Four `save()` gates — turn them all to `"error"` for a ship-quality diagram.**
+**Five `save()` gates — turn them all to `"error"` for a ship-quality diagram.**
 Each defaults to `"warn"` (prints) and becomes a hard failure at `"error"`:
 - `crossing_check` — a bound arrow runs through an unrelated box.
 - `legend_check` — a fill colour is used but missing from the `legend()` (fires
@@ -304,11 +305,16 @@ Each defaults to `"warn"` (prints) and becomes a hard failure at `"error"`:
 - `overflow_check` — bound text is bigger than its box (spills outside). Shapes
   don't overlap, so the overlap check misses this — it's a separate gate.
 - `text_overlap_check` — two captions / labels overlap each other.
+- `label_fit_check` — a bound arrow's label is wider than the connector it sits
+  on, so it crowds the arrowheads or spills onto the joined boxes. Bound arrow
+  labels are excluded from `overflow_check` (box labels) and `text_overlap_check`
+  (free captions), so this is their dedicated gate — leave it on `"warn"` and a
+  crowded label only prints a notice that scrolls past.
 
-The canonical examples ship with all four at `"error"`:
+The canonical examples ship with all five at `"error"`:
 `s.save("name", out_dir, crossing_check="error", legend_check="error",
-overflow_check="error", text_overlap_check="error")`. Do the same — it is the
-operational definition of "an outsider can read this."
+overflow_check="error", text_overlap_check="error", label_fit_check="error")`.
+Do the same — it is the operational definition of "an outsider can read this."
 
 **Centered captions anchor at the point.** `label(text, x, y)` and
 `title(..., align="center")` treat `x` as the *center* of the text (and
@@ -447,7 +453,7 @@ essentials:
 | `s.check_legend_coverage()` | `[fill, …]` colours used but absent from the `legend()` key (colour-SSOT); `[]` when clean |
 | `s.check_text_overflow()` | `[(id, …), …]` boxes whose bound text spills outside the shape |
 | `s.check_text_overlaps()` | `[(a, b), …]` captions/labels that overlap each other |
-| `s.save(basename, out_dir=".", crossing_check=…, legend_check=…, overflow_check=…, text_overlap_check=…)` | writes both files; **raises if shapes overlap**; each `*_check` is `"warn"` (default, prints) or `"error"` (raises). Use all four at `"error"` for a ship-quality diagram |
+| `s.save(basename, out_dir=".", crossing_check=…, legend_check=…, overflow_check=…, text_overlap_check=…, label_fit_check=…)` | writes both files; **raises if shapes overlap**; each `*_check` is `"warn"` (default, prints) or `"error"` (raises). Use all five at `"error"` for a ship-quality diagram |
 
 **Colours** accept a hex string or a palette name: `grey, red, orange, yellow,
 green, teal, blue, indigo, violet, pink`. Each name maps to Excalidraw's own
@@ -560,7 +566,8 @@ y = s.section("3 - INTEGRATION   invoked, gated, shipped")
 # ... external systems + arrows ...
 s.legend(...); s.glossary(...)
 s.save("full_architecture", out_dir, crossing_check="error",
-       legend_check="error", overflow_check="error", text_overlap_check="error")
+       legend_check="error", overflow_check="error", text_overlap_check="error",
+       label_fit_check="error")
 ```
 
 ### 2 · Pipeline / data flow
@@ -660,7 +667,7 @@ s.route_under(gate, resync, label="no - fix & re-sync", drop=70)
 **Pre-delivery checklist:**
 
 *The builder enforces these — turn the gates to `"error"`:*
-- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error")` — no overlaps, crossings, unlegended fills, text overflow, or overlapping captions
+- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error", label_fit_check="error")` — no overlaps, crossings, unlegended fills, text overflow, overlapping captions, or labels crowding their arrows
 - [ ] `Scene(seed=<int>)` if the diagram is committed (byte-stable output)
 
 *You must check these (the builder can't):*

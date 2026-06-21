@@ -1565,7 +1565,7 @@ def _render_stub(repo_name, comps, truncated):
     items_repr = ", ".join(repr(c) for c in items)
     cols = min(4, max(1, len(items)))
     # Size the grid cells to the longest component name so the live STRUCTURE layer
-    # never trips overflow_check (the stub ships with all four gates at "error").
+    # never trips overflow_check (the stub ships with all five gates at "error").
     longest = max((len(c) for c in items), default=12)
     gw = max(160, int(longest * 13 * 0.62) + 26)
     # Sanitize the repo name before it lands in the generated stub: a name with a
@@ -1593,7 +1593,7 @@ explain it, KEEP those, delete the rest, and fill in the real content:
   6. DATA/SCHEMA     if it produces a core record / output shape
 
 Colour = role: give each distinct meaning its own colour and add ONE legend()
-when colour is used. Keep all four save() gates at "error". Then run this file to
+when colour is used. Keep all five save() gates at "error". Then run this file to
 emit {safe}.excalidraw + {safe}.html.
 """
 {_STUB_IMPORT}
@@ -1644,7 +1644,7 @@ y = s.section("1 - STRUCTURE   the components")
 #          40, s.bounds()[3] + 50, title="Legend - colour = role")
 
 s.save({safe!r}, crossing_check="error", legend_check="error",
-       overflow_check="error", text_overlap_check="error")
+       overflow_check="error", text_overlap_check="error", label_fit_check="error")
 print("wrote {safe}.excalidraw + .html")
 '''
 
