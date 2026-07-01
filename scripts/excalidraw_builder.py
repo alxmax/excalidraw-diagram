@@ -1282,6 +1282,13 @@ class Scene:
           - label_fit_check    — an arrow's label is wider than the connector it
             sits on, so it crowds the arrowheads or spills onto the joined
             boxes. Bound arrow labels are excluded from the two checks above."""
+        # one scene, one save(): SKILL.md's "one file, many diagrams" rule —
+        # stack extra views in the SAME scene instead of saving twice.
+        if getattr(self, "_saved", False):
+            raise RuntimeError(
+                "save() already called on this Scene — one scene, one save(). "
+                "Stack additional views as labelled regions in the same scene "
+                "(use bounds() to start the next region below the previous one).")
         for name, val in (("crossing_check", crossing_check),
                           ("legend_check", legend_check),
                           ("overflow_check", overflow_check),
@@ -1368,6 +1375,7 @@ class Scene:
         p_html = os.path.join(out_dir, basename + ".html")
         with open(p_html, "w", encoding="utf-8") as f:
             f.write(_html_page(basename, scene))
+        self._saved = True
         return p_json, p_html
 
 
