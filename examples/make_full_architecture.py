@@ -189,9 +189,12 @@ pj, ph = s.save("full_architecture", out_dir=out_dir, crossing_check="error",
 
 # newline="\n" so the page is byte-identical whoever regenerates it (Python's
 # default translates "\n" to os.linesep, which made this file differ by platform).
-page = open(ph, encoding="utf-8").read()
+# `ph` is not a real path under the skill's own test suite, which runs every example
+# generator with save() stubbed out to keep the tests fast and file-free. Guard on
+# existence rather than assuming a file: the stamp is a post-step, not the diagram.
+page = open(ph, encoding="utf-8").read() if os.path.exists(ph) else ""
 tag = "<!-- generated-from: " + ", ".join(LINEAGE) + " -->"
-if tag not in page:
+if page and tag not in page:
     page = page.replace("<head>", "<head>" + chr(10) + tag, 1)
     with open(ph, "w", encoding="utf-8", newline=chr(10)) as f:
         f.write(page)
