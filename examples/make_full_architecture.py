@@ -165,11 +165,34 @@ s.glossary([
     ("gate", "pre-commit link-sync + drift + test-link check"),
     ("dogfood", "the repo runs reqmap on its own requirements/"),
     ("layer", "bus (foundation) / feature (composes bus) / need (stakeholder)"),
-    ("@v1", "git tag of the published GitHub Action"),
+    ("@v2", "major-alias git tag of the published GitHub Action"),
 ], 760, ly, title="Glossary")
+
+# The capabilities this poster actually draws. Stamped into the generated page as a
+# `generated-from:` tag so REQ-DOCBUNDLE-026 can do its job on the repo's own biggest
+# bundle: a contract change in any of these lists the poster as needing a redraw,
+# instead of the doc silently describing a version of the system that no longer exists.
+# Kept to what the diagram DEPICTS - a longer list would trade real signal for noise.
+LINEAGE = [
+    "CORE-PARSE-001",   # the requirement record, drawn as the DATA SCHEMA layer
+    "CORE-SCAN-002",    # member discovery, the scan arrow
+    "CORE-DRIFT-003",   # the lock + drift comparison
+    "REQ-CHECK-006",    # the gate box
+    "REQ-MAP-007",      # the generated artifacts
+    "REQ-VIEWER-007",   # the map viewer lane
+]
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "diagrams"
 pj, ph = s.save("full_architecture", out_dir=out_dir, crossing_check="error",
                 legend_check="error", overflow_check="error", text_overlap_check="error",
                 label_fit_check="error")
+
+# newline="\n" so the page is byte-identical whoever regenerates it (Python's
+# default translates "\n" to os.linesep, which made this file differ by platform).
+page = open(ph, encoding="utf-8").read()
+tag = "<!-- generated-from: " + ", ".join(LINEAGE) + " -->"
+if tag not in page:
+    page = page.replace("<head>", "<head>" + chr(10) + tag, 1)
+    with open(ph, "w", encoding="utf-8", newline=chr(10)) as f:
+        f.write(page)
 print("wrote full_architecture.excalidraw + .html")
