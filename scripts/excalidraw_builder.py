@@ -1370,10 +1370,15 @@ class Scene:
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
-        with open(p_json, "w", encoding="utf-8") as f:
+        # newline="\n" on every write: the default (None) translates "\n" to
+        # os.linesep, so this generator emitted CRLF on Windows and LF on Linux -
+        # the same scene, two different files. A committed diagram then differed by
+        # the platform that regenerated it, which is exactly what a reproducibility
+        # check cannot tolerate.
+        with open(p_json, "w", encoding="utf-8", newline="\n") as f:
             json.dump(scene, f, ensure_ascii=False, indent=2)
         p_html = os.path.join(out_dir, basename + ".html")
-        with open(p_html, "w", encoding="utf-8") as f:
+        with open(p_html, "w", encoding="utf-8", newline="\n") as f:
             f.write(_html_page(basename, scene))
         self._saved = True
         return p_json, p_html
@@ -1496,7 +1501,7 @@ def render_html(scene_path, out_dir=None):
     out_dir = out_dir or (os.path.dirname(os.path.abspath(scene_path)))
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, base + ".html")
-    with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(_html_page(base, scene))
     return out_path
 
@@ -1669,7 +1674,7 @@ def discover_stub(repo, out_path=None, max_components=20):
     repo_name = os.path.basename(os.path.abspath(repo)) or "repo"
     out_path = out_path or os.path.join(os.getcwd(), "make_diagram.py")
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(_render_stub(repo_name, comps, truncated))
     return out_path
 
