@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# implements: REQ-EXCALIDRAW-030
-# implements: REQ-EXCALIDRAW-031
-# implements: REQ-EXCALIDRAW-032
+# implements: ARCH-EXCALIDRAW-030
+# implements: ARCH-EXCALIDRAW-031
+# implements: ARCH-EXCALIDRAW-032
 """
 excalidraw_builder.py — build valid .excalidraw scenes (and a self-contained
 HTML viewer) from a small declarative API. Python standard library only.

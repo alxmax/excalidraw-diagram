@@ -169,17 +169,17 @@ s.glossary([
 ], 760, ly, title="Glossary")
 
 # The capabilities this poster actually draws. Stamped into the generated page as a
-# `generated-from:` tag so REQ-DOCBUNDLE-026 can do its job on the repo's own biggest
+# `generated-from:` tag so ARCH-DOCBUNDLE-026 can do its job on the repo's own biggest
 # bundle: a contract change in any of these lists the poster as needing a redraw,
 # instead of the doc silently describing a version of the system that no longer exists.
 # Kept to what the diagram DEPICTS - a longer list would trade real signal for noise.
 LINEAGE = [
-    "CORE-PARSE-001",   # the requirement record, drawn as the DATA SCHEMA layer
-    "CORE-SCAN-002",    # member discovery, the scan arrow
-    "CORE-DRIFT-003",   # the lock + drift comparison
-    "REQ-CHECK-006",    # the gate box
-    "REQ-MAP-007",      # the generated artifacts
-    "REQ-VIEWER-007",   # the map viewer lane
+    "ARCH-PARSE-001",   # the requirement record, drawn as the DATA SCHEMA layer
+    "ARCH-SCAN-002",    # member discovery, the scan arrow
+    "ARCH-DRIFT-003",   # the lock + drift comparison
+    "ARCH-CHECK-006",    # the gate box
+    "ARCH-MAP-007",      # the generated artifacts
+    "ARCH-VIEWER-007",   # the map viewer lane
 ]
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "diagrams"
