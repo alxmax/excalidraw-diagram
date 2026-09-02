@@ -43,7 +43,7 @@ y = s.section("1 - STRUCTURE   the plugin's containers")
 parts = s.row([
     ("reqmap.py\nparse-scan-gate-map", "engine"),
     ("3 skills\n(SKILL.md)", "skill"),
-    ("requirements/*.md\n36 specs - SSOT", "ssot"),
+    ("requirements/*.md\nSSOT - 3 levels", "ssot"),
     ("_map.* / _reqlock\ngenerated", "artifact"),
     ("app/ viewer\nReact", "viewer"),
 ], 80, y + 44, w=200, h=64, gap=28, font_size=13)
@@ -104,7 +104,7 @@ yb = yi + 150
 mkt = s.box(".claude-plugin\nmarketplace.json", 80, yb, w=190, h=64,
             fill="external", font_size=13)
 inst = s.box("/plugin install", 470, yb, w=170, h=64, fill="external", font_size=13)
-ci = s.box("git + CI\ncheck@v1 runs the gate", 840, yb, w=220, h=64,
+ci = s.box("git + CI\ncheck@v2 runs the gate", 840, yb, w=220, h=64,
            fill="external", font_size=13)
 s.arrow(mkt, inst, label="lists")
 s.label("distribution (left) + CI gating (right): every push runs the drift gate.",
@@ -125,23 +125,24 @@ y = s.section("6 - DATA SCHEMA   the requirement record it maintains")
 ys = y + 20
 record = s.box(
     "requirement (*.md)\n\n"
-    "id: REQ-...\n"
+    "id: SYS- | ARCH- | REQ-...\n"
+    "level: system | architecture | code\n"
     "status: draft | confirmed\n"
-    "layer: need | feature | bus\n"
+    "layer: need | aggregate | bus | feature\n"
     "depends_on: [ ... ]\n"
-    "satisfies: [ NEED-... ]\n"
+    "satisfies: [ SYS-... ]\n"
     "milestone\n\n"
-    "WHY / WHAT / WHERE / HOW",
-    560, ys, w=330, h=260, fill="ssot", font_size=12)
+    "sections: Description / Cases",
+    560, ys, w=350, h=260, fill="ssot", font_size=12)
 code = s.box("tagged source code\n# implements: / # tested-by:", 80, ys + 30,
              w=230, h=64, fill="enum", font_size=12)
 gate = s.box("reqmap gate\nlink-sync + drift", 80, ys + 170, w=230, h=64,
              fill="gate", font_size=13)
 s.arrow(code, record, label="tags link to")
 s.arrow(gate, record, label="checks")
-mapj = s.box("_map.json\n{engine_version,\nnodes, edges}", 1050, ys + 20,
+mapj = s.box("_map.json\n{engine_version,\nnodes, edges}", 1090, ys + 20,
              w=240, h=84, fill="artifact", font_size=12)
-lock = s.box("_reqlock.json\ncontent-hash baseline", 1100, ys + 180, w=240, h=64,
+lock = s.box("_reqlock.json\ncontent-hash baseline", 1140, ys + 180, w=240, h=64,
              fill="artifact", font_size=12)
 s.arrow(record, mapj, label="map builds")
 s.arrow(record, lock, label="gate hashes")
@@ -164,7 +165,8 @@ s.glossary([
     ("drift", "content hash of a spec vs _reqlock.json baseline"),
     ("gate", "pre-commit link-sync + drift + test-link check"),
     ("dogfood", "the repo runs reqmap on its own requirements/"),
-    ("layer", "bus (foundation) / feature (composes bus) / need (stakeholder)"),
+    ("layer", "bus (foundation) / feature (composes bus) / need (stakeholder) / aggregate (= its deps)"),
+    ("level", "system (SYS-) / architecture (ARCH-) / code (REQ-) - abstraction, orthogonal to layer"),
     ("@v2", "major-alias git tag of the published GitHub Action"),
 ], 760, ly, title="Glossary")
 
@@ -173,13 +175,19 @@ s.glossary([
 # bundle: a contract change in any of these lists the poster as needing a redraw,
 # instead of the doc silently describing a version of the system that no longer exists.
 # Kept to what the diagram DEPICTS - a longer list would trade real signal for noise.
+# The DATA SCHEMA box quotes the section names, the `level:` axis and the `layer:`
+# enum, so the requirements that define those are lineage too: the poster went stale
+# on all three (2026-09-03) while the six ids above stayed unchanged.
 LINEAGE = [
-    "ARCH-PARSE-001",   # the requirement record, drawn as the DATA SCHEMA layer
-    "ARCH-SCAN-002",    # member discovery, the scan arrow
-    "ARCH-DRIFT-003",   # the lock + drift comparison
-    "ARCH-CHECK-006",    # the gate box
-    "ARCH-MAP-007",      # the generated artifacts
-    "ARCH-VIEWER-007",   # the map viewer lane
+    "ARCH-PARSE-001",        # the requirement record, drawn as the DATA SCHEMA layer
+    "ARCH-SCAN-002",         # member discovery, the scan arrow
+    "ARCH-DRIFT-003",        # the lock + drift comparison
+    "ARCH-CHECK-006",        # the gate box
+    "ARCH-MAP-007",          # the generated artifacts
+    "ARCH-VIEWER-007",       # the map viewer lane
+    "ARCH-DESCRIPTION-057",  # the record's section names (Description / Cases)
+    "ARCH-LEVEL-051",        # the record's `level:` axis behind the SYS-/ARCH-/REQ- ids
+    "ARCH-TRACE-020",        # `satisfies:` and the need / aggregate layers
 ]
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "diagrams"
