@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: ARCH-EXCALIDRAW-030
+# tested-by: ARCH-EXCALIDRAW-030  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
 # tested-by: ARCH-EXCALIDRAW-031
 # tested-by: ARCH-EXCALIDRAW-032
 """Regression gate for the excalidraw-diagram skill.
@@ -96,7 +96,7 @@ def _install_cases():
 _install_cases()
 
 
-class TestBuilderUnits(unittest.TestCase):
+class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # tested-by: REQ-EXCALIDRAW-847
     """Unit coverage for the Phase-1 builder helpers (gaps closed after the
     consilium pre-merge review: the example tests prove clean layouts but did
     not exercise these paths directly)."""
@@ -125,7 +125,7 @@ class TestBuilderUnits(unittest.TestCase):
         s._move_node(nid, 10, 10)            # must not raise
         self.assertEqual(s._geom[nid][:2], (10, 10))
 
-    def test_save_crossing_check_error_raises(self):
+    def test_save_crossing_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1  # verifies: REQ-EXCALIDRAW-846#CASE-2
         s = eb.Scene(seed=99)
         left = s.box("L", 0, 0, 80, 40)
         s.box("M", 200, 0, 80, 40)
@@ -135,7 +135,7 @@ class TestBuilderUnits(unittest.TestCase):
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d, crossing_check="error")
 
-    def test_save_crossing_check_warn_default_does_not_raise(self):
+    def test_save_crossing_check_warn_default_does_not_raise(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1
         s = eb.Scene(seed=99)
         left = s.box("L", 0, 0, 80, 40)
         s.box("M", 200, 0, 80, 40)
@@ -170,12 +170,12 @@ class TestBuilderUnits(unittest.TestCase):
         s.legend([("input", "blue")], x=400, y=0)
         self.assertEqual(s.check_legend_coverage(), [eb._FILL["indigo"]])
 
-    def test_legend_coverage_noop_without_legend(self):
+    def test_legend_coverage_noop_without_legend(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3
         s = eb.Scene(seed=99)
         s.box("a", 0, 0, fill="indigo")            # no legend() -> nothing to enforce
         self.assertEqual(s.check_legend_coverage(), [])
 
-    def test_save_legend_check_error_raises_on_uncovered_fill(self):
+    def test_save_legend_check_error_raises_on_uncovered_fill(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3
         s = eb.Scene(seed=99)
         s.box("a", 0, 0, fill="blue")
         s.box("b", 0, 200, fill="violet")          # uncovered
@@ -218,7 +218,7 @@ class TestBuilderUnits(unittest.TestCase):
         self.assertEqual(s.check_text_overflow(), [],
                          "a box sized by fit_text must clear the overflow check")
 
-    def test_save_overflow_check_error_raises(self):
+    def test_save_overflow_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-4
         s = eb.Scene(seed=99)
         s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
         with tempfile.TemporaryDirectory() as d:
@@ -247,7 +247,7 @@ class TestBuilderUnits(unittest.TestCase):
         self.assertEqual(s.check_text_overlaps(), [],
                          "bound labels (box + legend rows) must not be flagged")
 
-    def test_save_text_overlap_check_error_raises(self):
+    def test_save_text_overlap_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-1
         s = eb.Scene(seed=99)
         s.label("caption one is here", 100, 100, size=14)
         s.label("caption two is here", 100, 103, size=14)
@@ -291,7 +291,7 @@ class TestBuilderUnits(unittest.TestCase):
         s.path([(0, 0), (5, 0)])               # tiny unbound connector
         self.assertEqual(s.check_short_arrows(), [])
 
-    def test_save_short_arrow_raises_by_default(self):
+    def test_save_short_arrow_raises_by_default(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
         s = eb.Scene(seed=99)
         a = s.box("A", 0, 0, 120, 60)
         b = s.box("B", 124, 0, 120, 60)
@@ -300,7 +300,7 @@ class TestBuilderUnits(unittest.TestCase):
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d)         # hard gate — raises with no opt-out
 
-    def test_save_short_arrow_allow_escape(self):
+    def test_save_short_arrow_allow_escape(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
         s = eb.Scene(seed=99)
         a = s.box("A", 0, 0, 120, 60)
         b = s.box("B", 124, 0, 120, 60)
@@ -328,7 +328,7 @@ class TestBuilderUnits(unittest.TestCase):
         s.arrow(a, b, label="ok")
         self.assertEqual(s.check_arrow_label_fit(), [])
 
-    def test_save_label_fit_error_raises(self):
+    def test_save_label_fit_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-2
         s = eb.Scene(seed=99)
         a = s.box("A", 0, 0, 120, 60)
         b = s.box("B", 240, 0, 120, 60)
@@ -387,13 +387,13 @@ class TestBuilderUnits(unittest.TestCase):
         self.assertEqual(s.bounds(), (10, 20, 100, 200))
 
 
-class TestCli(unittest.TestCase):
+class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
     """The render + discover CLI verbs, and the preserved no-arg smoke test."""
 
     BUILDER = os.path.join(HERE, "excalidraw_builder.py")
 
     # --- render: rebuild the .html viewer from an existing .excalidraw scene ---
-    def test_render_rebuilds_html_from_scene(self):
+    def test_render_rebuilds_html_from_scene(self):  # verifies: REQ-EXCALIDRAW-848#CASE-2
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=7)
             s.box("A", 0, 0)
@@ -441,7 +441,7 @@ class TestCli(unittest.TestCase):
             self.assertNotIn("node_modules", comps)
             self.assertEqual(comps, sorted(comps))           # deterministic
 
-    def test_discover_stub_is_runnable(self):
+    def test_discover_stub_is_runnable(self):  # verifies: REQ-EXCALIDRAW-848#CASE-3
         with tempfile.TemporaryDirectory() as d:
             os.makedirs(os.path.join(d, "core"))
             with open(os.path.join(d, "core", "engine.py"), "w") as f:
@@ -486,7 +486,7 @@ class TestCli(unittest.TestCase):
             self.assertIn("mod00", code)                         # first component kept
             self.assertNotIn("mod24", code)                      # 25th is past the cap of 20
 
-    def test_discover_stub_is_multilayer_poster(self):
+    def test_discover_stub_is_multilayer_poster(self):  # verifies: REQ-EXCALIDRAW-848#CASE-3
         # the stub scaffolds the adaptive multi-layer poster (live STRUCTURE +
         # commented optional layers) and carries the portable fallback import so
         # it runs from any repo, not only next to the builder / on PYTHONPATH.
@@ -506,14 +506,14 @@ class TestCli(unittest.TestCase):
         self.assertIn('overflow_check="error"', code)  # ships gates at error
 
     # --- the no-arg invocation must still be the smoke test (CI depends on it) ---
-    def test_cli_no_args_runs_selftest(self):
+    def test_cli_no_args_runs_selftest(self):  # verifies: REQ-EXCALIDRAW-848#CASE-1
         env = dict(os.environ, PYTHONPATH=HERE)
         r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER],
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("OK smoke test", r.stdout)
 
-    def test_cli_render_subcommand(self):
+    def test_cli_render_subcommand(self):  # verifies: REQ-EXCALIDRAW-848#CASE-2
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=8)
             s.box("X", 0, 0)
@@ -530,7 +530,7 @@ class TestCli(unittest.TestCase):
         code = eb._render_stub('a"""b\'c"d', ["x"], False)
         compile(code, "<stub>", "exec")            # must not raise SyntaxError
 
-    def test_cli_unknown_verb_exits_nonzero(self):
+    def test_cli_unknown_verb_exits_nonzero(self):  # verifies: REQ-EXCALIDRAW-848#CASE-4
         r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "bogus"],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 2)

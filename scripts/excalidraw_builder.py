@@ -101,10 +101,10 @@ def _hex(color, table, default):
     return table.get(color, default)
 
 
-class Scene:
+class Scene:  # implements: REQ-EXCALIDRAW-844
     """A drawing surface that accumulates elements and serialises them."""
 
-    def __init__(self, hand_drawn=None, font="normal", sketch=False,
+    def __init__(self, hand_drawn=None, font="normal", sketch=False,  # implements: REQ-EXCALIDRAW-845
                  background="#ffffff", seed=None, roles=None):
         """A drawing surface.
 
@@ -811,7 +811,7 @@ class Scene:
         scale = 0.5 / max(abs(dx) / w, abs(dy) / h)
         return cx + dx * scale, cy + dy * scale
 
-    def arrow(self, src, dst, *, label=None, dashed=False, color=None,
+    def arrow(self, src, dst, *, label=None, dashed=False, color=None,  # implements: REQ-EXCALIDRAW-845
               start=None, end="arrow", curve=False, gap=14, group=None):
         """A bound arrow from node `src` to node `dst`.
 
@@ -979,7 +979,7 @@ class Scene:
     # ====================================================================
     #  LAYOUT SANITY
     # ====================================================================
-    def check_overlaps(self, min_px=1.0):
+    def check_overlaps(self, min_px=1.0):  # implements: REQ-EXCALIDRAW-847
         """Return [(label_a, label_b), ...] for every pair of non-container
         nodes whose bounding boxes overlap by more than `min_px` in BOTH axes.
 
@@ -1027,7 +1027,7 @@ class Scene:
             return 0.0
         return (t1 - t0) * math.hypot(dx, dy)
 
-    def check_arrow_crossings(self, threshold=12.0, inset=4.0):
+    def check_arrow_crossings(self, threshold=12.0, inset=4.0):  # implements: REQ-EXCALIDRAW-846
         """Return [(src, dst, crossed), ...] where a bound arrow's straight
         src→dst path runs through an unrelated node by more than `threshold`
         pixels. Endpoints, containers and unbound arrows are ignored. This is a
@@ -1067,7 +1067,7 @@ class Scene:
                                  labels.get(nid, "?")))
         return hits
 
-    def check_legend_coverage(self):
+    def check_legend_coverage(self):  # implements: REQ-EXCALIDRAW-846
         """Colour-SSOT gate. Return the sorted list of fill colours used by real
         (non-container) nodes that the legend does NOT explain — `[]` when the
         legend covers every used fill, or when no `legend()` was rendered.
@@ -1096,7 +1096,7 @@ class Scene:
                 used.add(bg)
         return sorted(used - self._legend_colours)
 
-    def check_text_overflow(self, tol=2.0):
+    def check_text_overflow(self, tol=2.0):  # implements: REQ-EXCALIDRAW-846
         """Return [(label, text_w, box_w, text_h, box_h), ...] for every bound
         text whose rendered size exceeds its container SHAPE by more than `tol`
         px in either axis — a label too big for its box. The text then spills
@@ -1120,7 +1120,7 @@ class Scene:
                              round(th, 1), round(ch, 1)))
         return hits
 
-    def check_text_overlaps(self, tol=2.0):
+    def check_text_overlaps(self, tol=2.0):  # implements: REQ-EXCALIDRAW-847
         """Return [(text_a, text_b), ...] for pairs of FREE (unbound) text
         elements whose bounding boxes overlap by more than `tol` px in BOTH axes.
         Free text = a title()/section()/label() caption (containerId is None);
@@ -1144,7 +1144,7 @@ class Scene:
                                  (free[j].get("text") or "")[:40]))
         return hits
 
-    def check_short_arrows(self, min_len=24.0):
+    def check_short_arrows(self, min_len=24.0):  # implements: REQ-EXCALIDRAW-847
         """Return [(src_label, dst_label, length), ...] for every BOUND arrow
         whose drawn length (distance between its first and last point) is below
         `min_len` px — an arrow too short to render as a visible line.
@@ -1181,7 +1181,7 @@ class Scene:
                              round(length, 1)))
         return hits
 
-    def check_arrow_label_fit(self, min_stub=24.0):
+    def check_arrow_label_fit(self, min_stub=24.0):  # implements: REQ-EXCALIDRAW-847
         """Return [(label, stub_px), ...] for every BOUND arrow whose text label
         is too wide for the connector it sits on — leaving less than `min_stub`
         px of visible line on each side of the label.
@@ -1257,7 +1257,7 @@ class Scene:
             "files": {},
         }
 
-    def save(self, basename, out_dir=".", allow_overlap=False,
+    def save(self, basename, out_dir=".", allow_overlap=False,  # implements: REQ-EXCALIDRAW-845  # implements: REQ-EXCALIDRAW-846  # implements: REQ-EXCALIDRAW-847
              allow_short_arrows=False,
              crossing_check="warn", legend_check="warn",
              overflow_check="warn", text_overlap_check="warn",
@@ -1482,7 +1482,7 @@ window.addEventListener("load", function(){
 # (the skill's only authoring path stays Python; `build` from a declarative
 # spec was deliberately not added — it would fork a second, divergent path.)
 # ---------------------------------------------------------------------------
-def render_html(scene_path, out_dir=None):
+def render_html(scene_path, out_dir=None):  # implements: REQ-EXCALIDRAW-848
     """Regenerate the self-contained .html viewer from an existing .excalidraw
     scene file — e.g. one edited on excalidraw.com, for which there is no
     generator script to re-run. Writes <basename>.html beside the scene unless
@@ -1662,7 +1662,7 @@ print("wrote {safe}.excalidraw + .html")
 '''
 
 
-def discover_stub(repo, out_path=None, max_components=20):
+def discover_stub(repo, out_path=None, max_components=20):  # implements: REQ-EXCALIDRAW-848
     """Emit a runnable Python generator stub (default: ./make_diagram.py) seeded
     from a repo scan — one box per discovered component on a no-overlap grid, with
     TODO markers for the edges/grouping the author adds. Returns the stub path.
@@ -1690,7 +1690,7 @@ script against the Scene API, then run it. `render` re-emits the viewer for a sc
 edited elsewhere (e.g. excalidraw.com)."""
 
 
-def _selftest():
+def _selftest():  # verifies: REQ-EXCALIDRAW-844#CASE-4  # verifies: REQ-EXCALIDRAW-845#CASE-1  # verifies: REQ-EXCALIDRAW-845#CASE-2
     # smoke test — exercises auto-layout, the new Phase-1 helpers, and checks
     import tempfile
     out = os.path.join(tempfile.gettempdir(), "excd")
@@ -1771,7 +1771,7 @@ def _selftest():
     print("OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)")
 
 
-def _main(argv):
+def _main(argv):  # implements: REQ-EXCALIDRAW-848
     """CLI dispatch. No command -> self-test (so `python excalidraw_builder.py`
     stays the smoke test CI relies on). Returns a process exit code."""
     if not argv:
