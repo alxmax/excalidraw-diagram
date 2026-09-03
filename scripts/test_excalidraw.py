@@ -536,5 +536,114 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
         self.assertEqual(r.returncode, 2)
 
 
+import json as _json
+import ast as _ast
+
+try:
+    _STDLIB = set(sys.stdlib_module_names)   # Python 3.10+
+except AttributeError:
+    _STDLIB = {"json", "math", "os", "random", "sys", "time", "re", "io", "typing",
+               "itertools", "functools", "collections", "dataclasses", "pathlib",
+               "argparse", "subprocess", "tempfile", "unittest", "glob", "runpy",
+               "datetime", "hashlib", "textwrap", "string", "copy", "enum"}
+
+
+class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
+    def test_scene_save_produces_importable_json(self):  # verifies: REQ-EXCALIDRAW-844#CASE-1
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=1)
+            s.box("Hello", 0, 0)
+            p_json, _p_html = s.save("t1", out_dir=d)
+            with open(p_json, encoding="utf-8") as f:
+                scene = _json.load(f)
+        self.assertEqual(scene["type"], "excalidraw")
+        self.assertIn("elements", scene)
+        self.assertIsInstance(scene["elements"], list)
+        self.assertTrue(scene["elements"])
+
+    def test_shape_primitives_each_add_one_element_of_their_kind(self):  # verifies: REQ-EXCALIDRAW-844#CASE-2
+        s = eb.Scene(seed=1)
+        s.box("B", 0, 0)
+        s.ellipse("E", 300, 0)
+        s.diamond("D", 600, 0)
+        s.frame(0, 400, 100, 100)
+        types = [el["type"] for el in s.elements]
+        self.assertEqual(types.count("rectangle"), 2)   # box() + frame() both render "rectangle"
+        self.assertEqual(types.count("ellipse"), 1)
+        self.assertEqual(types.count("diamond"), 1)
+
+    def test_iso5807_aliases_add_elements_without_raising(self):  # verifies: REQ-EXCALIDRAW-844#CASE-3
+        s = eb.Scene(seed=1)
+        before = len(s.elements)
+        s.process("P", 0, 0)
+        s.terminator("T", 300, 0)
+        s.decision("D", 600, 0)
+        s.data("Dt", 0, 200)
+        s.predefined_process("PP", 300, 200)
+        s.preparation("Pr", 600, 200)
+        s.connector("C", 900, 0)
+        self.assertGreater(len(s.elements), before)
+        types = {el["type"] for el in s.elements}
+        self.assertIn("diamond", types)     # decision -> diamond
+        self.assertIn("ellipse", types)     # connector -> ellipse
+
+    def test_annotation_helpers_do_not_raise_and_save_succeeds(self):  # verifies: REQ-EXCALIDRAW-844#CASE-5
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=1)
+            s.box("A", 0, 0, fill="blue")
+            before = len(s.elements)
+            s.title("Title", 0, -60)
+            s.label("A label", 0, -20)
+            s.role("agent", "blue")
+            s.legend(x=0, y=200)
+            s.glossary([("TERM", "meaning")], 400, 200)
+            self.assertGreater(len(s.elements), before)   # title/label/legend/glossary all draw
+            p_json, p_html = s.save("ann", out_dir=d)
+            self.assertTrue(os.path.exists(p_json))
+            self.assertTrue(os.path.exists(p_html))
+
+    def test_seeded_scene_reproduces_byte_identical_output(self):  # verifies: REQ-EXCALIDRAW-845#CASE-3
+        def _build():
+            s = eb.Scene(seed=42)
+            a = s.box("A", 0, 0)
+            b = s.box("B", 300, 0)
+            s.arrow(a, b)
+            return s
+        with tempfile.TemporaryDirectory() as d:
+            p1, _h1 = _build().save("seed1", out_dir=d)
+            p2, _h2 = _build().save("seed2", out_dir=d)
+            with open(p1, "rb") as f:
+                c1 = f.read()
+            with open(p2, "rb") as f:
+                c2 = f.read()
+        self.assertEqual(c1, c2)
+
+    def test_builder_imports_stdlib_only(self):  # verifies: REQ-EXCALIDRAW-845#CASE-4
+        path = os.path.join(HERE, "excalidraw_builder.py")
+        with open(path, encoding="utf-8") as f:
+            tree = _ast.parse(f.read(), filename=path)
+        names = []
+        for node in tree.body:            # top-level only, not nested inside functions
+            if isinstance(node, _ast.Import):
+                names.extend(a.name.split(".")[0] for a in node.names)
+            elif isinstance(node, _ast.ImportFrom) and node.level == 0 and node.module:
+                names.append(node.module.split(".")[0])
+        self.assertTrue(names, "no top-level imports found")
+        for name in names:
+            self.assertIn(name, _STDLIB, "%r is not a stdlib module" % name)
+
+
+class CasesExcalidraw031(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-847
+    def test_check_arrow_crossings_returns_items_without_saving(self):  # verifies: REQ-EXCALIDRAW-847#CASE-4
+        s = eb.Scene(seed=99)
+        left = s.box("L", 0, 0, 80, 40)
+        s.box("M", 200, 0, 80, 40)
+        right = s.box("R", 400, 0, 80, 40)
+        s.arrow(left, right)                 # straight line passes through M
+        crossings = s.check_arrow_crossings()
+        self.assertEqual(len(crossings), 1)
+        self.assertEqual(s.check_text_overflow(), [])   # an unaffected check stays clean
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
