@@ -62,6 +62,7 @@ Colours accept either a hex string ("#a5d8ff") or a palette name:
     grey, red, orange, yellow, green, teal, blue, indigo, violet, pink.
 """
 
+import collections
 import json
 import math
 import os
@@ -99,6 +100,84 @@ def _hex(color, table, default):
     if color == "transparent":
         return "transparent"
     return table.get(color, default)
+
+
+_Advisory = collections.namedtuple(
+    "_Advisory", "mode_name run detail problem remedy warning")
+
+
+class Rect(object):  # implements: REQ-EXCALIDRAW-844
+    """The (x, y, w, h) box that travels together through nearly every builder
+    call. Holding the four as one value keeps width from being passed where
+    height belongs, and gives the layout code the derived edges it used to
+    recompute by hand at each call site."""
+
+    __slots__ = ("x", "y", "w", "h")
+
+    def __init__(self, x, y, w=0.0, h=0.0):
+        self.x, self.y = float(x), float(y)
+        self.w, self.h = float(w), float(h)
+
+    @property
+    def right(self):
+        """The x of the right edge."""
+        return self.x + self.w
+
+    @property
+    def bottom(self):
+        """The y of the bottom edge."""
+        return self.y + self.h
+
+    @property
+    def cx(self):
+        """The x of the centre."""
+        return self.x + self.w / 2.0
+
+    @property
+    def cy(self):
+        """The y of the centre."""
+        return self.y + self.h / 2.0
+
+    def centred(self, w, h):
+        """A `w` x `h` rect centred inside this one — how every bound label
+        is positioned within the shape that carries it."""
+        return Rect(self.x + (self.w - w) / 2.0, self.y + (self.h - h) / 2.0, w, h)
+
+    def __repr__(self):
+        return "Rect({:g}, {:g}, {:g}, {:g})".format(self.x, self.y, self.w, self.h)
+
+
+class Style(object):  # implements: REQ-EXCALIDRAW-844
+    """How one element is painted: the stroke/fill pair plus Excalidraw's four
+    stroke and fill modifiers and the group the element belongs to. `_base` took
+    these as seven separate parameters, but they are one decision, so they are
+    one value."""
+
+    __slots__ = ("stroke", "fill", "fill_style", "stroke_width", "stroke_style",
+                 "roundness", "group")
+
+    def __init__(self, stroke, fill="transparent", *, fill_style="solid",
+                 stroke_width=2, stroke_style="solid", roundness=None, group=None):
+        self.stroke, self.fill = stroke, fill
+        self.fill_style, self.stroke_width = fill_style, stroke_width
+        self.stroke_style, self.roundness = stroke_style, roundness
+        self.group = group
+
+    @property
+    def groups(self):
+        """The groupIds list Excalidraw expects — empty when ungrouped."""
+        return [self.group] if self.group else []
+
+
+class TextStyle(object):  # implements: REQ-EXCALIDRAW-844
+    """How one run of text is drawn: its size, colour and the two alignments.
+    They are chosen together and passed together, so they travel as one."""
+
+    __slots__ = ("size", "color", "align", "valign")
+
+    def __init__(self, size, color, align="center", valign="middle"):
+        self.size, self.color = size, color
+        self.align, self.valign = align, valign
 
 
 class Scene:  # implements: REQ-EXCALIDRAW-844
@@ -157,26 +236,25 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         return f"{prefix}-{self._n}-{self._rand():08x}"
 
     # -- base element ------------------------------------------------------
-    def _base(self, eid, etype, x, y, w, h, stroke, fill, *,
-              fill_style="solid", stroke_width=2, stroke_style="solid",
-              roundness=None, group=None):
-        groups = [group] if group else []
+    def _base(self, eid, etype, rect, style):
+        """The element dict every shape starts from: identity, geometry (`rect`)
+        and paint (`style`)."""
         return {
             "id": eid,
             "type": etype,
-            "x": float(x), "y": float(y),
-            "width": float(w), "height": float(h),
+            "x": rect.x, "y": rect.y,
+            "width": rect.w, "height": rect.h,
             "angle": 0,
-            "strokeColor": stroke,
-            "backgroundColor": fill,
-            "fillStyle": fill_style,
-            "strokeWidth": stroke_width,
-            "strokeStyle": stroke_style,
+            "strokeColor": style.stroke,
+            "backgroundColor": style.fill,
+            "fillStyle": style.fill_style,
+            "strokeWidth": style.stroke_width,
+            "strokeStyle": style.stroke_style,
             "roughness": self.roughness,
             "opacity": 100,
-            "groupIds": groups,
+            "groupIds": style.groups,
             "frameId": None,
-            "roundness": roundness,
+            "roundness": style.roundness,
             "seed": self._rand(),
             "version": 1,
             "versionNonce": self._rand(),
@@ -187,18 +265,17 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             "locked": False,
         }
 
-    def _text_el(self, text, x, y, w, h, *, size, color, container=None,
-                 align="center", valign="middle", group=None):
+    def _text_el(self, text, rect, ts, *, container=None, group=None):
+        """A text element filling `rect`, painted per the TextStyle `ts`."""
         eid = self._new_id("text")
         line_h = 1.25
-        el = self._base(eid, "text", x, y, w, h, color, "transparent",
-                        roundness=None, group=group)
+        el = self._base(eid, "text", rect, Style(ts.color, group=group))
         el.update({
             "text": text,
-            "fontSize": size,
+            "fontSize": ts.size,
             "fontFamily": self.font,
-            "textAlign": align,
-            "verticalAlign": valign,
+            "textAlign": ts.align,
+            "verticalAlign": ts.valign,
             "containerId": container,
             "originalText": text,
             "lineHeight": line_h,
@@ -260,22 +337,22 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         # ISO 5807 polygon symbols (data=parallelogram, preparation=hexagon) have
         # no native Excalidraw primitive — drawn as a closed line + free label,
         # with their bounding box registered for arrows/overlap.
+        rect = Rect(x, y, w, h)
         if shape in self._ISO_POLYGON:
-            return self._iso_polygon(shape, text, x, y, w, h, sc, bg,
-                                     font_size, font_color, group, container)
+            return self._iso_polygon(shape, text, rect, Style(sc, bg, group=group),
+                                     TextStyle(font_size, font_color), container)
 
         etype, roundness, deco = self._resolve_native(shape)
         cid = self._new_id(etype)
-        cont = self._base(cid, etype, x, y, w, h, sc, bg,
-                          roundness=roundness, group=group)
+        cont = self._base(cid, etype, rect,
+                          Style(sc, bg, roundness=roundness, group=group))
 
         if text:
             tcolor = _hex(font_color, _STROKE, _STROKE["black"])
             tw, th = self._text_wh(text, font_size)
-            tx = x + (w - tw) / 2
-            ty = y + (h - th) / 2
-            tel = self._text_el(text, tx, ty, tw, th, size=font_size,
-                                color=tcolor, container=cid, group=group)
+            tel = self._text_el(text, rect.centred(tw, th),
+                                TextStyle(font_size, tcolor),
+                                container=cid, group=group)
             cont["boundElements"].append({"type": "text", "id": tel["id"]})
             self.elements.append(cont)
             self.elements.append(tel)
@@ -331,18 +408,18 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
 
     def _vline(self, x, y, h, sc, group=None):
         """A bare vertical line element (decoration, not a tracked node)."""
-        el = self._base(self._new_id("line"), "line", x, y, 0.0, float(h),
-                        sc, "transparent", roundness=None, group=group)
+        el = self._base(self._new_id("line"), "line", Rect(x, y, 0.0, h),
+                        Style(sc, group=group))
         el.update({"points": [[0.0, 0.0], [0.0, float(h)]],
                    "lastCommittedPoint": None,
                    "startBinding": None, "endBinding": None,
                    "startArrowhead": None, "endArrowhead": None})
         return el
 
-    def _iso_polygon(self, shape, text, x, y, w, h, sc, bg,
-                     font_size, font_color, group, container):
+    def _iso_polygon(self, shape, text, rect, style, ts, container):
         """Draw an ISO 5807 polygon (parallelogram/hexagon) as a closed line
         with a free centered label; register the bounding box as the node."""
+        w, h = rect.w, rect.h
         if shape == "data":            # parallelogram — input / output
             sk = min(w * 0.18, 26.0)
             pts = [(sk, 0), (w, 0), (w - sk, h), (0, h), (sk, 0)]
@@ -353,8 +430,7 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         else:
             raise ValueError(f"unknown ISO polygon shape: {shape!r}")
         pid = self._new_id(shape)
-        el = self._base(pid, "line", x, y, w, h, sc, bg,
-                        roundness=None, group=group)
+        el = self._base(pid, "line", rect, style)
         el.update({"points": [[float(px), float(py)] for px, py in pts],
                    "lastCommittedPoint": None,
                    "startBinding": None, "endBinding": None,
@@ -362,16 +438,16 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                    "polygon": True})
         self.elements.append(el)
         if text:
-            tcolor = _hex(font_color, _STROKE, _STROKE["black"])
-            tw, th = self._text_wh(text, font_size)
+            tcolor = _hex(ts.color, _STROKE, _STROKE["black"])
+            tw, th = self._text_wh(text, ts.size)
             self.elements.append(
-                self._text_el(text, x + (w - tw) / 2, y + (h - th) / 2, tw, th,
-                              size=font_size, color=tcolor, group=group))
-        self._geom[pid] = (x, y, w, h, "rectangle")   # bbox for arrows/overlap
+                self._text_el(text, rect.centred(tw, th),
+                              TextStyle(ts.size, tcolor), group=style.group))
+        self._geom[pid] = (rect.x, rect.y, w, h, "rectangle")  # bbox for arrows/overlap
         if container:
             self._containers.add(pid)
         else:
-            self._nodes.append((pid, x, y, w, h,
+            self._nodes.append((pid, rect.x, rect.y, w, h,
                                 (text or "").split("\n")[0] or shape))
         return pid
 
@@ -487,9 +563,9 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         sc = _hex(stroke, _STROKE, _STROKE["black"])
         bg = _hex(fill, _FILL, "transparent")
         fid = self._new_id("frame")
-        el = self._base(fid, "rectangle", x, y, w, h, sc, bg,
-                        stroke_style="dashed" if dashed else "solid",
-                        roundness={"type": 3}, group=group)
+        el = self._base(fid, "rectangle", Rect(x, y, w, h),
+                        Style(sc, bg, stroke_style="dashed" if dashed else "solid",
+                              roundness={"type": 3}, group=group))
         self.elements.insert(0, el)          # behind everything so far
         self._geom[fid] = (x, y, w, h, "rectangle")
         self._containers.add(fid)            # frames hold children — never flag
@@ -515,9 +591,11 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                 out.append({"text": str(it)})
         return out
 
-    def _place(self, it, x, y, w, h, fill, font_size, shape):
-        return self.box(it.get("text", ""), x, y,
-                        it.get("w", w), it.get("h", h),
+    def _place(self, it, rect, fill, font_size, shape):
+        """Draw one normalised item at `rect`, letting the item override any of
+        the row/column/grid defaults it carries its own value for."""
+        return self.box(it.get("text", ""), rect.x, rect.y,
+                        it.get("w", rect.w), it.get("h", rect.h),
                         fill=it.get("fill", fill), stroke=it.get("stroke"),
                         shape=it.get("shape", shape),
                         font_size=it.get("font_size", font_size),
@@ -536,7 +614,7 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             )
         ids, cx = [], x
         for it in self._norm(items):
-            ids.append(self._place(it, cx, y, w, h, fill, font_size, shape))
+            ids.append(self._place(it, Rect(cx, y, w, h), fill, font_size, shape))
             cx += it.get("w", w) + gap
         if connect:
             for a, b in zip(ids, ids[1:]):
@@ -548,7 +626,7 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         """Place items top→down starting at (x, y); return their ids."""
         ids, cy = [], y
         for it in self._norm(items):
-            ids.append(self._place(it, x, cy, w, h, fill, font_size, shape))
+            ids.append(self._place(it, Rect(x, cy, w, h), fill, font_size, shape))
             cy += it.get("h", h) + gap
         if connect:
             for a, b in zip(ids, ids[1:]):
@@ -683,6 +761,20 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
     # ====================================================================
     #  POST-PLACEMENT ADJUSTMENT  (align / distribute already-placed nodes)
     # ====================================================================
+    def _element(self, eid):
+        """The element dict with this id, or None if it was never placed."""
+        for el in self.elements:
+            if el["id"] == eid:
+                return el
+        return None
+
+    def _bound_texts(self, el):
+        """The text elements bound to `el` — the labels that must travel with
+        it whenever it moves."""
+        ids = {be["id"] for be in el.get("boundElements", [])
+               if be.get("type") == "text"}
+        return [t for t in self.elements if t["id"] in ids]
+
     def _move_node(self, nid, new_x, new_y):
         """Move a placed node (and its bound label) to (new_x, new_y), keeping
         _geom and the overlap-check bookkeeping in sync — so a later save() still
@@ -691,18 +783,12 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         dx, dy = new_x - x, new_y - y
         if dx == 0 and dy == 0:
             return
-        for el in self.elements:
-            if el["id"] == nid:
-                el["x"] = float(new_x)
-                el["y"] = float(new_y)
-                for be in el.get("boundElements", []):
-                    if be.get("type") == "text":
-                        for t in self.elements:
-                            if t["id"] == be["id"]:
-                                t["x"] += dx
-                                t["y"] += dy
-                                break
-                break
+        el = self._element(nid)
+        if el is not None:
+            el["x"], el["y"] = float(new_x), float(new_y)
+            for label in self._bound_texts(el):
+                label["x"] += dx
+                label["y"] += dy
         self._geom[nid] = (new_x, new_y, w, h, shape)
         self._nodes = [
             (i, new_x, new_y, aw, ah, lab) if i == nid
@@ -710,37 +796,39 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             for (i, ax, ay, aw, ah, lab) in self._nodes
         ]
 
+    # One entry per alignment axis, so adding an axis is a table row rather than
+    # another branch: `target` reduces the selected geometries to the shared
+    # coordinate, `place` says where one node goes once that target is known.
+    # Each geometry is the (x, y, w, h, shape) tuple `_geom` stores.
+    _ALIGN_AXES = {
+        "left":     (lambda gs: min(g[0] for g in gs),
+                     lambda t, g: (t, g[1])),
+        "right":    (lambda gs: max(g[0] + g[2] for g in gs),
+                     lambda t, g: (t - g[2], g[1])),
+        "center_x": (lambda gs: sum(g[0] + g[2] / 2 for g in gs) / len(gs),
+                     lambda t, g: (t - g[2] / 2, g[1])),
+        "top":      (lambda gs: min(g[1] for g in gs),
+                     lambda t, g: (g[0], t)),
+        "bottom":   (lambda gs: max(g[1] + g[3] for g in gs),
+                     lambda t, g: (g[0], t - g[3])),
+        "center_y": (lambda gs: sum(g[1] + g[3] / 2 for g in gs) / len(gs),
+                     lambda t, g: (g[0], t - g[3] / 2)),
+    }
+
     def align(self, ids, axis="center_x"):
         """Align already-placed nodes on a shared edge/axis:
         left|right|center_x|top|bottom|center_y. Mutates positions in place and
         keeps the overlap check honest. Returns ids."""
-        g = {i: self._geom[i] for i in ids}
-        if axis == "left":
-            t = min(v[0] for v in g.values())
-            for i in ids:
-                self._move_node(i, t, g[i][1])
-        elif axis == "right":
-            t = max(v[0] + v[2] for v in g.values())
-            for i in ids:
-                self._move_node(i, t - g[i][2], g[i][1])
-        elif axis == "center_x":
-            c = sum(v[0] + v[2] / 2 for v in g.values()) / len(g)
-            for i in ids:
-                self._move_node(i, c - g[i][2] / 2, g[i][1])
-        elif axis == "top":
-            t = min(v[1] for v in g.values())
-            for i in ids:
-                self._move_node(i, g[i][0], t)
-        elif axis == "bottom":
-            t = max(v[1] + v[3] for v in g.values())
-            for i in ids:
-                self._move_node(i, g[i][0], t - g[i][3])
-        elif axis == "center_y":
-            c = sum(v[1] + v[3] / 2 for v in g.values()) / len(g)
-            for i in ids:
-                self._move_node(i, g[i][0], c - g[i][3] / 2)
-        else:
+        try:
+            target_of, placed_at = self._ALIGN_AXES[axis]
+        except KeyError:
             raise ValueError(f"align: unknown axis {axis!r}")
+        # dict first: a repeated id must count once toward a centre average,
+        # exactly as the per-axis branches did before.
+        geoms = {i: self._geom[i] for i in ids}
+        target = target_of(list(geoms.values()))
+        for i in ids:
+            self._move_node(i, *placed_at(target, geoms[i]))
         return ids
 
     def distribute(self, ids, axis="x", *, gap=40):
@@ -777,8 +865,8 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             x = x - tw / 2
         elif align == "right":
             x = x - tw
-        el = self._text_el(text, x, y, tw, th, size=size, color=c,
-                           align=align, valign="top", group=group)
+        el = self._text_el(text, Rect(x, y, tw, th),
+                           TextStyle(size, c, align, "top"), group=group)
         self.elements.append(el)
         return el["id"]
 
@@ -847,8 +935,9 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
         w = max(xs) - min(xs); h = max(ys) - min(ys)
 
-        el = self._base(aid, "arrow", ax, ay, w, h, sc, "transparent",
-                        roundness={"type": 2} if curve else None, group=group)
+        el = self._base(aid, "arrow", Rect(ax, ay, w, h),
+                        Style(sc, roundness={"type": 2} if curve else None,
+                              group=group))
         el.update({
             "points": pts,
             "lastCommittedPoint": None,
@@ -879,9 +968,9 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                 mx, my = pts[len(pts) // 2]
             lx = ax + mx - tw / 2
             ly = ay + my - th / 2
-            tel = self._text_el(label, lx, ly, tw, th, size=14,
-                                color=_STROKE["grey"], container=aid,
-                                group=group)
+            tel = self._text_el(label, Rect(lx, ly, tw, th),
+                                TextStyle(14, _STROKE["grey"]),
+                                container=aid, group=group)
             el["boundElements"].append({"type": "text", "id": tel["id"]})
             self.elements.append(tel)
         return aid
@@ -928,9 +1017,9 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                                    min(p[1] for p in points_abs),
                                    max(p[0] for p in points_abs),
                                    max(p[1] for p in points_abs)))
-        el = self._base(aid, "arrow", ax, ay,
-                        max(xs) - min(xs), max(ys) - min(ys),
-                        sc, "transparent", roundness=None, group=group)
+        el = self._base(aid, "arrow",
+                        Rect(ax, ay, max(xs) - min(xs), max(ys) - min(ys)),
+                        Style(sc, group=group))
         el.update({
             "points": rel, "lastCommittedPoint": None,
             "startBinding": None, "endBinding": None,
@@ -953,14 +1042,14 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             # under it, and bound arrows elsewhere must not false-positive on it).
             lw, lh = tw + 8, th + 4
             bg = self._base(self._new_id("rectangle"), "rectangle",
-                            lx - 4, ly - 2, lw, lh,
-                            "transparent", "#ffffff", roundness={"type": 3})
+                            Rect(lx - 4, ly - 2, lw, lh),
+                            Style("transparent", "#ffffff", roundness={"type": 3}))
             self.elements.append(bg)
             self._nodes.append((bg["id"], lx - 4, ly - 2, lw, lh,
                                 f'label "{label.splitlines()[0][:24]}"'))
             self.elements.append(
-                self._text_el(label, lx, ly, tw, th,
-                              size=13, color=_STROKE["grey"], group=group))
+                self._text_el(label, Rect(lx, ly, tw, th),
+                              TextStyle(13, _STROKE["grey"]), group=group))
         return aid
 
     def route_under(self, src, dst, *, drop=70, label=None, color="grey",
@@ -1289,13 +1378,20 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                 "save() already called on this Scene — one scene, one save(). "
                 "Stack additional views as labelled regions in the same scene "
                 "(use bounds() to start the next region below the previous one).")
-        for name, val in (("crossing_check", crossing_check),
-                          ("legend_check", legend_check),
-                          ("overflow_check", overflow_check),
-                          ("text_overlap_check", text_overlap_check),
-                          ("label_fit_check", label_fit_check)):
+        modes = {"crossing_check": crossing_check, "legend_check": legend_check,
+                 "overflow_check": overflow_check,
+                 "text_overlap_check": text_overlap_check,
+                 "label_fit_check": label_fit_check}
+        for name, val in modes.items():
             if val not in ("warn", "error"):
                 raise ValueError(f"{name} must be 'warn' or 'error'")
+        self._run_hard_checks(allow_overlap, allow_short_arrows)
+        self._run_advisory_checks(modes)
+        return self._write(basename, out_dir)
+
+    def _run_hard_checks(self, allow_overlap, allow_short_arrows):
+        """The two defects that raise unless explicitly allowed: shapes sitting
+        on each other, and a connector too short to draw a visible line."""
         hits = self.check_overlaps()
         if hits and not allow_overlap:
             pairs = "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits)
@@ -1311,62 +1407,76 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                 f"(only the label would show): {pairs}. Move the shapes farther "
                 "apart (~60px+ of clear space), or pass allow_short_arrows=True "
                 "if intentional.")
-        crossings = self.check_arrow_crossings()
-        if crossings:
-            seen = sorted({f"{a}->{b} crosses '{c}'" for a, b, c in crossings})
-            detail = "; ".join(seen)
-            if crossing_check == "error":
-                raise ValueError(
-                    "arrow(s) run through an unrelated box: " + detail
-                    + ". Reroute with route_under()/path(), move the box, or "
-                    "pass crossing_check='warn' to downgrade to a warning.")
-            print("WARNING: arrow(s) may run through an unrelated box — "
-                  "reroute or move the box: " + detail)
-        uncovered = self.check_legend_coverage()
-        if uncovered:
-            detail = ", ".join(uncovered)
-            if legend_check == "error":
-                raise ValueError(
-                    "fill colour(s) used but missing from the legend: " + detail
-                    + ". Add a legend() entry for each, recolour the box to a "
-                    "legended colour, or pass legend_check='warn' to downgrade "
-                    "to a warning.")
-            print("WARNING: fill colour(s) used but not in the legend — a "
-                  "reader decoding by the key gets no meaning for: " + detail)
-        overflows = self.check_text_overflow()
-        if overflows:
-            detail = "; ".join(f"'{lab}' (text {tw}px in {cw}px box)"
-                               for lab, tw, cw, _th, _ch in overflows)
-            if overflow_check == "error":
-                raise ValueError(
-                    "bound text overflows its box: " + detail
-                    + ". Widen the box (or wrap the label with fit_text()), or "
-                    "pass overflow_check='warn' to downgrade to a warning.")
-            print("WARNING: bound text is bigger than its box — the label spills "
-                  "outside the shape: " + detail)
-        text_overlaps = self.check_text_overlaps()
-        if text_overlaps:
-            detail = "; ".join(f"'{a}' overlaps '{b}'" for a, b in text_overlaps)
-            if text_overlap_check == "error":
-                raise ValueError(
-                    "free text label(s) overlap: " + detail
-                    + ". Move the caption/header apart, or pass "
-                    "text_overlap_check='warn' to downgrade to a warning.")
-            print("WARNING: free text label(s) overlap (a caption/header sits on "
-                  "another): " + detail)
-        label_fits = self.check_arrow_label_fit()
-        if label_fits:
-            detail = "; ".join(f"'{lab}' ({stub:g}px line each side)"
-                               for lab, stub in label_fits)
-            if label_fit_check == "error":
-                raise ValueError(
-                    "arrow label(s) too wide for their connector (the label "
-                    "crowds or spills onto the boxes): " + detail
-                    + ". Widen the gap between the shapes, shorten/wrap the "
-                    "label, or pass label_fit_check='warn' to downgrade to a "
-                    "warning.")
-            print("WARNING: arrow label(s) wider than their connector — the "
-                  "label crowds the arrowheads or spills onto a box: " + detail)
+
+    def _advisory_checks(self):
+        """One row per warn-or-raise check, in report order. `detail` renders the
+        checker's hits into the string both messages embed; `problem` and `remedy`
+        bracket that detail in the raised error; `warning` is printed instead when
+        the mode is "warn". A new check is a row here, not another block in
+        `save`."""
+        return (
+            _Advisory(
+                "crossing_check", self.check_arrow_crossings,
+                lambda hits: "; ".join(
+                    sorted({f"{a}->{b} crosses '{c}'" for a, b, c in hits})),
+                "arrow(s) run through an unrelated box: ",
+                ". Reroute with route_under()/path(), move the box, or "
+                "pass crossing_check='warn' to downgrade to a warning.",
+                "WARNING: arrow(s) may run through an unrelated box — "
+                "reroute or move the box: "),
+            _Advisory(
+                "legend_check", self.check_legend_coverage,
+                lambda hits: ", ".join(hits),
+                "fill colour(s) used but missing from the legend: ",
+                ". Add a legend() entry for each, recolour the box to a "
+                "legended colour, or pass legend_check='warn' to downgrade "
+                "to a warning.",
+                "WARNING: fill colour(s) used but not in the legend — a "
+                "reader decoding by the key gets no meaning for: "),
+            _Advisory(
+                "overflow_check", self.check_text_overflow,
+                lambda hits: "; ".join(f"'{lab}' (text {tw}px in {cw}px box)"
+                                       for lab, tw, cw, _th, _ch in hits),
+                "bound text overflows its box: ",
+                ". Widen the box (or wrap the label with fit_text()), or "
+                "pass overflow_check='warn' to downgrade to a warning.",
+                "WARNING: bound text is bigger than its box — the label spills "
+                "outside the shape: "),
+            _Advisory(
+                "text_overlap_check", self.check_text_overlaps,
+                lambda hits: "; ".join(f"'{a}' overlaps '{b}'" for a, b in hits),
+                "free text label(s) overlap: ",
+                ". Move the caption/header apart, or pass "
+                "text_overlap_check='warn' to downgrade to a warning.",
+                "WARNING: free text label(s) overlap (a caption/header sits on "
+                "another): "),
+            _Advisory(
+                "label_fit_check", self.check_arrow_label_fit,
+                lambda hits: "; ".join(f"'{lab}' ({stub:g}px line each side)"
+                                       for lab, stub in hits),
+                "arrow label(s) too wide for their connector (the label "
+                "crowds or spills onto the boxes): ",
+                ". Widen the gap between the shapes, shorten/wrap the "
+                "label, or pass label_fit_check='warn' to downgrade to a "
+                "warning.",
+                "WARNING: arrow label(s) wider than their connector — the "
+                "label crowds the arrowheads or spills onto a box: "),
+        )
+
+    def _run_advisory_checks(self, modes):
+        """Run each advisory check and apply its mode: raise under "error",
+        print under "warn"."""
+        for chk in self._advisory_checks():
+            hits = chk.run()
+            if not hits:
+                continue
+            detail = chk.detail(hits)
+            if modes[chk.mode_name] == "error":
+                raise ValueError(chk.problem + detail + chk.remedy)
+            print(chk.warning + detail)
+
+    def _write(self, basename, out_dir):
+        """Write <basename>.excalidraw + .html and return both paths."""
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
@@ -1387,9 +1497,10 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
 # ---------------------------------------------------------------------------
 # Self-contained HTML viewer (renders the scene with the official component)
 # ---------------------------------------------------------------------------
-def _html_page(title, scene):
-    scene_js = json.dumps(scene)
-    tmpl = """<!DOCTYPE html>
+# The self-contained viewer page. It is a template, not logic: keeping it as a
+# module constant leaves `_html_page` as the one substitution step it performs,
+# and puts the markup where a reader looks for markup.
+_HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -1473,8 +1584,12 @@ window.addEventListener("load", function(){
 </body>
 </html>
 """
-    return (tmpl.replace("__SCENE__", scene_js)
-                .replace("__TITLE__", title))
+
+
+def _html_page(title, scene):
+    """The scene rendered into the standalone viewer page."""
+    return (_HTML_TEMPLATE.replace("__SCENE__", json.dumps(scene))
+                          .replace("__TITLE__", title))
 
 
 # ---------------------------------------------------------------------------
@@ -1567,32 +1682,12 @@ except ModuleNotFoundError:                      # not alongside the stub — fi
     from excalidraw_builder import Scene'''
 
 
-def _render_stub(repo_name, comps, truncated):
-    """Render the text of a runnable, multi-LAYER poster stub from the components.
-
-    The stub is a single-file architecture poster: layer 1 (STRUCTURE) is live and
-    runs as-is; layers 2-6 are commented scaffolds the author keeps/deletes per what
-    the repo actually needs. This encodes the skill's adaptive recipe — pick the
-    layers that explain THIS repo, emit them all in one file."""
-    items = comps or ["component-a", "component-b"]
-    items_repr = ", ".join(repr(c) for c in items)
-    cols = min(4, max(1, len(items)))
-    # Size the grid cells to the longest component name so the live STRUCTURE layer
-    # never trips overflow_check (the stub ships with all five gates at "error").
-    longest = max((len(c) for c in items), default=12)
-    gw = max(160, int(longest * 13 * 0.62) + 26)
-    # Sanitize the repo name before it lands in the generated stub: a name with a
-    # quote (or `"""`) would otherwise break the stub's docstring / string literals
-    # on filesystems that allow such characters. Also keeps the saved filename sane.
-    safe = "".join(c if (c.isalnum() or c in " _-.") else "_" for c in repo_name) or "diagram"
-    notes = []
-    if not comps:
-        notes.append("# NOTE: no source components auto-detected — placeholders shown; replace them.")
-    if truncated:
-        notes.append("# NOTE: repo had more components than the cap; only the first are shown.")
-    note_block = ("\n".join(notes) + "\n") if notes else ""
-    return f'''#!/usr/bin/env python3
-"""Diagram generator for {safe} — scaffolded by `excalidraw_builder.py discover`.
+# The generator this command scaffolds. It is emitted source, not logic, so it
+# lives here as a template with __NAME__ placeholders — the same style as
+# _HTML_TEMPLATE, and brace-safe, which matters because the stub is Python and
+# is full of { } that a .format() template would force us to double.
+_STUB_TEMPLATE = '''#!/usr/bin/env python3
+"""Diagram generator for __SAFE__ — scaffolded by `excalidraw_builder.py discover`.
 
 A multi-LAYER architecture poster in ONE file. Layer 1 (STRUCTURE) is live and
 runnable now; layers 2-6 are commented scaffolds. DECIDE PER REPO which layers
@@ -1607,18 +1702,18 @@ explain it, KEEP those, delete the rest, and fill in the real content:
 
 Colour = role: give each distinct meaning its own colour and add ONE legend()
 when colour is used. Keep all five save() gates at "error". Then run this file to
-emit {safe}.excalidraw + {safe}.html.
+emit __SAFE__.excalidraw + __SAFE__.html.
 """
-{_STUB_IMPORT}
+__IMPORT__
 
 s = Scene(seed=7)
-s.title({safe!r}, 40, -70, size=30)
+s.title(__SAFE_REPR__, 40, -70, size=30)
 s.label("What it is, how it runs, how it integrates. Left -> right within a layer.",
         40, -34, size=14, align="left")
 
 # ---- 1 - STRUCTURE (live: one box per discovered component) ----------------
 y = s.section("1 - STRUCTURE   the components")
-{note_block}nodes = s.grid([{items_repr}], 40, y, {cols}, w={gw}, h=64, font_size=13)
+__NOTES__nodes = s.grid([__ITEMS__], 40, y, __COLS__, w=__GW__, h=64, font_size=13)
 # TODO: group related nodes -> s.enclose([nodes[0], nodes[1]], label="subsystem")
 
 # ---- 2 - WORKFLOW (optional: uncomment if the repo has a pipeline) ----------
@@ -1656,10 +1751,44 @@ y = s.section("1 - STRUCTURE   the components")
 # s.legend([("component", "blue"), ("external system", "grey")],
 #          40, s.bounds()[3] + 50, title="Legend - colour = role")
 
-s.save({safe!r}, crossing_check="error", legend_check="error",
+s.save(__SAFE_REPR__, crossing_check="error", legend_check="error",
        overflow_check="error", text_overlap_check="error", label_fit_check="error")
-print("wrote {safe}.excalidraw + .html")
+print("wrote __SAFE__.excalidraw + .html")
 '''
+
+
+def _render_stub(repo_name, comps, truncated):
+    """Render the text of a runnable, multi-LAYER poster stub from the components.
+
+    The stub is a single-file architecture poster: layer 1 (STRUCTURE) is live and
+    runs as-is; layers 2-6 are commented scaffolds the author keeps/deletes per what
+    the repo actually needs. This encodes the skill's adaptive recipe — pick the
+    layers that explain THIS repo, emit them all in one file."""
+    items = comps or ["component-a", "component-b"]
+    items_repr = ", ".join(repr(c) for c in items)
+    cols = min(4, max(1, len(items)))
+    # Size the grid cells to the longest component name so the live STRUCTURE layer
+    # never trips overflow_check (the stub ships with all five gates at "error").
+    longest = max((len(c) for c in items), default=12)
+    gw = max(160, int(longest * 13 * 0.62) + 26)
+    # Sanitize the repo name before it lands in the generated stub: a name with a
+    # quote (or `"""`) would otherwise break the stub's docstring / string literals
+    # on filesystems that allow such characters. Also keeps the saved filename sane.
+    safe = "".join(c if (c.isalnum() or c in " _-.") else "_" for c in repo_name) or "diagram"
+    notes = []
+    if not comps:
+        notes.append("# NOTE: no source components auto-detected — placeholders shown; replace them.")
+    if truncated:
+        notes.append("# NOTE: repo had more components than the cap; only the first are shown.")
+    note_block = ("\n".join(notes) + "\n") if notes else ""
+    return (_STUB_TEMPLATE
+            .replace("__IMPORT__", _STUB_IMPORT)
+            .replace("__SAFE_REPR__", repr(safe))
+            .replace("__SAFE__", safe)
+            .replace("__NOTES__", note_block)
+            .replace("__ITEMS__", items_repr)
+            .replace("__COLS__", str(cols))
+            .replace("__GW__", str(gw)))
 
 
 def discover_stub(repo, out_path=None, max_components=20):  # implements: REQ-EXCALIDRAW-848
