@@ -24,3 +24,17 @@ __pycache__/**
 # carry. They are not unchecked: CI runs every generator, and a generator that
 # raises fails the build.
 plugin/skills/excalidraw-diagram/examples/**
+
+# The diagram generators behind README.md's pictures. Same argument as the worked
+# examples above: a generator demonstrates the builder rather than implementing a
+# capability, so drafting a requirement for one claims a promise it does not carry.
+# CI runs each of them, so they are checked, just not owned by a requirement.
+docs/make_*.py
+
+# The contract and its reference files. SKILL.md is already in the engine's ignore
+# bucket by name; these are the same contract (SKILL.universal.md) and the material
+# that illustrates it. What they describe is owned by ARCH-EXCALIDRAW-030/031/034 —
+# drafting a second requirement from the prose would state the same obligation twice,
+# which is the merge smell the engine warns about, seeded on purpose.
+plugin/skills/excalidraw-diagram/SKILL.universal.md
+plugin/skills/excalidraw-diagram/references/**

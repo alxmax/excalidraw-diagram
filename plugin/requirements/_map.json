@@ -771,6 +771,68 @@
       "covered": 5
     },
     {
+      "id": "ARCH-RELEASE-035",
+      "layer": "feature",
+      "level": "architecture",
+      "status": "confirmed",
+      "area": "ARCH",
+      "title": "A released version reaches the people who installed it",
+      "intent": "The version number is written in three places and read from one of them. If a bump misses a copy, nothing errors, no test fails and the release looks shipped — it simply never arrives: an installed plugin keeps running the old build because the marketplace entry still advertises the old number. That is the worst shape a defect can take, silent and invisible from inside the repo, so it gets a check of its own rather than a line in a checklist.",
+      "contract": [
+        "`scripts/check_versions.py` compares the version in `plugin/.claude-plugin/plugin.json`, which is the source of truth, against both copies in `.claude-plugin/marketplace.json`: the top-level one and the one inside `plugins[]`.",
+        "The script exits 0 when all three agree, and 1 when any disagrees. A failure names every copy that disagreed and what it says, so the reader fixes the right file instead of hunting.",
+        "`--fix` rewrites `marketplace.json` from `plugin.json` instead of failing, because the copies exist only to be identical and retyping them by hand is where the mismatch came from.",
+        "CI runs this check on every push and every pull request, so a mismatch cannot be merged."
+      ],
+      "verify": [],
+      "notes": [
+        "The count in the success line is three: `plugin.json` plus the two marketplace copies. It is printed so a future manifest that adds a fourth copy shows up as a changed number rather than passing unnoticed.",
+        "This is a repo capability, not a shipped one: `scripts/` sits outside `plugin/` and never reaches an installed copy. It satisfies the diagram need indirectly — a fix nobody receives is a fix that did not happen."
+      ],
+      "current_impl": [
+        "`scripts/check_versions.py`.",
+        "`scripts/test_check_versions.py`.",
+        "The `versions` job in `.github/workflows/ci.yml`."
+      ],
+      "acc": [
+        "CASE-1 — — three matching versions pass Given  `plugin.json` at a version and both `marketplace.json` copies at the same one When   `check_versions.py` runs Then   it exits 0 and prints that the version agrees across three locations",
+        "CASE-2 — — a missed copy fails, and says which one Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind When   `check_versions.py` runs Then   it exits 1 and its output names the top-level copy and the value it holds",
+        "CASE-3 — — a missed copy inside plugins[] fails too Given  both top-level versions agreeing while the entry in `plugins[]` lags When   `check_versions.py` runs Then   it exits 1 and its output names that entry",
+        "CASE-4 — — `--fix` makes them agree instead of failing Given  a marketplace manifest whose two copies both disagree with `plugin.json` When   `check_versions.py --fix` runs Then   it exits 0, and a second run with no flag exits 0 because the file now agrees"
+      ],
+      "accept": "CASE-1 — three matching versions pass\n  Given  `plugin.json` at a version and both `marketplace.json` copies at the same one\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across three locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  both top-level versions agreeing while the entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  a marketplace manifest whose two copies both disagree with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the file now agrees",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "SYS-DIAGRAM-001"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "scripts/check_versions.py:2"
+        },
+        {
+          "role": "tested-by",
+          "loc": "scripts/test_check_versions.py:2"
+        },
+        {
+          "role": "tested-by",
+          "loc": "scripts/test_check_versions.py:33"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": "v1.1.0",
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
+    },
+    {
       "id": "REQ-EXCALIDRAW-849",
       "layer": "feature",
       "level": "code",
@@ -867,7 +929,8 @@
         "ARCH-EXCALIDRAW-031",
         "ARCH-EXCALIDRAW-032",
         "ARCH-EXCALIDRAW-033",
-        "ARCH-EXCALIDRAW-034"
+        "ARCH-EXCALIDRAW-034",
+        "ARCH-RELEASE-035"
       ],
       "members": [],
       "test_exempt": null,
@@ -946,6 +1009,10 @@
     [
       "REQ-EXCALIDRAW-851",
       "ARCH-EXCALIDRAW-034"
+    ],
+    [
+      "ARCH-RELEASE-035",
+      "SYS-DIAGRAM-001"
     ],
     [
       "REQ-EXCALIDRAW-849",
@@ -1136,26 +1203,18 @@
     }
   ],
   "design": {
-    "files": 4,
-    "clean_files": 1,
-    "score": 25,
+    "files": 2,
+    "clean_files": 0,
+    "score": 0,
     "candidates": {
       "encapsulation": 41,
       "abstraction": 3,
       "inheritance": 0,
       "polymorphism": 0,
       "metrics": 1,
-      "standards": 4
+      "standards": 3
     },
     "findings": [
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "docs/make_gate_demo.py",
-        "line": 41,
-        "name": "make_gate_demo.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 41"
-      },
       {
         "pillar": "standards",
         "kind": "file-too-long",
@@ -1536,7 +1595,7 @@
         "pillar": "standards",
         "kind": "missing-docstring",
         "file": "scripts/check_versions.py",
-        "line": 34,
+        "line": 35,
         "name": "main",
         "detail": "1 public definition(s) without a docstring: main"
       }
@@ -1554,11 +1613,11 @@
   },
   "health": {
     "score": 100,
-    "total": 14,
-    "healthy": 14,
-    "confirmed": 14,
-    "implemented": 13,
-    "tested": 13,
+    "total": 15,
+    "healthy": 15,
+    "confirmed": 15,
+    "implemented": 14,
+    "tested": 14,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,
