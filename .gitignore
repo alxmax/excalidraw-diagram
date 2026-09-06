@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# Generated diagrams are regenerable and never committed: run an example
+# generator with an output directory of your choosing.
+diagrams/
+out/
+*.excalidraw
+!plugin/skills/excalidraw-diagram/references/*.excalidraw

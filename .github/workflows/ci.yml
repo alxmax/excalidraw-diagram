@@ -1,0 +1,86 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The builder's own smoke run is the primary check: `python excalidraw_builder.py`
+  # renders every shape, runs the auto-layout, and asserts nothing overlaps. It exits
+  # non-zero on a layout regression, which a unit test alone would not catch.
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: tests (py${{ matrix.python }} on ${{ matrix.os }})
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      # -X utf8 on every invocation: the suites print non-ASCII and fail on cp1252.
+      - name: Builder smoke + layout self-checks
+        working-directory: plugin/skills/excalidraw-diagram/scripts
+        run: python -X utf8 excalidraw_builder.py
+      - name: Builder unit tests
+        working-directory: plugin/skills/excalidraw-diagram/scripts
+        run: python -X utf8 -m unittest test_excalidraw -v
+
+  # Every example generator must still run. They are the skill's worked examples, so a
+  # generator that raises is a documentation defect, not just a broken script. They write
+  # into a temp dir: nothing generated is ever committed.
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Every example generator runs
+        run: |
+          out=$(mktemp -d)
+          for f in plugin/skills/excalidraw-diagram/examples/make_*.py; do
+            echo "::group::$f"
+            python -X utf8 "$f" "$out"
+            echo "::endgroup::"
+          done
+          ls -la "$out"
+          test -n "$(ls -A "$out")" || { echo "::error::no diagram was written"; exit 1; }
+
+  # plugin.json is the single source of truth for the version; the marketplace manifest
+  # must agree with it in both places, or an installed copy never sees the update.
+  versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Manifest versions agree
+        run: python scripts/check_versions.py
+
+  # A version bump with no CHANGELOG section ships a release nobody can read.
+  changelog:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: A version bump carries a CHANGELOG entry
+        run: |
+          base="origin/${{ github.base_ref }}"
+          if git diff --quiet "$base" -- plugin/.claude-plugin/plugin.json; then
+            echo "plugin.json unchanged - nothing to check"; exit 0
+          fi
+          v=$(python -c "import json;print(json.load(open('plugin/.claude-plugin/plugin.json'))['version'])")
+          grep -q -- "\`v$v\`" CHANGELOG.md || {
+            echo "::error::plugin.json is at $v but CHANGELOG.md has no \`v$v\` heading"; exit 1; }
+          echo "CHANGELOG has an entry for v$v"
