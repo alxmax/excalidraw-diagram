@@ -1,5 +1,5 @@
 {
-  "engine_version": "2026-09-06.15",
+  "engine_version": "2026-09-07",
   "repo": "alxmax/excalidraw-diagram",
   "nodes": [
     {
@@ -1112,6 +1112,10 @@
           "help": "With --risk: expand every bucket instead of the top few."
         },
         {
+          "flag": "--i18n",
+          "help": "List the translations the configured LANGUAGE (en | ro | both, in requirements/_config.json) expects and does not have, missing or stale. --json emits each entry's source fields and cache key for whoever translates."
+        },
+        {
           "flag": "--untagged",
           "help": "With --risk: report membership-tag coverage per directory."
         },
@@ -1184,12 +1188,12 @@
     {
       "name": "clarify",
       "group": "author",
-      "summary": "Ask what a requirement has not answered yet: vague terms with no threshold, numbers with no unit, unbounded quantities, clauses with no case, a missing failure path. Read-only, always exit 0, never a gate rule. --decompose is the write half of the same question: it scaffolds an over-scoped requirement's clauses into requirements of their own. Run it before implementing, so the ambiguity is resolved in the requirement instead of guessed in code.",
+      "summary": "Ask what a requirement has not answered yet: vague terms with no threshold, numbers with no unit, unbounded quantities, clauses with no case, a missing failure path. Read-only, always exit 0, never a gate rule. --decompose is the write half of the same question: it splits a requirement into code-rung children along the bold group labels in its Description (--apply writes), or scaffolds one draft per over-long clause when it has none. Run it before implementing, so the ambiguity is resolved in the requirement instead of guessed in code.",
       "arg": "AREA-NAME-NNN",
       "flags": [
         {
           "flag": "--decompose",
-          "help": "Scaffold an over-scoped requirement's clauses into requirements of their own."
+          "help": "Split a requirement into code-rung children along the bold group labels its author wrote in the Description; --apply writes them and rewrites the parent. With no id, every requirement carrying groups. A requirement with no groups falls back to one draft per over-long clause."
         },
         {
           "flag": "--levels",
