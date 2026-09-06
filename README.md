@@ -100,7 +100,7 @@ plugin/skills/excalidraw-diagram/
   references/worked_examples.md   the repo-poster recipe and ❌ → ✅ variants
   references/excalidraw_format.md the file-format notes the builder encodes
   examples/make_*.py        four worked generators, each runnable on its own
-plugin/requirements/        the skill's requirement corpus, checked in CI
+requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py + *.png      the generators behind the pictures in this README
 scripts/check_versions.py   plugin.json and marketplace.json must agree
 ```

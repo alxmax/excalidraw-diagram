@@ -10,4 +10,4 @@ out/
 
 # The rendered viewer is regenerable from the committed _map.json and the vendored
 # template, so it is built rather than committed (the upstream ADR-0034 posture).
-plugin/requirements/_map.html
+requirements/_map.html
