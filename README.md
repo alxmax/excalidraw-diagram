@@ -76,5 +76,8 @@ across with it, so `git log` still reaches the original commits.
 
 ## Licence
 
-BUSL-1.1 — see [LICENSE](LICENSE). Free for non-commercial and internal use; commercial
-redistribution needs a licence from the author.
+MIT — see [LICENSE](LICENSE). Use it, change it, ship it.
+
+Note this is looser than [requirement-manager](https://github.com/alxmax/requirement-manager),
+where this code lived until the split: that repo is BUSL-1.1. The skill was relicensed on
+the way out, deliberately — a diagram builder is more useful to more people unencumbered.
