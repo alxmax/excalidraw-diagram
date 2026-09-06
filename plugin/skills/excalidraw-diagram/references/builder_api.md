@@ -108,7 +108,7 @@ the API above.
   ],
   "groups": [{"label": "the service", "members": ["api", "auth"]}],
   "legend": true,                      // -> legend() from `roles`
-  "glossary": [["SSOT", "single source of truth"]]
+  "glossary": [["back edge", "an arrow returning to an earlier step"]]
 }
 ```
 

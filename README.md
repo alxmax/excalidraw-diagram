@@ -120,22 +120,25 @@ Every CI run also uploads a **gallery** artifact with each example's `.excalidra
 
 ### `make_explainer.py` — a teaching diagram for a reader with no context
 
-The shape the skill reaches for when someone says "explain how X works": read top to bottom,
-everyday words, a legend and a glossary that decode everything on the canvas.
+The shape the skill reaches for when someone says "explain how X works" — here turned on
+the skill itself: read top to bottom, everyday words, a legend and a glossary that decode
+everything on the canvas.
 
 ![Explainer](docs/explainer.png)
 
 ### `make_full_architecture.py` — a layered repo poster
 
-Structure, workflow, integration, data schema: one stacked section per layer, one legend
-for the whole poster.
+This repo, drawn by the builder it documents. Structure, workflows, integration, data
+schema: one stacked section per layer, a lane per authoring path, one legend for the
+whole poster.
 
 ![Full architecture](docs/full_architecture.png)
 
 ### `make_iso5807_flowchart.py` — an ISO 5807 flowchart
 
-Terminator, preparation, data, process, predefined process, decision and on-page connector,
-all through `pipeline()`.
+How the builder turns a description into two files, in standard flowchart symbols:
+terminator, preparation, data, process, predefined process, decision and the on-page
+connector.
 
 ![ISO 5807 flowchart](docs/iso5807_flowchart.png)
 

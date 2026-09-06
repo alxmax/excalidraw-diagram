@@ -1936,7 +1936,7 @@ except ModuleNotFoundError:                      # not alongside the stub — fi
     # the plugin, that cached build may lag an unreleased local edit to the builder.
     import glob, re
     _cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                          "cache", "requirement-manager", "requirement-manager")
+                          "cache", "excalidraw-diagram", "excalidraw-diagram")
     _hits = glob.glob(os.path.join(_cache, "*", "skills",
                                    "excalidraw-diagram", "scripts"))
     if not _hits:
@@ -2078,7 +2078,7 @@ def scene_from_json(spec_path, out_dir=None, basename=None):  # implements: REQ-
                      "dashed": false}],
           "groups": [{"label": "the service", "members": ["api", "auth"]}],
           "legend": true,                   // render the roles key
-          "glossary": [["SSOT", "single source of truth"]]
+          "glossary": [["back edge", "an arrow returning to an earlier step"]]
         }
 
     Returns the (.excalidraw, .html) paths. Raises ValueError on a malformed

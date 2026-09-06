@@ -43,6 +43,18 @@ and the ❌ → ✅ variants). `SKILL.universal.md` is 200 lines and back in ste
 - `ARCH-EXCALIDRAW-033` cited a quality rule by its number; it now cites the rule
   by name, because renumbering the list would have broken the link silently.
 
+**The skill no longer explains someone else's tool.** Three of the four worked
+generators drew requirement-manager — the repo this skill was split out of. They
+draw *this* one now: `make_explainer.py` teaches what the skill is,
+`make_full_architecture.py` is the layered poster of this plugin, and
+`make_iso5807_flowchart.py` is the builder's own path from a description to two
+files. The ❌ → ✅ variants and the quality rules stopped citing `reqmap.py` as
+their example of a real identifier.
+
+That pass found one real defect: the stub `discover` writes into an external repo
+still resolved the builder from the **old** plugin's cache path, so every
+scaffold it generated would have failed to import. Fixed.
+
 **The no-arg smoke test, `render` and `discover` are untouched.**
 
 ## plugin `v1.0.1` — 2026-09-06
