@@ -59,7 +59,11 @@ CASE-3 — the asker who does not know the system gets a picture that teaches it
 **Notes**
 - The obligation on plain words and a stated reading direction is checked by
   reading the diagram, not by a gate: no check can tell "Auth service" from
-  "Service A". Rule 5 of the Quality rules in `SKILL.md` is the prose form.
+  "Service A". Its prose form is the `SKILL.md` quality rule named
+  **Real identifiers as node names, jargon in a glossary** — kept on one line
+  here so `grep` can confirm the rule still exists. Cite it by name, never by
+  number: renumbering the list would break this link silently, and neither the
+  gate, the tests nor a line count would notice.
 - `legend_check` ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend
   is rendered, a fill it does not decode fails the build.
 

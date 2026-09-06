@@ -2,6 +2,7 @@
 # tested-by: ARCH-EXCALIDRAW-030  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
 # tested-by: ARCH-EXCALIDRAW-031
 # tested-by: ARCH-EXCALIDRAW-032
+# tested-by: ARCH-EXCALIDRAW-034
 # tested-by: ARCH-EXCALIDRAW-033
 """Regression gate for the excalidraw-diagram skill.
 
@@ -15,6 +16,7 @@ It executes each examples/*.py with a stubbed Scene.save (nothing is written to
 disk) and asserts on the in-memory scene.
 """
 import glob
+import json
 import os
 import runpy
 import subprocess
@@ -705,3 +707,266 @@ class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
         # it opens with a title-sized heading
         sizes = [e.get("fontSize", 0) for e in s.elements if e.get("type") == "text"]
         self.assertTrue(any(sz >= 28 for sz in sizes), "explainer has no title")
+
+# ---------------------------------------------------------------------------
+# pack() — the auto-layout. Every case here asserts the SEVEN inspection checks
+# come back empty, because a layout that merely runs is worth nothing: the whole
+# point of computing the coordinates is that the result is readable. The graphs
+# below are deliberately different shapes, so passing is not one hand-tuned case.
+# ---------------------------------------------------------------------------
+def _all_gates(scene):
+    """Every inspection check, as {name: offenders} for the ones that fired."""
+    checks = {
+        "overlaps": scene.check_overlaps(),
+        "crossings": scene.check_arrow_crossings(),
+        "text_overflow": scene.check_text_overflow(),
+        "text_overlaps": scene.check_text_overlaps(),
+        "short_arrows": scene.check_short_arrows(),
+        "label_fit": scene.check_arrow_label_fit(),
+        "legend": scene.check_legend_coverage(),
+    }
+    return {name: hits for name, hits in checks.items() if hits}
+
+
+class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
+    """pack() lays a described graph out cleanly, whatever shape it has."""
+
+    # a 13-node graph with two groups, a back edge and a layer-skipping edge —
+    # the shape the requirement's CASE-1 names
+    NODES = [{"id": i} for i in
+             ("ask", "match", "read", "write", "layer", "order", "route",
+              "gate", "scene", "html", "edit", "ci", "ship")]
+    EDGES = [
+        {"src": "ask", "dst": "match", "label": "triggers"},
+        {"src": "match", "dst": "read"},
+        {"src": "read", "dst": "write"},
+        {"src": "write", "dst": "layer", "label": "no coordinates"},
+        {"src": "layer", "dst": "order"},
+        {"src": "order", "dst": "route"},
+        {"src": "route", "dst": "gate"},
+        {"src": "gate", "dst": "scene", "label": "clean"},
+        {"src": "gate", "dst": "html"},
+        {"src": "gate", "dst": "write", "label": "not clean: try again"},   # back
+        {"src": "scene", "dst": "edit", "label": "still editable"},
+        {"src": "scene", "dst": "ci"},
+        {"src": "ci", "dst": "ship"},
+        {"src": "ask", "dst": "ship", "dashed": True},                      # skips
+    ]
+    GROUPS = [{"label": "what the skill decides", "members": ["read", "write"]},
+              {"label": "what pack() does", "members": ["layer", "order", "route"]}]
+
+    def test_layered_graph_with_feedback_edge_is_gate_clean(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-1
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=11)
+            placed = s.pack(self.NODES, self.EDGES, direction=direction,
+                            groups=self.GROUPS)
+            self.assertEqual(len(placed), len(self.NODES))
+            self.assertEqual(_all_gates(s), {}, "%s layout is not clean" % direction)
+
+    def test_a_second_feedback_graph_of_a_different_shape_is_also_clean(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-2
+        # the point of this one: it is NOT the graph the implementation was
+        # tuned against. Two back edges at different spans, one forward edge that
+        # skips a layer, no groups. A layout that only passes on its own example
+        # is the "three toy graphs pass, the fourth does not" failure.
+        nodes = [{"id": c} for c in "abcdefg"]
+        edges = [{"src": "a", "dst": "b"}, {"src": "b", "dst": "c"},
+                 {"src": "c", "dst": "d"}, {"src": "d", "dst": "e"},
+                 {"src": "e", "dst": "f"}, {"src": "f", "dst": "g"},
+                 {"src": "f", "dst": "b", "label": "retry"},        # mid-flow back
+                 {"src": "g", "dst": "a", "label": "restart"},      # full-span back
+                 {"src": "b", "dst": "e", "label": "fast path"}]    # forward skip
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=12)
+            s.pack(nodes, edges, direction=direction)
+            self.assertEqual(_all_gates(s), {}, "%s layout is not clean" % direction)
+
+    def test_back_edges_are_routed_never_drawn_straight(self):  # verifies: REQ-EXCALIDRAW-851#CASE-1
+        # barycenter ordering minimises edge-EDGE crossings; the gate measures an
+        # edge cutting through a BOX. Routing is what keeps them apart, so assert
+        # the back edge really became an unbound routed path and not an arrow.
+        s = eb.Scene(seed=13)
+        s.pack([{"id": "a"}, {"id": "b"}, {"id": "c"}],
+               [{"src": "a", "dst": "b"}, {"src": "b", "dst": "c"},
+                {"src": "c", "dst": "a", "label": "loop"}])
+        arrows = [e for e in s.elements if e.get("type") == "arrow"]
+        bound = [e for e in arrows if e.get("startBinding") and e.get("endBinding")]
+        routed = [e for e in arrows if not e.get("startBinding")]
+        self.assertEqual(len(bound), 2, "the two forward edges stay bound arrows")
+        self.assertEqual(len(routed), 1, "the back edge is routed, not bound")
+        self.assertGreater(len(routed[0]["points"]), 2, "a routed edge turns corners")
+
+    def test_a_long_chain_does_not_recurse(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-3  # verifies: REQ-EXCALIDRAW-851#CASE-2
+        # longest-path layering over 200 chained nodes: Kahn's algorithm, so the
+        # depth of the graph never becomes the depth of the Python stack
+        s = eb.Scene(seed=14)
+        nodes = [{"id": "n%d" % i} for i in range(200)]
+        edges = [{"src": "n%d" % i, "dst": "n%d" % (i + 1)} for i in range(199)]
+        s.pack(nodes, edges)
+        self.assertEqual(_all_gates(s), {})
+
+    def test_disconnected_components_and_an_isolated_node(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-3
+        s = eb.Scene(seed=15)
+        s.pack([{"id": c} for c in "abcdef"] + [{"id": "solo"}],
+               [{"src": "a", "dst": "b"}, {"src": "b", "dst": "c"},
+                {"src": "d", "dst": "e"}, {"src": "e", "dst": "f"}])
+        self.assertEqual(_all_gates(s), {})
+
+    def test_a_wide_fan_out_and_back_in(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-3
+        s = eb.Scene(seed=16)
+        fan = [{"id": "w%d" % i} for i in range(12)]
+        s.pack([{"id": "in"}] + fan + [{"id": "out"}],
+               [{"src": "in", "dst": w["id"]} for w in fan]
+               + [{"src": w["id"], "dst": "out"} for w in fan])
+        self.assertEqual(_all_gates(s), {})
+
+    def test_a_long_edge_label_widens_its_gap_instead_of_crowding(self):  # verifies: REQ-EXCALIDRAW-851#CASE-3
+        s = eb.Scene(seed=17)
+        s.pack([{"id": "a"}, {"id": "b"}],
+               [{"src": "a", "dst": "b",
+                 "label": "consumers receive it eventually"}])
+        self.assertEqual(s.check_arrow_label_fit(), [])
+
+    def test_roles_and_shapes_reach_the_elements(self):  # verifies: REQ-EXCALIDRAW-851#CASE-4
+        s = eb.Scene(seed=18, roles={"gate": "orange"})
+        s.pack([{"id": "a", "label": "start", "kind": "terminator"},
+                {"id": "b", "label": "ok?", "kind": "decision", "fill": "gate"}],
+               [{"src": "a", "dst": "b"}])
+        kinds = [e["type"] for e in s.elements if e.get("type") in ("rectangle", "diamond")]
+        self.assertIn("diamond", kinds, "kind='decision' must reach the element")
+        self.assertIn(eb._FILL["orange"], [e.get("backgroundColor") for e in s.elements])
+
+    def test_a_malformed_graph_raises_valueerror_not_something_else(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-4  # verifies: REQ-EXCALIDRAW-851#CASE-5
+        for build, why in (
+                (lambda: eb.Scene(seed=19).pack([], []), "no nodes"),
+                (lambda: eb.Scene(seed=19).pack([{"id": "a"}, {"id": "a"}], []),
+                 "duplicate id"),
+                (lambda: eb.Scene(seed=19).pack([{"id": "a"}],
+                                                [{"src": "a", "dst": "ghost"}]),
+                 "edge to an unknown node"),
+                (lambda: eb.Scene(seed=19).pack([{"id": "a"}],
+                                                [{"src": "a", "dst": "a"}]),
+                 "self-edge"),
+                (lambda: eb.Scene(seed=19).pack([{"id": ""}], []), "empty id"),
+                (lambda: eb.Scene(seed=19).pack([{"id": "a"}], [], direction="up"),
+                 "bad direction"),
+        ):
+            with self.assertRaises(ValueError, msg=why):
+                build()
+
+
+class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-850
+    """`scene --from-json` — the coordinate-free path from JSON to both files."""
+
+    BUILDER = os.path.join(HERE, "excalidraw_builder.py")
+
+    GRAPH = {
+        "name": "from_json",
+        "title": "A described system",
+        "subtitle": "Left to right.",
+        "direction": "LR",
+        "seed": 21,
+        "roles": {"step": "blue", "gate": "orange"},
+        "nodes": [{"id": "a", "label": "ingest", "fill": "step"},
+                  {"id": "b", "label": "parse", "fill": "step"},
+                  {"id": "c", "label": "ok?", "fill": "gate", "kind": "decision"},
+                  {"id": "d", "label": "store", "fill": "step"}],
+        "edges": [{"src": "a", "dst": "b"}, {"src": "b", "dst": "c"},
+                  {"src": "c", "dst": "d", "label": "yes"},
+                  {"src": "c", "dst": "a", "label": "no: read it again"}],
+        "groups": [{"label": "the pipeline", "members": ["a", "b"]}],
+        "legend": True,
+        "glossary": [["gate", "a check that can fail the build"]],
+    }
+
+    def _write(self, directory, spec, name="graph.json"):
+        path = os.path.join(directory, name)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(spec, fh)
+        return path
+
+    def test_a_coordinate_free_graph_writes_both_files_gate_clean(self):  # verifies: REQ-EXCALIDRAW-850#CASE-1
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._write(d, self.GRAPH)
+            pj, ph = eb.scene_from_json(spec, out_dir=d)
+            self.assertTrue(os.path.exists(pj) and os.path.exists(ph))
+            with open(pj, encoding="utf-8") as fh:
+                scene = json.load(fh)
+            self.assertEqual(scene["type"], "excalidraw")
+            self.assertTrue(scene["elements"])
+            # nothing in the description carried a coordinate; every x/y in the
+            # scene was computed by pack()
+            described = json.dumps(self.GRAPH)
+            self.assertNotIn('"x"', described)
+            self.assertNotIn('"y"', described)
+            self.assertTrue(any("x" in e for e in scene["elements"]))
+
+    def test_the_same_description_twice_is_byte_identical(self):  # verifies: REQ-EXCALIDRAW-850#CASE-2
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._write(d, self.GRAPH)
+            first, _ = eb.scene_from_json(spec, out_dir=os.path.join(d, "one"))
+            second, _ = eb.scene_from_json(spec, out_dir=os.path.join(d, "two"))
+            with open(first, "rb") as fa, open(second, "rb") as fb:
+                self.assertEqual(fa.read(), fb.read())
+
+    def test_the_legend_and_glossary_land_below_the_diagram(self):  # verifies: REQ-EXCALIDRAW-850#CASE-3
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._write(d, self.GRAPH)
+            pj, _ = eb.scene_from_json(spec, out_dir=d)
+            with open(pj, encoding="utf-8") as fh:
+                texts = [e.get("text") for e in json.load(fh)["elements"]
+                         if e.get("type") == "text"]
+            self.assertIn("A described system", texts)
+            self.assertIn("What the colours mean", texts)
+            self.assertIn("gate — a check that can fail the build", texts)
+
+    def test_a_malformed_description_exits_1_with_one_readable_line(self):  # verifies: REQ-EXCALIDRAW-850#CASE-4
+        cases = {
+            "not-json": "{oops",
+            "not-an-object": "[1, 2, 3]",
+            "no-nodes": '{"nodes": []}',
+            "unknown-node": '{"nodes": [{"id": "a"}], "edges": [{"src": "a", "dst": "z"}]}',
+            "edges-not-a-list": '{"nodes": [{"id": "a"}], "edges": 3}',
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, body in cases.items():
+                path = os.path.join(d, name + ".json")
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(body)
+                r = subprocess.run(
+                    [sys.executable, "-X", "utf8", self.BUILDER,
+                     "scene", "--from-json", path, "-o", d],
+                    capture_output=True, text=True)
+                self.assertEqual(r.returncode, 1, "%s: %s" % (name, r.stderr))
+                self.assertTrue(r.stderr.startswith("error: "), r.stderr)
+                self.assertNotIn("Traceback", r.stderr)
+
+    def test_the_verb_without_a_spec_exits_2_with_usage(self):  # verifies: REQ-EXCALIDRAW-850#CASE-5
+        for args in (["scene"], ["scene", "--from-json"], ["scene", "-o", "out"]):
+            r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER] + args,
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn("usage:", r.stderr)
+
+    def test_the_cli_writes_both_files_and_the_other_verbs_are_untouched(self):  # verifies: REQ-EXCALIDRAW-850#CASE-1
+        with tempfile.TemporaryDirectory() as d:
+            spec = self._write(d, self.GRAPH)
+            r = subprocess.run(
+                [sys.executable, "-X", "utf8", self.BUILDER,
+                 "scene", "--from-json", spec, "-o", d],
+                capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(os.path.exists(os.path.join(d, "from_json.excalidraw")))
+            self.assertTrue(os.path.exists(os.path.join(d, "from_json.html")))
+        # the no-arg smoke test is still the smoke test, and an unknown verb
+        # still exits 2 — adding a verb must not shadow either
+        env = dict(os.environ, PYTHONPATH=HERE)
+        smoke = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER],
+                               capture_output=True, text=True, env=env)
+        self.assertEqual(smoke.returncode, 0, smoke.stderr)
+        self.assertIn("OK smoke test", smoke.stdout)
+        unknown = subprocess.run(
+            [sys.executable, "-X", "utf8", self.BUILDER, "frobnicate"],
+            capture_output=True, text=True)
+        self.assertEqual(unknown.returncode, 2, unknown.stderr)
+        self.assertIn("scene", unknown.stderr)   # the new verb is offered
+

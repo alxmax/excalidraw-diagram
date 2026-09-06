@@ -1,9 +1,25 @@
 {
   "_schema": 1,
   "accepted": {
+    "ARCH-EXCALIDRAW-032": {
+      "hash": "ae42616891ef",
+      "reason": "wording"
+    },
     "ARCH-EXCALIDRAW-033": {
       "hash": "b2f679144c3f",
       "reason": "ARCH-EXCALIDRAW-033: CASE-3 marked inspection-only"
+    },
+    "ARCH-EXCALIDRAW-034": {
+      "hash": "21b13f139a51",
+      "reason": "four CLI verbs, and the auto-layout they reach"
+    },
+    "REQ-EXCALIDRAW-850": {
+      "hash": "9408a7a9cb69",
+      "reason": "four CLI verbs, and the auto-layout they reach"
+    },
+    "REQ-EXCALIDRAW-851": {
+      "hash": "53788ea2b943",
+      "reason": "four CLI verbs, and the auto-layout they reach"
     }
   }
 }

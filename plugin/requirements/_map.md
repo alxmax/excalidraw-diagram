@@ -1,9 +1,9 @@
 ---
-generated: 2026-09-06
+generated: 2026-09-07
 engine: 2026-09-06.15
-nodes: 11
-edges: 3
-design OOP: 0/100 (0/2 source files without a design candidate)
+nodes: 14
+edges: 5
+design OOP: 25/100 (1/4 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -16,13 +16,15 @@ _The spec hierarchy: system needs -> architecture requirements (`satisfies:`), e
 graph TD
   ARCH_EXCALIDRAW_030[ARCH-EXCALIDRAW-030<br/>2 code]
   ARCH_EXCALIDRAW_031[ARCH-EXCALIDRAW-031<br/>2 code]
-  ARCH_EXCALIDRAW_032[ARCH-EXCALIDRAW-032<br/>1 code]
+  ARCH_EXCALIDRAW_032[ARCH-EXCALIDRAW-032<br/>2 code]
   ARCH_EXCALIDRAW_033[ARCH-EXCALIDRAW-033<br/>1 code]
+  ARCH_EXCALIDRAW_034[ARCH-EXCALIDRAW-034<br/>1 code]
   SYS_DIAGRAM_001[[SYS-DIAGRAM-001]]
   SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_030
   SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_031
   SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_032
   SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_033
+  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_034
   style SYS_DIAGRAM_001 stroke-width:3px
 ```
 
@@ -37,6 +39,7 @@ graph LR
     ARCH_EXCALIDRAW_031["Excalidraw quality gates<br><small>ARCH-EXCALIDRAW-031</small>"]
     ARCH_EXCALIDRAW_032["Excalidraw builder CLI verbs<br><small>ARCH-EXCALIDRAW-032</small>"]
     ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
+    ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
   end
   subgraph sg_REQ["REQ"]
     REQ_EXCALIDRAW_844["Shape, layout, and annotation vocabulary<br><small>REQ-EXCALIDRAW-844</small>"]
@@ -44,6 +47,8 @@ graph LR
     REQ_EXCALIDRAW_846["Named gates: crossing, legend, and overflow checks<br><small>REQ-EXCALIDRAW-846</small>"]
     REQ_EXCALIDRAW_847["Text-overlap, label-fit gates, and the two hard gates<br><small>REQ-EXCALIDRAW-847</small>"]
     REQ_EXCALIDRAW_848["Smoke test, render and discover verbs<br><small>REQ-EXCALIDRAW-848</small>"]
+    REQ_EXCALIDRAW_850["The scene verb: a described graph becomes both files<br><small>REQ-EXCALIDRAW-850</small>"]
+    REQ_EXCALIDRAW_851["pack(): layering, ordering, and routing what will not go straight<br><small>REQ-EXCALIDRAW-851</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
   end
   subgraph sg_misc["misc"]
@@ -52,6 +57,8 @@ graph LR
   ARCH_EXCALIDRAW_031 --> ARCH_EXCALIDRAW_030
   ARCH_EXCALIDRAW_032 --> ARCH_EXCALIDRAW_030
   ARCH_EXCALIDRAW_033 --> ARCH_EXCALIDRAW_030
+  ARCH_EXCALIDRAW_034 --> ARCH_EXCALIDRAW_030
+  ARCH_EXCALIDRAW_034 --> ARCH_EXCALIDRAW_031
 ```
 
 ## Requirement-to-Code
@@ -78,8 +85,13 @@ graph LR
   ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
   ARCH_EXCALIDRAW_033 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5_669["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:5-669"]
-  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5_669
+  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_671["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-671"]
+  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_671
+  ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
+  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
+  ARCH_EXCALIDRAW_034 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6
+  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"]
+  ARCH_EXCALIDRAW_034 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5
   SYS_DIAGRAM_001["Stakeholder need — a picture of the system, without a drawing session<br><small>SYS-DIAGRAM-001</small>"]
   style SYS_DIAGRAM_001 fill:#fee,stroke:#c66
 ```
@@ -90,8 +102,8 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 
 ```mermaid
 graph LR
-  a_ARCH["ARCH<br><small>4 caps</small>"]
-  a_REQ["REQ<br><small>6 caps</small>"]
+  a_ARCH["ARCH<br><small>5 caps</small>"]
+  a_REQ["REQ<br><small>8 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 

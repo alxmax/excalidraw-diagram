@@ -43,16 +43,30 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.x"
+      # docs/make_*.py are in here too: they generate the pictures README.md
+      # embeds, so a builder change that breaks one makes the README stale.
       - name: Every example generator runs
         run: |
           out=$(mktemp -d)
-          for f in plugin/skills/excalidraw-diagram/examples/make_*.py; do
+          for f in plugin/skills/excalidraw-diagram/examples/make_*.py docs/make_*.py; do
             echo "::group::$f"
             python -X utf8 "$f" "$out"
             echo "::endgroup::"
           done
+          echo "::group::scene --from-json"
+          python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py               scene --from-json docs/repo_graph.json -o "$out"
+          echo "::endgroup::"
           ls -la "$out"
           test -n "$(ls -A "$out")" || { echo "::error::no diagram was written"; exit 1; }
+          mkdir -p gallery && cp "$out"/* gallery/
+      # The gallery: every example's .excalidraw + .html, built from this commit. Open an
+      # .html by double-click, or drop an .excalidraw on excalidraw.com. Regenerable, so
+      # it is an artifact, never a commit.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gallery
+          path: gallery/
+          retention-days: 30
 
   # The requirement gate. This repo vendors reqmap and keeps its own corpus, so the
   # skill's contracts are checked here rather than in the repository they came from.

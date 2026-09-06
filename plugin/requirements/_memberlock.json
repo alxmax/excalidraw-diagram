@@ -7,9 +7,12 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#TextStyle": "d6aafca2a7b5e52fc97cf5755fd1ea42bb987d32da4f69f9f6c1b867ad1e6013"
     },
     "REQ-EXCALIDRAW-848": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#_main": "fb0e06e7e51f1499ac0ab91a58a36ea12b8576f854f043e3f01314f51937fd21",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#_main": "dd1e237fa9b8826aca8d00841c1cf9ddc1a1665a1a8a9e15fc8a2de626355cd1",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#discover_stub": "154796cd21d884e9f9e5d69dc7d1fa6871e9dbb9e29291d0dd720d9454e43467",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#render_html": "c0a660beac3de58aeed98364dea74505958999b5588020063de54fa18add4343"
+    },
+    "REQ-EXCALIDRAW-850": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#scene_from_json": "c3332a2bac1f5e60c6868699cdfab86a02356d2c54b6b56f2a95abf590cc08e2"
     }
   }
 }
