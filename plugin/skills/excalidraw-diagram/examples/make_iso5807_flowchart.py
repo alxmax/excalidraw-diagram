@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ISO 5807 flowchart — the reqmap command workflow (~80% standard + colour).
+"""ISO 5807 flowchart — how the builder turns a description into two files.
 
 Doubles as the demonstration/regression example for the builder's ISO 5807 shape
 set: terminator (start/end), preparation (init), data (I/O parallelogram),
@@ -10,8 +10,10 @@ is undefined — here colour reinforces the shape category (redundant encoding),
 purely so the diagram reads with some life. The coloured shape key decodes both
 axes.
 
-Top -> bottom is the flow; the gate's "no" branch loops back to `sync` via an
-on-page connector (A) rather than a long back-edge.
+Top -> bottom is the flow. The first decision is the one that matters: an edge
+becomes a straight arrow only if its line clears every box, and the "no" branch
+routes it instead, resuming at the gates via on-page connector A rather than a
+long back-edge.
 
 Run from the repo root, writing into the regenerable diagrams/ dir:
     python plugin/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py diagrams
@@ -41,9 +43,9 @@ def at(w, y):  # x so a width-w box is centred on cx
     return cx - w / 2, y
 
 
-s.title("reqmap workflow — ISO 5807 flowchart", 40, -78, size=28)
+s.title("From a description to two files — ISO 5807 flowchart", 40, -78, size=28)
 s.label("Top -> bottom. ~80% ISO 5807 (shape = meaning) + colour by category for "
-        "readability. Gate 'no' loops back to sync via on-page connector A.",
+        "readability. A crossing edge is routed, then resumes at on-page connector A.",
         cx, -44, size=14)
 
 # ── main flow (top -> bottom) ─────────────────────────────────────────────
@@ -52,45 +54,45 @@ s.label("Top -> bottom. ~80% ISO 5807 (shape = meaning) + colour by category for
 # tighter stack — a clamped near-zero arrow shows only its label).
 GAP_V = 96            # clear enough that even a labelled step ('yes') keeps line
 yc = 0
+
+
 def below(h):            # return the top y for a height-h box, then advance
     global yc
     top = yc
     yc += h + GAP_V
     return top
 
+
 start = s.terminator("Start", *at(150, below(52)), w=150, h=52, fill="startend")
-init  = s.preparation("init\n(scaffold + lock)", *at(240, below(78)), w=240, h=78, fill="init")
-inp   = s.data("requirements/*.md\n+ tagged code", *at(250, below(64)), w=250, h=64, fill="io")
-drc   = s.process("draft -> confirm", *at(220, below(60)), w=220, h=60, fill="step")
-sync  = s.process("sync\n(rescan + baseline)", *at(220, below(60)), w=220, h=60, fill="step")
-gate  = s.decision("gate:\ndrift & links\nclean?", *at(230, below(120)), w=230, h=120, fill="branch")
-mapc  = s.process("map\n(regen _map.*)", *at(220, below(60)), w=220, h=60, fill="step")
-outp  = s.data("_map.json / _map.md\n_reqlock.json", *at(250, below(66)), w=250, h=66, fill="io")
-nxt   = s.process("next\n(risk buckets)", *at(220, below(60)), w=220, h=60, fill="step")
-done  = s.terminator("Commit", *at(150, below(52)), w=150, h=52, fill="startend")
+init = s.preparation("Scene(seed=…)\n(canvas + roles)", *at(240, below(78)), w=240, h=78, fill="init")
+inp = s.data("nodes, edges, groups\n(no coordinates)", *at(250, below(64)), w=250, h=64, fill="io")
+layer = s.process("layer by depth", *at(220, below(60)), w=220, h=60, fill="step")
+order = s.process("order each layer\n(barycenter)", *at(220, below(60)), w=220, h=60, fill="step")
+clear = s.decision("edge's line\nclears every\nbox?", *at(230, below(120)), w=230, h=120, fill="branch")
+gates = s.process("run the\nseven gates", *at(220, below(60)), w=220, h=60, fill="step")
+outp = s.data("scene.excalidraw\n+ viewer.html", *at(250, below(66)), w=250, h=66, fill="io")
+done = s.terminator("Open it", *at(150, below(52)), w=150, h=52, fill="startend")
 
-# ── remediation branch (gate = no) ────────────────────────────────────────
-# gate spans y 664..784; place the fix beside it and the connectors with the
-# same >=70px clear so the branch arrows render too.
-gy = s._geom[gate][1]                     # gate's top y (layout-driven, not hand-counted)
-fix    = s.predefined_process("fix /\nsync --accept-drift", 620, gy, w=210, h=70, fill="sub")
-connA1 = s.connector("A", 702, gy + 140, w=46, h=46, fill="conn")
-connA2 = s.connector("A", 36, s._geom[sync][1] + 7, w=46, h=46, fill="conn")
+# ── the "no" branch: route the edge instead of drawing it straight ────────
+cy = s._geom[clear][1]                    # decision's top y (layout-driven)
+route = s.predefined_process("route_around()\n(out, along, back)", 620, cy, w=210, h=70, fill="sub")
+connA1 = s.connector("A", 702, cy + 140, w=46, h=46, fill="conn")
+connA2 = s.connector("A", 36, s._geom[gates][1] + 7, w=46, h=46, fill="conn")
 
-# ── arrows ────────────────────────────────────────────────────────────────
+# ── connectors ────────────────────────────────────────────────────────────
 s.arrow(start, init)
 s.arrow(init, inp)
-s.arrow(inp, drc)
-s.arrow(drc, sync)
-s.arrow(sync, gate)
-s.arrow(gate, mapc, label="yes")
-s.arrow(mapc, outp)
-s.arrow(outp, nxt)
-s.arrow(nxt, done)
-s.arrow(gate, fix, label="no")
-s.arrow(fix, connA1)
-s.arrow(connA2, sync, label="resume (A)")
-s.label("on-page connector A: after fixing, resume at sync", 740, gy + 200, size=12)
+s.arrow(inp, layer)
+s.arrow(layer, order)
+s.arrow(order, clear)
+s.arrow(clear, gates, label="yes: draw it straight")
+s.arrow(gates, outp)
+s.arrow(outp, done)
+s.arrow(clear, route, label="no")
+s.arrow(route, connA1)
+s.arrow(connA2, gates, label="resume (A)")
+s.label("on-page connector A: once routed, the edge rejoins at the gates",
+        740, cy + 200, size=12)
 
 # ── shape key (ISO 5807 symbol + colour → meaning) ────────────────────────
 kx, ky = 920, 40
@@ -110,14 +112,14 @@ for fn, role, meaning in key:
     s.label(meaning, kx + 76, row_y + 9, size=12, align="left")
     row_y += 58
 
-# ── glossary (reqmap jargon) ──────────────────────────────────────────────
+# ── glossary (the builder's own terms) ────────────────────────────────────
 s.glossary([
-    ("SSOT", "single source of truth — requirements/*.md"),
-    ("drift", "content hash of a spec vs _reqlock.json baseline"),
-    ("gate", "pre-commit link-sync + drift + test-link check"),
-    ("sync", "rescan + advance the drift baseline + regen the map"),
+    ("layer", "how deep a node sits in the flow; one column, or one row"),
+    ("barycenter", "put a node near the average position of its neighbours"),
+    ("routed edge", "one drawn around the diagram because a straight line would cut a box"),
+    ("gate", "a check run before writing; a failed one refuses the file"),
 ], 235, s.bounds()[3] + 60, title="Glossary")
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
-s.save("reqmap_command_flow_iso5807", out_dir=out_dir, crossing_check="error")
-print("wrote reqmap_command_flow_iso5807.excalidraw + .html")
+s.save("builder_flow_iso5807", out_dir=out_dir, crossing_check="error")
+print("wrote builder_flow_iso5807.excalidraw + .html")

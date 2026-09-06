@@ -103,11 +103,11 @@ gates on. This is `make_full_architecture.py`.
 ```python
 # ✅ a layered poster — structure / workflow / integration
 y = s.section("1 - STRUCTURE   the components")
-parts = [s.box("reqmap.py\nparse-scan-gate", 80, y, fill="engine"), ...]
-s.enclose(parts, label="requirement-manager plugin")
+parts = s.row([("excalidraw_builder.py\nstdlib only", "engine"), ...], 80, y)
+s.enclose(parts, label="excalidraw-diagram plugin")
 y = s.section("2 - WORKFLOW   run order (left -> right)")
-s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
-y = s.section("3 - INTEGRATION   invoked, gated, shipped")
+s.pipeline([("layer","process"),("clear?","decision"),("route","process")], 80, y)
+y = s.section("3 - INTEGRATION   invoked, checked, shipped")
 # ... external systems + arrows ...
 s.legend(...); s.glossary(...)
 s.save("full_architecture", out_dir, crossing_check="error",
@@ -148,11 +148,11 @@ s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
 *(Only for repos that bundle 2+ distinct tools; a single-tool repo keeps one pipeline.)*
 
 ```python
-y = s.section("2 - WORKFLOWS   one pipeline per skill")
-a = s.pipeline([("init","process"),("gate","decision"),("map","process")], 120, y + 40)
-s.lane(a, "requirement-manager - SSOT + drift gate")
-b = s.pipeline([("review","data"),("check","process"),("findings","terminator")], 120, y + 210)
-s.lane(b, "requirement-quality-review - advisory")
+y = s.section("2 - WORKFLOWS   one pipeline per tool")
+a = s.pipeline([("ingest","data"),("validate","decision"),("store","process")], 120, y + 40)
+s.lane(a, "api  -  takes the request, writes the record")
+b = s.pipeline([("poll","process"),("render","process"),("upload","terminator")], 120, y + 210)
+s.lane(b, "worker  -  picks the job up later, renders it")
 ```
 
 ### 3 · Parallel agents / sub-agents (the #1 spaghetti source)
@@ -214,8 +214,8 @@ project jargon unexplained, colours with no key. The asker still does not
 understand it — the diagram is correct and teaches nothing.
 
 ```python
-s.box("reqmap.py", x, y, fill="violet")          # ❌ what is it? why violet?
-s.box("SSOT drift gate", x2, y, fill="orange")   # ❌ two undefined terms in one box
+s.box("pack()", x, y, fill="violet")             # ❌ what is it? why violet?
+s.box("barycenter ordering", x2, y, fill="orange")   # ❌ jargon, undefined
 ```
 
 ✅ A teaching diagram, read top to bottom: a subtitle that says what it is and
@@ -224,17 +224,16 @@ how to read it, everyday words in the boxes, one `section()` per idea
 `glossary()` that decode every colour and term. This is `make_explainer.py`.
 
 ```python
-s.title("requirement-manager — how it works", 40, -96, size=32)
-s.label("A tool that stops a project's PLAN and its CODE from quietly drifting "
-        "apart. Read top to bottom. Every special word is explained in the "
-        "Glossary at the bottom.", 40, -52, size=15, align="left")
+s.title("excalidraw-diagram — how it works", 40, -96, size=32)
+s.label("A tool that turns a DESCRIPTION of a system into a PICTURE of it, and "
+        "refuses to hand you one that cannot be read. Read top to bottom. Every "
+        "special word is explained in the Glossary at the bottom.",
+        40, -52, size=15, align="left")
 y = s.section("1 - THE PROBLEM IT SOLVES")
-plan = s.box("What the project
-SHOULD do
-(the plan)", 120, y, fill="plan")
-code = s.box("What the code
-ACTUALLY does", 880, y, fill="outside")
-s.arrow(plan, code, dashed=True, color="red", label="over time they silently disagree = 'drift'")
-# ... 2 - HOW YOU USE IT, 3 - WHAT IS INSIDE ...
-s.legend([...]); s.glossary([("drift", "plan and code no longer say the same thing"), ...])
+know = s.box("What someone\nUNDERSTANDS\nabout a system", 120, y, fill="words")
+draw = s.box("What a diagram\nof it would show", 880, y, fill="outside")
+s.arrow(know, draw, dashed=True, color="red",
+        label="the picture nobody has the afternoon to draw")
+# ... 2 - HOW YOU USE IT, 3 - WHAT'S INSIDE, 4 - WHERE IT RUNS ...
+s.legend([...]); s.glossary([("gate", "a check that refuses an unreadable diagram"), ...])
 ```

@@ -12,7 +12,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#render_html": "c0a660beac3de58aeed98364dea74505958999b5588020063de54fa18add4343"
     },
     "REQ-EXCALIDRAW-850": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#scene_from_json": "c3332a2bac1f5e60c6868699cdfab86a02356d2c54b6b56f2a95abf590cc08e2"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#scene_from_json": "8f7cee2a16f2bcf1441988d59331e804d6831333c4d50026699ec309efa038b8"
     }
   }
 }

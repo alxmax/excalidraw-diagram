@@ -38,7 +38,7 @@ that shows *how the system actually works*: its real components, the flow betwee
 them, how it is invoked, how it ships. For a repo that means *that repo's* files
 and flow, never a generic template. Pretty-but-shallow fails. Three things pass:
 
-1. **Substance** — real identifiers (`reqmap.py`, `check_overlaps()`), the actual
+1. **Substance** — real identifiers (`excalidraw_builder.py`, `pack()`), the actual
    workflow, and all three layers (internal flow → integration → distribution).
 2. **Readability** — title + one-line subtitle, a legend when colour means a
    role, a glossary for jargon, one reading direction, zero overlaps/crossings.
@@ -154,8 +154,8 @@ fills. That is the operational definition of "clean", not a matter of taste.
 4. **Label cross-role edges.** Any arrow whose ends are different roles, or is
    otherwise non-obvious, carries a short verb phrase (`label="validates"`).
 5. **Real identifiers as node names, jargon in a glossary.** Name the actual file
-   / function / component (`reqmap.py`, `check_overlaps()`), never "Service A".
-   When a label must use a term a newcomer cannot decode (`SSOT`, `@v1`), add
+   / function / component (`save()`, `check_overlaps()`), never "Service A".
+   When a label must use a term a newcomer cannot decode (`back edge`, `@v1`), add
    `s.glossary([(term, meaning), …])` beside the legend, so every term is
    explained on the canvas.
 6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
