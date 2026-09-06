@@ -1,0 +1,26 @@
+# Paths reqmap should not scan (one fnmatch glob per line, # comments ok).
+
+# The vendored engine and its viewer template. reqmap.py carries the `implements:`
+# self-tags of the repository it was written in, and those requirements do not live
+# here — unignored, every one reads as a dangling ERROR. This is the standard consumer
+# posture the engine seeds itself (`_reqmapignore_seed`); this repo is a consumer of
+# reqmap, not its home.
+plugin/scripts/reqmap.py
+plugin/scripts/_map_viewer.html
+
+# Isolated agent worktrees. Each holds a FULL second copy of this repo, so a local scan
+# counts every member twice and reads the copies' tags as dangling refs — errors that do
+# not exist in the code, in files CI never checks out.
+.worktrees/**
+.claude/worktrees/**
+
+# Generated diagrams: regenerable by definition, never committed.
+out/**
+diagrams/**
+__pycache__/**
+
+# Worked example generators. They demonstrate the builder rather than implementing
+# a capability of their own, so tagging one would claim a requirement it does not
+# carry. They are not unchecked: CI runs every generator, and a generator that
+# raises fails the build.
+plugin/skills/excalidraw-diagram/examples/**

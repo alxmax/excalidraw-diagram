@@ -54,6 +54,22 @@ jobs:
           ls -la "$out"
           test -n "$(ls -A "$out")" || { echo "::error::no diagram was written"; exit 1; }
 
+  # The requirement gate. This repo vendors reqmap and keeps its own corpus, so the
+  # skill's contracts are checked here rather than in the repository they came from.
+  # `--code ..` widens the scan to the repo root so members outside plugin/ are seen;
+  # the committed _map.* and _reqlock.json are generated from that widened scan, and a
+  # narrower run would report every member's path one level off.
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Requirement gate
+        working-directory: plugin
+        run: python -X utf8 scripts/reqmap.py gate --code ..
+
   # plugin.json is the single source of truth for the version; the marketplace manifest
   # must agree with it in both places, or an installed copy never sees the update.
   versions:

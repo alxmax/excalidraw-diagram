@@ -1,0 +1,15 @@
+{
+  "_schema": 2,
+  "members": {
+    "REQ-EXCALIDRAW-844": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#Rect": "cb0903533534e2d4ea9f371616f25b3d1e592f0abcbf4e4d3edf2e89a8fde361",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#Style": "f903aeff80d7b6710b95541403e1a3de83186f76a8802b5cdffd5df0074f5ad0",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#TextStyle": "d6aafca2a7b5e52fc97cf5755fd1ea42bb987d32da4f69f9f6c1b867ad1e6013"
+    },
+    "REQ-EXCALIDRAW-848": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#_main": "fb0e06e7e51f1499ac0ab91a58a36ea12b8576f854f043e3f01314f51937fd21",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#discover_stub": "154796cd21d884e9f9e5d69dc7d1fa6871e9dbb9e29291d0dd720d9454e43467",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#render_html": "c0a660beac3de58aeed98364dea74505958999b5588020063de54fa18add4343"
+    }
+  }
+}

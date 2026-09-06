@@ -45,6 +45,31 @@ invisible to consumers running `/plugin update`. A bump needs a matching `` `vX.
 heading in `CHANGELOG.md` — CI fails the PR without one (the backticked form is what the
 grep matches).
 
+## Requirements
+
+This repo keeps its own requirement corpus and vendors the engine that checks it, so the
+skill's contracts travelled with the skill rather than being left behind.
+
+```bash
+cd plugin && python -X utf8 scripts/reqmap.py gate --code ..    # THE verdict
+cd plugin && python -X utf8 scripts/reqmap.py sync --code ..    # rebuild lock + map
+cd plugin && python -X utf8 scripts/reqmap.py gate --audit --code ..
+```
+
+**`--code ..` is not optional for those two.** The committed `_reqlock.json` and `_map.*`
+are generated from the widened scan; a run without it reports every member's path one
+level off and fails the freshness check against the real committed files.
+
+`plugin/scripts/reqmap.py` is **vendored, not owned**. It carries the `implements:`
+self-tags of the repository it was written in, and those requirements do not live here —
+`.reqmapignore` excludes it for exactly that reason, which is the posture the engine seeds
+for any consumer. Do not edit it here; update it from upstream.
+
+Nine requirements: `SYS-DIAGRAM-001` (the need), three `ARCH-EXCALIDRAW-*` capabilities and
+their five `REQ-*` children. `SYS-DIAGRAM-001` was **authored by a human** on the split —
+the ARCH nodes previously satisfied `SYS-VISUAL-106` in requirement-manager, whose scope
+was seeing the requirement graph, which is a different need from this one.
+
 ## Layout
 
 ```
