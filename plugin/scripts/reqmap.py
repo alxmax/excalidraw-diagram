@@ -222,7 +222,7 @@ RISK_ADVICE = {
 # vendored copy is older than the installed plugin's. ISO date with an optional
 # `.N` same-day revision suffix (YYYY-MM-DD[.N]): lexicographic order ==
 # chronological order, so a plain string compare is enough.
-MAP_ENGINE_VERSION = "2026-09-06.15"
+MAP_ENGINE_VERSION = "2026-09-07"
 
 # Declared support floor, deliberately equal to the OLDEST version CI actually runs
 # (the `tests` matrix in .github/workflows/ci.yml). The code itself needs only 3.7
@@ -438,6 +438,16 @@ COMMANDS = {
                 ),
             },
             {
+                "name": "mode_i18n",
+                "flag": "--i18n",
+                "type": "bool",
+                "help": (
+                    "List the translations the configured LANGUAGE (en | ro | both, in "
+                    "requirements/_config.json) expects and does not have, missing or stale. "
+                    "--json emits each entry's source fields and cache key for whoever translates."
+                ),
+            },
+            {
                 "name": "untagged",
                 "flag": "--untagged",
                 "type": "bool",
@@ -580,9 +590,11 @@ COMMANDS = {
             "Ask what a requirement has not answered yet: vague terms with no threshold, "
             "numbers with no unit, unbounded quantities, clauses with no case, a missing "
             "failure path. Read-only, always exit 0, never a gate rule. --decompose is the "
-            "write half of the same question: it scaffolds an over-scoped requirement's "
-            "clauses into requirements of their own. Run it before implementing, so the "
-            "ambiguity is resolved in the requirement instead of guessed in code. "
+            "write half of the same question: it splits a requirement into code-rung "
+            "children along the bold group labels in its Description (--apply writes), or "
+            "scaffolds one draft per over-long clause when it has none. Run it before "
+            "implementing, so the ambiguity is resolved in the requirement instead of "
+            "guessed in code. "
        
         ),
         "arg": "AREA-NAME-NNN",
@@ -592,7 +604,10 @@ COMMANDS = {
                 "flag": "--decompose",
                 "type": "bool",
                 "help": (
-                    "Scaffold an over-scoped requirement's clauses into requirements of their own."
+                    "Split a requirement into code-rung children along the bold group labels "
+                    "its author wrote in the Description; --apply writes them and rewrites the "
+                    "parent. With no id, every requirement carrying groups. A requirement with "
+                    "no groups falls back to one draft per over-long clause."
                 ),
             },
             {
@@ -4459,7 +4474,7 @@ def _parse_todos_from_text(text):
             if "|" in rest:
                 name_part, meta = rest.rsplit("|", 1)
                 name = name_part.strip()
-                lane_m = re.search(r"lane:\s*(\w+)", meta)  # lane must be a single word (bus|feature|ops)
+                lane_m = re.search(r"lane:\s*(\w+)", meta)  # one word: bug|feature (bus|ops still parse; the roadmap files them as features)
                 lane = lane_m.group(1) if lane_m else "feature"
             else:
                 name, lane = rest.strip(), "feature"
@@ -4494,6 +4509,89 @@ def _parse_todos(root):  # implements: REQ-MAP-871
 TRANSLATOR_VERSION = "1"   # part of the cache key: bump to invalidate every cached
                            # translation at once (the `translate` verb that wrote the
                            # cache was removed 2026-09-05; the reader below stays)
+
+
+# The repository's declared requirements language: `en`, `ro`, or `both`. Set in
+# `requirements/_config.json` as `"LANGUAGE": "ro"`. It changes what the engine EXPECTS,
+# never what it writes: with `ro` or `both` a requirement without a fresh Romanian entry
+# is a gap `sync` reports and `gate --i18n` lists, and the viewer opens in Romanian
+# (`ro`) or offers both (`both`). The engine still translates nothing — that is
+# REQ-TRANSLATE-937, and it holds because the emitter hands the source text and the
+# cache key to whoever does.
+LANGUAGE = "en"          # implements: REQ-TRANSLATE-996
+LANGUAGE_LOCALES = {"en": (), "ro": ("ro",), "both": ("ro",)}   # locales a setting expects filled
+
+
+def _translation_gaps(reqs, reqs_dir):  # implements: ARCH-TRANSLATE-044  # implements: REQ-TRANSLATE-996
+    """Every (requirement, locale) the configured LANGUAGE expects a fresh translation
+    for and does not have, with the reason and the exact source fields to translate.
+
+    Reads the cache files raw rather than through `_load_translations`, which drops a
+    stale entry silently — here "stale" is the finding, so the two must be told apart.
+    Returns `[]` under `en`: nothing is expected, so nothing is missing."""
+    out = []
+    for locale in LANGUAGE_LOCALES.get(LANGUAGE, ()):
+        cache = {}
+        try:
+            with open(os.path.join(reqs_dir, "_i18n", locale + ".json"), encoding="utf-8") as f:
+                cache = json.load(f)
+        except (OSError, ValueError):
+            cache = {}
+        if not isinstance(cache, dict):
+            cache = {}
+        for rid in sorted(reqs):
+            r = reqs[rid]
+            if r["meta"].get("status") == "deprecated":
+                continue
+            body = r["body"]
+            title = _title(body)
+            want = translation_hash(body, title)
+            entry = cache.get(rid)
+            have = entry.get("hash") if isinstance(entry, dict) else None
+            if have == want:
+                continue
+            out.append({
+                "id": rid, "locale": locale,
+                "reason": "stale" if entry is not None else "missing",
+                "hash": want,
+                "title": title,
+                "intent": _first_quote(body),
+                "contract": _from_any(_section_raw, body, CONTRACT_LABELS),
+                "acceptance": _from_any(_section_raw, body, ACCEPTANCE_LABELS),
+            })
+    return out
+
+
+def cmd_i18n(ws, as_json=False):  # implements: ARCH-TRANSLATE-044  # implements: REQ-TRANSLATE-996
+    """`gate --i18n`: the translations the configured LANGUAGE expects and does not have.
+
+    Read-only. The JSON form is the hand-off: each entry carries the four source fields
+    exactly as the hash was computed over them, plus that hash, so whoever translates —
+    the skill, an assistant, a person — writes `_i18n/<locale>.json[id]` with the four
+    translated fields and the same `hash`, and the next `sync` serves it. The engine
+    calls nothing external (REQ-TRANSLATE-937); it says what is owed and by what key."""
+    reqs, reqs_dir = ws.reqs, ws.reqs_dir
+    gaps = _translation_gaps(reqs, reqs_dir)
+    if as_json:
+        print(json.dumps({"language": LANGUAGE, "gaps": gaps}, indent=2, ensure_ascii=False))
+        return 0
+    if not LANGUAGE_LOCALES.get(LANGUAGE):
+        print("LANGUAGE is `{}` - no translation is expected. Set `\"LANGUAGE\": \"ro\"` or "
+              "`\"both\"` in requirements/{} to have the engine track Romanian coverage."
+              .format(LANGUAGE, CONFIG_FILE))
+        return 0
+    if not gaps:
+        print("LANGUAGE is `{}` - every requirement has a fresh translation in: {}."
+              .format(LANGUAGE, ", ".join(LANGUAGE_LOCALES[LANGUAGE])))
+        return 0
+    missing = sum(1 for g in gaps if g["reason"] == "missing")
+    print("LANGUAGE is `{}` - {} requirement(s) need a translation ({} missing, {} stale):\n"
+          .format(LANGUAGE, len(gaps), missing, len(gaps) - missing))
+    for g in gaps:
+        print("  {:<8} {:<26} {:<7} {}".format(g["locale"], g["id"], g["reason"], g["title"][:60]))
+    print("\nRe-run with --json for the source fields and the cache key to write back; "
+          "each entry goes in requirements/_i18n/<locale>.json under its id, with the same `hash`.")
+    return 0
 
 
 def _translation_source_text(body, title):  # implements: ARCH-TRANSLATE-044
@@ -4603,6 +4701,7 @@ def _assemble_map_data(reqs, members, reqs_dir, root=".", ac_cover=None):  # imp
         ac_cover = scan_ac_verifies(root, reqs_dir)
     data = _build_map_data(reqs, members, ac_cover)
     data["repo"] = _repo_name(root)
+    data["language"] = LANGUAGE          # implements: REQ-TRANSLATE-996
     data["todos"] = _parse_todos(root)
     _design = _design_summary(root, reqs_dir, with_findings=True)   # implements: REQ-DESIGN-954  # implements: REQ-DESIGN-976
     if _design is not None:
@@ -5358,6 +5457,386 @@ def _decompose_clause(reqs_dir, parent_id, parent, n, clause, reqs=None):  # imp
     return new_id
 
 
+# ---------- decompose on contract groups: the code rung for a tagged corpus ----------
+# `init` mints the code rung only for files it extracts, and it extracts only untagged
+# files; `clarify --levels` classifies a requirement but never creates one. So a corpus
+# that adopted the tool at the architecture rung had no path to `level: code` at all —
+# on one consumer, 40 of 42 architecture nodes with zero children and 160 group labels
+# sitting in their contracts. This is the path. The seam is one the AUTHOR already drew:
+# a bold group label in the Description is a heading the author wrote to say "these
+# clauses belong together", and a behaviour group is what the code rung is defined as.
+# It is not the engine inventing structure; it is the engine reading structure that is
+# already in the file, which is the line ADR-0025 had to refold 573 leaves back behind.
+
+GROUP_CHILD_TEMPLATE = """---
+id: {new_id}
+status: draft
+level: code
+level_source: auto
+layer: {layer}
+owner: {owner}
+satisfies: [{parent}]
+---
+
+# {title}
+
+<!-- decomposed-from: {parent}#group:{slug} -->
+
+## Description
+> Split from {parent} along a contract group the author wrote: **{label}**. Rewrite this
+> quote before confirming — say what this behaviour is for and what breaks without it.
+
+Every bullet below is binding.
+{bullets}
+
+## Cases
+{cases}
+
+## Context
+**Notes**
+- SCAFFOLD, NOT A DECISION. The seam was the parent's own group label, not a guess, but
+  whether this group is ONE behaviour or several is still yours to judge.
+- No `implements:` tag was written. The gate checks that a tag exists, never that it
+  points at the right code, so an auto-generated child citing the wrong function would
+  pass every check. Expected members, found by searching for the group's subject —
+  verify each, then tag by hand:
+{members}
+- {moved} case(s) moved here from {parent}; {unassigned} stayed on the parent because no
+  group's subject appeared in their text, or more than one did.
+"""
+
+
+def _contract_groups(body):  # implements: ARCH-DECOMPOSE-050  # implements: REQ-DECOMPOSE-994
+    """`[(label, [clause, ...]), ...]` — the bold group labels in the Description and the
+    bullets under each, in order. A bullet before the first label belongs to no group and
+    is not returned: it is the parent's own preamble, and it stays there."""
+    out, cur = [], None
+    for raw in _section_lines(body, CONTRACT_LABELS, raw=True):
+        s = raw.strip()
+        if _is_label_line(raw):
+            cur = (s.strip("*").strip(), [])
+            out.append(cur)
+        elif cur is not None and (s == "-" or s.startswith("- ")):
+            cur[1].append(s[1:].strip())
+        elif cur is not None and cur[1] and s and not s.startswith(("|", ">", "#", "<!--")):
+            cur[1][-1] += " " + s          # hanging-indent continuation of the last clause
+    return [(label, clauses) for label, clauses in out if clauses]
+
+
+def _group_subject(label):  # implements: REQ-DECOMPOSE-994
+    """The identifier a case or a member would name: `load_json_stdin(script_name)` ->
+    `load_json_stdin`; `Falsifiability anchor (Law 8)` -> `Falsifiability anchor`.
+    Backticks and a parenthesised tail are presentation, not identity."""
+    s = label.replace("`", "").strip()
+    s = re.sub(r"\s*\(.*$", "", s).strip()
+    return s
+
+
+def _group_slug(label):  # implements: REQ-DECOMPOSE-994
+    return re.sub(r"[^A-Za-z0-9]+", "-", _group_subject(label)).strip("-").upper() or "GROUP"
+
+
+def _group_child_id(parent_id, label, reqs, reqs_dir):  # implements: REQ-DECOMPOSE-994
+    """`<parent>-<SLUG>`, with a trailing `-NNN` on the parent dropped first so the child
+    reads `SCRIPTS-UTILS-LOAD-JSON-STDIN` rather than `REQ-FOO-012-LOAD-JSON-STDIN`. On
+    collision a `-2`, `-3` suffix; the number sits last, where `_next_free_number` and
+    `_warn_number_collision` expect one."""
+    parts = parent_id.split("-")
+    stem = "-".join(parts[:-1]) if len(parts) >= 3 and parts[-1].isdigit() else parent_id
+    base = "{}-{}".format(stem, _group_slug(label))
+    taken = set(reqs or ())
+    try:
+        taken |= {fn[:-3] for fn in os.listdir(reqs_dir) if fn.endswith(".md")}
+    except OSError:
+        pass
+    cand, k = base, 2
+    while cand in taken:
+        cand = "{}-{}".format(base, k); k += 1
+    return cand
+
+
+def _case_raw_blocks(body):  # implements: REQ-DECOMPOSE-994
+    """`{label: [line, ...]}` — each labelled case's own lines, indentation kept, so a
+    moved case reads in the child exactly as it read in the parent. `_acc_blocks` folds a
+    case to one line for counting and search; a Given/When/Then block is worth more than
+    that on the page."""
+    out, cur = {}, None
+    for raw in _section_lines(body, ACCEPTANCE_LABELS, raw=True):
+        m = _AC_LABEL_RE.match(raw.strip())
+        if m:
+            cur = m.group(1)
+            out[cur] = [raw.rstrip()]
+        elif cur is not None and raw.strip():
+            out[cur].append(raw.rstrip())
+    return out
+
+
+def _assign_cases(blocks, groups):  # implements: REQ-DECOMPOSE-994
+    """Which child each parent case belongs to: `{case_index: group_index}` for the cases
+    whose text names exactly ONE group's subject. Zero matches or two-plus is left on the
+    parent — assigning by guess is the failure mode, and reporting the unassigned count is
+    the feature."""
+    # whole-word: `is_headless` must not claim a case about `is_headless_mode`. A generic
+    # label such as **Module** still matches "the module is imported" — that is the rule
+    # working, and the reason every move is printed for a human to read.
+    subjects = [re.compile(r"(?<![\w])" + re.escape(_group_subject(label).lower()) + r"(?![\w])")
+                if _group_subject(label) else None for label, _ in groups]
+    owner = {}
+    for i, blk in enumerate(blocks):
+        text = (blk.get("text", "") + " " + blk.get("label", "")).lower()
+        hits = [g for g, rx in enumerate(subjects) if rx and rx.search(text)]
+        if len(hits) == 1:
+            owner[i] = hits[0]
+    return owner
+
+
+def _expected_members(code_root, members, label):  # implements: REQ-DECOMPOSE-994
+    """`file:line` hits for the group's subject inside the parent's `implements:` files —
+    the code a child is EXPECTED to claim. Listed, never tagged."""
+    subj = _group_subject(label)
+    if not subj or not code_root:
+        return []
+    needle = re.compile(re.escape(subj))
+    hits, seen = [], set()
+    for role, rel, _ln in members or []:
+        if role != "implements" or rel in seen:
+            continue
+        seen.add(rel)
+        try:
+            with open(os.path.join(code_root, rel), encoding="utf-8", errors="ignore") as f:
+                for n, line in enumerate(f, 1):
+                    if needle.search(line) and re.search(r"\b(def|class|function|func|fn)\b", line):
+                        hits.append("{}:{}".format(rel, n))
+                        break
+        except OSError:
+            continue
+    return hits
+
+
+def _plan_group_split(rid, r, reqs, reqs_dir, code_root, members):  # implements: REQ-DECOMPOSE-994
+    """Everything a run would do to ONE requirement, computed without writing: the children,
+    each child's clauses and cases, the expected members, what stays on the parent, and
+    why the run refuses if it does. Dry-run prints this; --apply executes it."""
+    body = r["body"]
+    groups = _contract_groups(body)
+    plan = {"id": rid, "groups": groups, "children": [], "refuse": None}
+    if len(groups) < 2:
+        plan["refuse"] = "fewer than two contract groups — nothing to split along"
+        return plan
+    if len(groups) > LINT_AC_MAX:
+        plan["refuse"] = ("{} groups is {} children for one capability, which is the shape "
+                          "ADR-0025 had to refold. Merge the labels down to {} or fewer, "
+                          "then re-run.".format(len(groups), len(groups), LINT_AC_MAX))
+        return plan
+    blocks = _acc_blocks(body)
+    raw_by_label = _case_raw_blocks(body)
+    owner = _assign_cases(blocks, groups)
+    used = set()
+    for g, (label, clauses) in enumerate(groups):
+        cases = [{"label": blocks[i]["label"],
+                  "lines": raw_by_label.get(blocks[i]["label"], [blocks[i]["text"]])}
+                 for i, og in sorted(owner.items()) if og == g]
+        cid = _group_child_id(rid, label, set(reqs) | used, reqs_dir)
+        used.add(cid)
+        plan["children"].append({
+            "id": cid, "label": label, "subject": _group_subject(label),
+            "clauses": clauses, "cases": cases,
+            "members": _expected_members(code_root, members, label),
+        })
+    plan["moved_cases"] = len(owner)
+    plan["kept_cases"] = len(blocks) - len(owner)
+    plan["kept_case_labels"] = [b.get("label", "") for i, b in enumerate(blocks) if i not in owner]
+    return plan
+
+
+def _render_group_child(plan_child, parent_id, meta, moved_total, unassigned):  # implements: REQ-DECOMPOSE-994
+    c = plan_child
+    bullets = "\n".join("- " + cl for cl in c["clauses"])
+    if c["cases"]:
+        parts = []
+        for n, blk in enumerate(c["cases"], 1):
+            lines = list(blk["lines"])
+            first = lines[0].strip() if lines else ""
+            m = _AC_LABEL_RE.match(first)
+            title = first[m.end():].strip(" —-–:") if m else ""
+            head = "CASE-{}".format(n) + (" — " + title if title else "")
+            body_lines = [l for l in lines[1:]]
+            parts.append("\n".join([head] + body_lines))
+        cases = "\n\n".join(parts)
+    else:
+        cases = ("CASE-1\n  Given  <precondition>\n  When   <action>\n"
+                 "  Then   <observable, pass/fail result>")
+    members = "\n".join("  - `{}`".format(m) for m in c["members"]) or \
+              "  - (none found — search the parent's members for `{}` yourself)".format(c["subject"])
+    return GROUP_CHILD_TEMPLATE.format(
+        new_id=c["id"], parent=parent_id, slug=_group_slug(c["label"]), label=c["label"],
+        title=c["subject"] or c["label"], bullets=bullets, cases=cases, members=members,
+        layer=meta.get("layer", "feature") or "feature", owner=meta.get("owner", "") or "",
+        moved=len(c["cases"]), unassigned=unassigned)
+
+
+def _rewrite_parent_after_split(text, plan):  # implements: REQ-DECOMPOSE-994
+    """The parent with each split group replaced by one obligation line ending in the
+    child's id — the ARCH shape this corpus documents: intent, then one sentence per child
+    with the detail living only in the child. Moved cases are removed; the cases that
+    stayed keep their labels, because a label is an identifier a `verifies:` tag points at
+    and renumbering would break every tag that does. Everything outside those two
+    sections is byte-identical.
+
+    A parent left with NO case gets one placeholder. The per-function cases went to the
+    children; what this rung still owes is the one case that shows the children work
+    TOGETHER, and the engine cannot write that — it can only say the hole is there."""
+    PLACEHOLDER = [
+        "CASE-1",
+        "  Given  every child requirement listed above is confirmed on its own",
+        "  When   this capability is exercised end to end",
+        "  Then   <the ONE observable result that shows the children work TOGETHER — the",
+        "         per-behaviour cases moved to the children; this rung asserts their composition>",
+        "",
+    ]
+    lines = text.split("\n")
+    out = []
+    child_by_label = {c["label"]: c for c in plan["children"]}
+    moved_case_labels = {b["label"] for c in plan["children"] for b in c["cases"]}
+    in_contract = in_cases = False
+    skipping_group = skipping_case = False
+    cases_kept = cases_removed = 0
+
+    def close_cases():
+        # leaving the Cases section: if every case left, say what the rung still owes
+        if in_cases and cases_removed and not cases_kept:
+            while out and not out[-1].strip():
+                out.pop()
+            out.append("")
+            out.extend(PLACEHOLDER)
+
+    for raw in lines:
+        s = raw.strip()
+        if s.startswith("## "):
+            if skipping_group and out and out[-1].strip():
+                out.append("")               # the blank the skipped group used to end on
+            close_cases()
+            in_contract = any(_heading_label_is(s, n) for n in CONTRACT_LABELS)
+            in_cases = any(_heading_label_is(s, n) for n in ACCEPTANCE_LABELS)
+            skipping_group = skipping_case = False
+            out.append(raw); continue
+        if in_contract:
+            if _is_label_line(raw):
+                label = s.strip("*").strip()
+                if label in child_by_label:
+                    c = child_by_label[label]
+                    out.append("- {} — see [[{}]].".format(c["subject"] or c["label"], c["id"]))
+                    skipping_group = True
+                    continue
+                if skipping_group and out and out[-1].strip():
+                    out.append("")           # an unsplit group follows a split one
+                skipping_group = False
+            if skipping_group:
+                continue                     # the group's bullets now live in the child
+            out.append(raw); continue
+        if in_cases:
+            m = _AC_LABEL_RE.match(s)
+            if m:
+                skipping_case = m.group(1) in moved_case_labels
+                if skipping_case:
+                    cases_removed += 1
+                    continue
+                cases_kept += 1
+            elif skipping_case and not s:
+                skipping_case = False        # a blank ends the moved case's block
+                if out and not out[-1].strip():
+                    continue                 # ...and must not stack on the one already there
+            if skipping_case:
+                continue
+            out.append(raw); continue
+        out.append(raw)
+    close_cases()
+    return "\n".join(out)
+
+
+def cmd_decompose_groups(ws, only=None, apply_it=False, code_root=None):  # implements: ARCH-DECOMPOSE-050  # implements: REQ-DECOMPOSE-994
+    """Split a requirement into code-rung children along its own contract group labels.
+
+    Returns None when nothing in scope carries a group, so the caller can fall through to
+    the older clause-level path. Otherwise prints the plan and — with `apply_it` — writes
+    the children and rewrites the parent, returning 0.
+
+    The parent IS edited on apply. That is the point: the finding clears only when its
+    case count drops, and a child that duplicates its parent's clauses byte-for-byte is
+    a redundancy the engine would then report. So a confirmed parent drifts, visibly, and
+    `sync --accept-drift` is the acknowledgement. `git checkout` of the parent plus
+    deleting the children restores the corpus exactly."""
+    reqs, reqs_dir = ws.reqs, ws.reqs_dir
+    members = ws.members or {}
+    targets = [only] if only else [rid for rid in sorted(reqs) if len(_contract_groups(reqs[rid]["body"])) >= 2]
+    if only and len(_contract_groups(reqs[only]["body"])) < 2:
+        return None
+    if not targets:
+        return None
+    total_children = total_moved = total_kept = 0
+    plans = []
+    for rid in targets:
+        plan = _plan_group_split(rid, reqs[rid], reqs, reqs_dir, code_root, members.get(rid))
+        plans.append(plan)
+        print("{}  ({} contract groups, {} cases)".format(
+            rid, len(plan["groups"]), len(_acc_blocks(reqs[rid]["body"]))))
+        if plan["refuse"]:
+            print("  refused: {}".format(plan["refuse"]))
+            for label, clauses in plan["groups"]:
+                print("    **{}**  {} clause(s)".format(label, len(clauses)))
+            continue
+        for c in plan["children"]:
+            print("  -> {:<40} {} clause(s), {} case(s), {} expected member(s)".format(
+                c["id"], len(c["clauses"]), len(c["cases"]), len(c["members"])))
+        print("  parent keeps {} case(s){}".format(
+            plan["kept_cases"],
+            ": " + ", ".join(l for l in plan["kept_case_labels"] if l) if plan["kept_cases"] else ""))
+        total_children += len(plan["children"]); total_moved += plan["moved_cases"]; total_kept += plan["kept_cases"]
+        m = reqs[rid]["meta"]
+        if "ac-count-high" in (_as_list(m.get("lint_exempt")) or []) and plan["kept_cases"] <= LINT_AC_MAX:
+            print("  note: `lint_exempt: [ac-count-high]` will silence nothing once the parent "
+                  "holds {} case(s) — drop it.".format(plan["kept_cases"]))
+    print("\n{} child requirement(s) from {} parent(s); {} case(s) move, {} stay on their parents."
+          .format(total_children, sum(1 for p in plans if not p["refuse"]), total_moved, total_kept))
+    print("Children carry `level: code`, `level_source: auto`, `satisfies: <parent>`, `status: draft`.")
+    print("No member tags are written — each child lists the members it is expected to claim.")
+    if not apply_it:
+        print("\nNothing written. Re-run with --apply. The parent IS rewritten on apply (moved groups")
+        print("become one line each naming the child, moved cases leave), so a confirmed parent")
+        print("drifts and `sync --accept-drift` is how you accept it. `git checkout` the parent and")
+        print("delete the children to undo.")
+        return 0
+    written = 0
+    for plan in plans:
+        if plan["refuse"]:
+            continue
+        rid = plan["id"]; r = reqs[rid]
+        unassigned = plan["kept_cases"]
+        for c in plan["children"]:
+            dest = os.path.join(reqs_dir, c["id"] + ".md")
+            if os.path.exists(dest):
+                print("  SKIP  {} exists".format(dest)); continue
+            with open(dest, "w", encoding="utf-8") as f:
+                f.write(_render_group_child(c, rid, r["meta"], plan["moved_cases"], unassigned))
+            print("  wrote  requirements/{}.md".format(c["id"]))
+            written += 1
+        src = r.get("path") or os.path.join(reqs_dir, rid + ".md")
+        try:
+            with open(src, encoding="utf-8", newline="") as f:
+                raw = f.read()
+        except OSError:
+            print("  SKIP  cannot read {} to rewrite it".format(src)); continue
+        crlf = "\r\n" in raw
+        new = _rewrite_parent_after_split(raw.replace("\r\n", "\n"), plan)
+        with open(src, "w", encoding="utf-8", newline="") as f:
+            f.write(new.replace("\n", "\r\n") if crlf else new)
+        print("  rewrote requirements/{} (each split group is now one line naming its child)".format(
+            os.path.basename(src)))
+    print("\n{} file(s) written. Next: review each child, tag its members, then `reqmap.py sync "
+          "--accept-drift \"<why>\"`.".format(written))
+    return 0
+
+
 # NOTE: `--decompose` deliberately covers `statement-size` ONLY. An `ac-count-high`
 # triage-stub path was written and then removed before it ever shipped: `_oversize`
 # fires on 0 of this corpus's 72 lintable requirements (all six over LINT_AC_MAX
@@ -5953,6 +6432,30 @@ def _audit_summary(reqs, members, reqs_dir, code_root):  # implements: ARCH-AUDI
                      "nothing without --apply".format(
                          unlevelled, shape["total"],
                          " - the corpus is flat" if shape["flat"] else ""))
+    # The code rung a tagged corpus could not reach (REQ-DECOMPOSE-994): requirements whose
+    # Description already draws the seams — bold group labels — and that have no child
+    # satisfying them. Reported here, never written here: `sync` runs inside the consumer's
+    # pre-commit hook, and a write that creates files the commit does not contain and
+    # drifts confirmed parents is what ADR-0031's "Why not on sync" refuses. The command is
+    # named so the fix is one step away from the place the signal appears.
+    kids = set()
+    for _r in reqs.values():
+        kids.update(_as_list(_r["meta"].get("satisfies")))
+    splittable = [rid for rid, _r in reqs.items()
+                  if rid not in kids and len(_contract_groups(_r["body"])) >= 2]
+    if splittable:
+        lines.append("{} requirement(s) carry contract groups and no code children - "
+                     "`reqmap.py clarify --decompose` plans the split along those groups, "
+                     "--apply writes it".format(len(splittable)))
+    # Translation coverage, only when the repo asked for a second language. Under `en`
+    # nothing is expected and nothing is said; under `ro`/`both` a requirement with no
+    # fresh Romanian entry is a gap, named with the command that hands over the text.
+    _gaps = _translation_gaps(reqs, reqs_dir)
+    if _gaps:
+        _missing = sum(1 for g in _gaps if g["reason"] == "missing")
+        lines.append("{} requirement(s) have no fresh translation for LANGUAGE `{}` ({} missing, "
+                     "{} stale) - `reqmap.py gate --i18n --json` emits the entries to fill"
+                     .format(len(_gaps), LANGUAGE, _missing, len(_gaps) - _missing))
     if shape.get("auto"):
         # A corpus can be fully levelled and still be nothing but the engine's guesses,
         # in which case every other number here reads as healthy. ADR-0030's revisit
@@ -9776,13 +10279,13 @@ CONFIG_KEYS = ("LINT_AC_MIN", "LINT_AC_MAX", "LINT_STATEMENT_WORDS", "LINT_CONTR
                "DESIGN_CLUMP_FUNCS", "DESIGN_PREFIX_GROUP", "DESIGN_SHARED_METHODS",
                "DESIGN_ISINSTANCE_CHAIN", "DESIGN_BRANCH_CHAIN", "DESIGN_FILE_MAX_LINES",
                "DESIGN_LINE_MAX", "DESIGN_FILE_MAX_FUNCS", "DESIGN_DOCSTRING_PUBLIC",
-               "DESIGN_RFC_MAX", "DRIFT_SEVERITY")
+               "DESIGN_RFC_MAX", "DRIFT_SEVERITY", "LANGUAGE")
 
 # A string-valued config key names a behaviour, so its accepted spellings are declared
 # here and a value outside them is reported rather than applied. Without this, a repo
 # that wrote `"eror"` would get the default back in silence — precisely the failure the
 # whole config mechanism exists to avoid.
-CONFIG_ENUMS = {"DRIFT_SEVERITY": ("warn", "error")}
+CONFIG_ENUMS = {"DRIFT_SEVERITY": ("warn", "error"), "LANGUAGE": ("en", "ro", "both")}
 
 
 def load_config(reqs_dir):  # implements: ARCH-CONFIG-060  # implements: REQ-CONFIG-949
@@ -9950,6 +10453,8 @@ def _build_parser():  # implements: ARCH-CMDREGISTRY-033
                     help="gate: also print risk, duplicate contracts, design signals and tag coverage")
     ap.add_argument("--risk", dest="mode_risk", action="store_true",
                     help="gate: print the corpus risk snapshot and what to do next")
+    ap.add_argument("--i18n", dest="mode_i18n", action="store_true",
+                    help="gate: list the translations the configured LANGUAGE expects and does not have")
     ap.add_argument("--show", dest="mode_show", metavar="ID", nargs="?", default=None,
                     const="",
                     help="gate: print one requirement's dossier")
@@ -9980,6 +10485,8 @@ def _dispatch_gate(a, ws, code_root, reqs_dir):
     reqs, members = ws.reqs, ws.members   # the commands that take only part of it
     if a.mode_audit:
         return cmd_audit(ws, strict=a.strict, as_json=a.as_json)
+    if a.mode_i18n:
+        return cmd_i18n(ws, as_json=a.as_json)
     if a.mode_risk:
         if a.as_badge:
             return cmd_health(ws, False, True)
@@ -10146,11 +10653,17 @@ def main():
         return _dispatch_sync(a, ws, code_root, reqs_dir)
     if a.cmd == "clarify":
         if a.decompose:
-            # scaffolding a clause into its own requirement is the write half of the
-            # same question clarify asks about an over-scoped requirement — for THIS
-            # requirement (it used to scaffold every over-long clause in the corpus)
             if a.arg and a.arg not in ws.reqs:
                 print("no requirement with id {}".format(a.arg)); return 1
+            # Two seams, tried in order. A requirement whose Description carries bold
+            # group labels is split along THOSE — the author already drew the lines, and
+            # the children are the code rung a tagged corpus otherwise cannot reach. Only
+            # a requirement with no groups falls through to the older clause-level path,
+            # which scaffolds one draft per over-long clause and never edits the parent.
+            rc = cmd_decompose_groups(ws, only=a.arg or None, apply_it=a.do_apply,
+                                      code_root=code_root)
+            if rc is not None:
+                return rc
             return cmd_lint(ws, strict=False, decompose=True, only=a.arg or None)
         if a.levels:
             # the retrofit ADR-0030 leaves out: `init` mints the rungs only for the
