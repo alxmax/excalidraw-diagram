@@ -1,0 +1,51 @@
+{
+  "name": "scene_from_json",
+  "title": "What happens when you ask for a diagram",
+  "subtitle": "Left to right. Nothing in this description carries a coordinate — pack() worked out every position, and the seven gates judged the result. Colours are in the key below; dashed lines are paths the flow takes back.",
+  "direction": "LR",
+  "seed": 19,
+  "roles": {
+    "you": "grey",
+    "contract": "violet",
+    "engine": "blue",
+    "gate": "orange",
+    "output": "green"
+  },
+  "nodes": [
+    {"id": "ask", "label": "\"explain how X works\"", "fill": "you", "kind": "terminator"},
+    {"id": "skill", "label": "SKILL.md matches", "fill": "contract"},
+    {"id": "read", "label": "read the system", "fill": "contract"},
+    {"id": "graph", "label": "write graph.json", "fill": "contract"},
+    {"id": "layer", "label": "layer by depth", "fill": "engine"},
+    {"id": "order", "label": "order each layer", "fill": "engine"},
+    {"id": "route", "label": "route what won't go straight", "fill": "engine"},
+    {"id": "gates", "label": "seven gates", "fill": "gate", "kind": "decision"},
+    {"id": "scene", "label": "scene.excalidraw", "fill": "output", "kind": "terminator"},
+    {"id": "html", "label": "viewer.html", "fill": "output", "kind": "terminator"},
+    {"id": "edit", "label": "edit on excalidraw.com", "fill": "you"}
+  ],
+  "edges": [
+    {"src": "ask", "dst": "skill", "label": "triggers"},
+    {"src": "skill", "dst": "read"},
+    {"src": "read", "dst": "graph"},
+    {"src": "graph", "dst": "layer", "label": "no coordinates"},
+    {"src": "layer", "dst": "order"},
+    {"src": "order", "dst": "route"},
+    {"src": "route", "dst": "gates"},
+    {"src": "gates", "dst": "scene", "label": "clean"},
+    {"src": "gates", "dst": "html"},
+    {"src": "gates", "dst": "graph", "label": "not clean: describe it better"},
+    {"src": "scene", "dst": "edit", "label": "still editable"}
+  ],
+  "groups": [
+    {"label": "what the skill decides", "members": ["read", "graph"]},
+    {"label": "what pack() does", "members": ["layer", "order", "route"]},
+    {"label": "what you get", "members": ["scene", "html"]}
+  ],
+  "legend": true,
+  "glossary": [
+    ["pack()", "the layout pass: layer, order, then route"],
+    ["gate", "a check at save() time that refuses an unreadable diagram"],
+    ["back edge", "an arrow returning to an earlier step; always routed, never straight"]
+  ]
+}

@@ -1,5 +1,50 @@
 # Changelog
 
+## plugin `v1.1.0` — 2026-09-07
+
+**A diagram without writing Python.** Until now the only way in was to write a
+generator script and choose every coordinate — right when the layout carries
+meaning, and a poor trade when you just want a picture of a fifteen-node flow.
+
+```
+python scripts/excalidraw_builder.py scene --from-json graph.json -o out/
+```
+
+`graph.json` names nodes, edges, groups and a direction. No coordinates anywhere.
+`Scene.pack()` layers the graph by depth, orders each layer to keep connected
+nodes together, places everything, and runs the same seven gates a hand-written
+generator answers to. `pack()` is also callable from a generator, for a diagram
+that is auto-laid-out in one region and hand-placed in another.
+
+**The routing is the part that matters.** Barycenter ordering — the classic
+second pass — minimises crossings between *edges*; this builder's gate measures
+an edge cutting through a *box*. So ordering narrows the problem and never closes
+it: an edge whose straight line would cut a third box is routed instead, out
+through the gap between rows, across the empty strip between two layers, and
+along a lane of its own past the diagram. Feedback edges are always routed, so a
+cycle never cuts back across the flow.
+
+Fifteen tests cover it (65 → 80), including two independently authored
+feedback-edge graphs — a layout that only works on the graph it was written
+against is not a layout — plus both orientations, a 200-node chain, disconnected
+components, a 12-way fan-out, and every malformed description.
+
+**`SKILL.md` is 196 lines, down from 731.** Every binding rule still states
+itself in the file. What moved out is the material that *illustrates* them:
+`references/builder_api.md` (every call, how to import the builder, the
+`graph.json` schema) and `references/worked_examples.md` (the repo-poster recipe
+and the ❌ → ✅ variants). `SKILL.universal.md` is 200 lines and back in step.
+
+- New `ARCH-EXCALIDRAW-034` (auto-layout) with `REQ-EXCALIDRAW-851` (`pack()`),
+  and `REQ-EXCALIDRAW-850` (the `scene` verb) under the CLI capability.
+  `ARCH-EXCALIDRAW-032` / `REQ-EXCALIDRAW-848` now say four verbs, not three.
+- `check_arrow_crossings()` and `pack()` read one geometry helper, so the layout
+  cannot disagree with the check that judges it.
+- `ARCH-EXCALIDRAW-033` cited a quality rule by its number; it now cites the rule
+  by name, because renumbering the list would have broken the link silently.
+
+**The no-arg smoke test, `render` and `discover` are untouched.**
+
 ## plugin `v1.0.1` — 2026-09-06
 
 **The skill now says out loud that it is for people who do not understand the thing.**

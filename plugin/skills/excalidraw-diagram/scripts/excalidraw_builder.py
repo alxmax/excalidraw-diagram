@@ -3,6 +3,7 @@
 # implements: ARCH-EXCALIDRAW-031
 # implements: ARCH-EXCALIDRAW-032
 # implements: ARCH-EXCALIDRAW-033
+# implements: ARCH-EXCALIDRAW-034
 """
 excalidraw_builder.py — build valid .excalidraw scenes (and a self-contained
 HTML viewer) from a small declarative API. Python standard library only.
@@ -1067,6 +1068,259 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
                          group=group)
 
     # ====================================================================
+    #  GRAPH AUTO-LAYOUT  (coordinates computed, not authored)
+    # ====================================================================
+    @staticmethod
+    def _back_edges(ids, links):
+        """Indices of the links that close a cycle, by an iterative DFS.
+
+        Layering needs a DAG; removing exactly these edges leaves one. They are
+        also the edges pack() must route around the diagram rather than draw
+        straight — a feedback edge is precisely the arrow that would otherwise
+        cut back across the whole flow.
+        """
+        succ = {i: [] for i in ids}
+        for k, link in enumerate(links):
+            succ[str(link["src"])].append((str(link["dst"]), k))
+        white, grey, black = 0, 1, 2
+        colour = dict.fromkeys(ids, white)
+        back = set()
+        for root in ids:
+            if colour[root] != white:
+                continue
+            colour[root] = grey
+            stack = [(root, iter(succ[root]))]
+            while stack:                    # iterative: a 200-node chain must not
+                node, walk = stack[-1]      # depend on the recursion limit
+                descended = False
+                for nxt, k in walk:
+                    if colour[nxt] == grey:
+                        back.add(k)         # points back into the active path
+                    elif colour[nxt] == white:
+                        colour[nxt] = grey
+                        stack.append((nxt, iter(succ[nxt])))
+                        descended = True
+                        break
+                if not descended:
+                    colour[node] = black
+                    stack.pop()
+        return back
+
+    @staticmethod
+    def _layer_of(ids, links):
+        """Longest-path layering over a DAG: a node sits one layer after the
+        deepest node that reaches it. Kahn's algorithm, so no recursion."""
+        succ = {i: [] for i in ids}
+        indeg = dict.fromkeys(ids, 0)
+        for link in links:
+            succ[str(link["src"])].append(str(link["dst"]))
+            indeg[str(link["dst"])] += 1
+        layer = dict.fromkeys(ids, 0)
+        queue = [i for i in ids if indeg[i] == 0]
+        while queue:
+            nxt = []
+            for node in queue:
+                for child in succ[node]:
+                    layer[child] = max(layer[child], layer[node] + 1)
+                    indeg[child] -= 1
+                    if indeg[child] == 0:
+                        nxt.append(child)
+            queue = nxt
+        return layer
+
+    @staticmethod
+    def _by_barycenter(lay, neighbours, pos):
+        """One ordering sweep: every node moves to the mean position of its
+        neighbours in the reference layer; one with none keeps its place."""
+        def key(item):
+            idx, node = item
+            seen = [pos[m] for m in neighbours[node] if m in pos]
+            return sum(seen) / len(seen) if seen else float(idx)
+        return [node for _, node in sorted(enumerate(lay), key=key)]
+
+    def pack(self, nodes, edges=(), *, direction="LR", x=40, y=0, groups=(),  # implements: REQ-EXCALIDRAW-851
+             gap_major=140, gap_minor=46, lane_gap=54, font_size=13):
+        """Lay out a directed graph from ids and edges alone — no coordinates.
+
+        `nodes` is a list of dicts `{id, label, fill, kind, w, h}` (only `id` is
+        required; `kind` is any box()/ISO shape name). `edges` is a list of
+        `{src, dst, label, dashed}`. `groups` is a list of
+        `{label, members: [id, ...]}`, each drawn as an enclose() frame.
+        `direction` is "LR" (layers become columns) or "TB" (layers become rows).
+        Returns `{node id: scene id}` so the caller can keep annotating.
+
+        Three passes — longest-path layering, barycenter ordering, placement —
+        plus the thing that matters more here than the ordering does: an edge
+        becomes a straight arrow ONLY when its centre-to-centre line clears every
+        other box. Every other edge (a feedback edge, one that skips layers, one
+        whose line would cut a third box) is routed through the empty channels
+        between layers and along its own lane past the diagram. Barycenter
+        ordering minimises edge-EDGE crossings; this builder's gate measures
+        edges cutting through BOXES, so the routing is what keeps
+        check_arrow_crossings() empty.
+        """
+        if direction not in ("LR", "TB"):
+            raise ValueError("pack(): direction must be 'LR' or 'TB'")
+        specs, ids = {}, []
+        for node in nodes:
+            nid = str(node.get("id", "") or "")
+            if not nid:
+                raise ValueError("pack(): every node needs a non-empty 'id'")
+            if nid in specs:
+                raise ValueError("pack(): duplicate node id %r" % nid)
+            specs[nid] = node
+            ids.append(nid)
+        if not ids:
+            raise ValueError("pack() needs at least one node")
+        links = []
+        for edge in edges:
+            src, dst = str(edge.get("src", "")), str(edge.get("dst", ""))
+            if src not in specs or dst not in specs:
+                raise ValueError(
+                    "pack(): edge %r -> %r names a node that does not exist"
+                    % (src, dst))
+            if src == dst:
+                raise ValueError(
+                    "pack(): self-edge on %r — a loop has no layer to route through"
+                    % src)
+            links.append(edge)
+
+        # --- 1. layers (back edges excluded so the rest is a DAG) ------------
+        back = self._back_edges(ids, links)
+        forward = [link for k, link in enumerate(links) if k not in back]
+        layer = self._layer_of(ids, forward)
+        layers = [[] for _ in range(max(layer.values()) + 1)]
+        for nid in ids:
+            layers[layer[nid]].append(nid)
+
+        # --- 2. ordering within each layer ----------------------------------
+        pred = {i: [] for i in ids}
+        succ = {i: [] for i in ids}
+        for link in forward:
+            succ[str(link["src"])].append(str(link["dst"]))
+            pred[str(link["dst"])].append(str(link["src"]))
+        for _ in range(4):
+            for k in range(1, len(layers)):
+                pos = {n: p for p, n in enumerate(layers[k - 1])}
+                layers[k] = self._by_barycenter(layers[k], pred, pos)
+            for k in range(len(layers) - 2, -1, -1):
+                pos = {n: p for p, n in enumerate(layers[k + 1])}
+                layers[k] = self._by_barycenter(layers[k], succ, pos)
+        gkey = {}
+        for gi, group in enumerate(groups):
+            for member in group.get("members", ()):
+                gkey[str(member)] = gi
+        if gkey:   # keep a group's members adjacent so its frame holds only them
+            layers = [sorted(lay, key=lambda n: gkey.get(n, -1)) for lay in layers]
+
+        # --- 3. sizes, gaps, coordinates ------------------------------------
+        size = {}
+        for nid in ids:
+            text, w, h = self.fit_text(str(specs[nid].get("label", nid)),
+                                       font=font_size, max_chars=22,
+                                       min_w=150, min_h=58)
+            size[nid] = (float(specs[nid].get("w", w)),
+                         float(specs[nid].get("h", h)), text)
+        gaps = [float(gap_major)] * max(1, len(layers) - 1)
+        for link in forward:
+            a, b = layer[str(link["src"])], layer[str(link["dst"])]
+            if b == a + 1 and link.get("label"):
+                # a bound arrow's label needs ~24px of visible line on each side
+                # (check_arrow_label_fit), so the gap must be wide enough for it
+                gaps[a] = max(gaps[a],
+                              self._text_wh(str(link["label"]), 14)[0] + 96.0)
+        major = (lambda n: size[n][0]) if direction == "LR" else (lambda n: size[n][1])
+        minor = (lambda n: size[n][1]) if direction == "LR" else (lambda n: size[n][0])
+        extent = [max(major(n) for n in lay) for lay in layers]
+        at, cur = [], float(x if direction == "LR" else y)
+        for k, lay in enumerate(layers):
+            at.append(cur)
+            cur += extent[k] + (gaps[k] if k < len(gaps) else 0.0)
+        runs = [sum(minor(n) for n in lay) + gap_minor * (len(lay) - 1)
+                for lay in layers]
+        widest, origin = max(runs), float(y if direction == "LR" else x)
+
+        placed = {}
+        for k, lay in enumerate(layers):
+            cur = origin + (widest - runs[k]) / 2.0
+            for nid in lay:
+                w, h, text = size[nid]
+                nx, ny = (at[k], cur) if direction == "LR" else (cur, at[k])
+                placed[nid] = self.box(text, nx, ny, w, h,
+                                       fill=specs[nid].get("fill"),
+                                       shape=specs[nid].get("kind", "rectangle"),
+                                       font_size=font_size)
+                cur += minor(nid) + gap_minor
+        for group in groups:
+            members = [placed[str(m)] for m in group.get("members", ())
+                       if str(m) in placed]
+            if members:
+                self.enclose(members, label=group.get("label"))
+
+        # --- 4. edges: straight where the line is clear, routed where it is not
+        # channel[k] is the empty strip just before layer k, where a routed
+        # connector crosses the diagram. 34px clears three things at once: no box
+        # sits in a layer gap, enclose() draws its frame 24px out so the line
+        # never traces a frame border, and an arrow's label is centred in the gap
+        # with >=48px free at each end (the gap was widened above to guarantee
+        # it), so the line misses the text too.
+        channel = [at[0] - 60.0]
+        channel += [at[k] - 34.0 for k in range(1, len(layers))]
+        channel.append(at[-1] + extent[-1] + 60.0)
+        _, _, far_x, far_y = self.bounds()
+        lane = 0
+        for k, link in enumerate(links):
+            src, dst = str(link["src"]), str(link["dst"])
+            a, b = placed[src], placed[dst]
+            if (k not in back and layer[dst] - layer[src] == 1
+                    and not self._straight_hits(a, b)):
+                self.arrow(a, b, label=link.get("label"),
+                           dashed=bool(link.get("dashed")))
+                continue
+            far = far_x if direction == "TB" else far_y
+            self._route_around(a, b, direction, channel, layer[src], layer[dst],
+                               far + lane_gap * (lane + 1),
+                               # clear of enclose()'s 24px frame, inside the row gap
+                               min(max(gap_minor * 0.75, 30.0), gap_minor - 6.0),
+                               label=link.get("label"),
+                               nudge=min(lane * 5.0, 10.0))
+            lane += 1
+        return placed
+
+    def _route_around(self, src, dst, direction, channel, ls, ld, lane, stub,  # implements: REQ-EXCALIDRAW-851
+                      label=None, nudge=0.0):
+        """Route a connector out of `src`, along `lane` past the diagram, and
+        back into `dst`. Eight points, and every leg is in empty space:
+
+          out of the box on its far side -> `stub` px into the gap between rows
+          -> across to the layer channel -> down (LR) or right (TB) to the lane
+          -> along the lane -> and the mirror of all that back into `dst`.
+
+        Leaving through the row gap rather than straight out of the box's side
+        is the part that matters. A bound arrow carries its label at its own
+        mid-height, which is exactly the height of a box's side — a connector
+        leaving there would run through the neighbouring arrow's text, and no
+        gate would see it (check_text_overlaps() excludes bound labels by
+        design). `nudge` offsets connectors that share a channel so they do not
+        stack; it stays inside the gap's label-free margin.
+        """
+        sx, sy, sw, sh, _ = self._geom[src]
+        dx, dy, dw, dh, _ = self._geom[dst]
+        out_i, in_i = (ls, ld + 1) if ld <= ls else (ls + 1, ld)
+        out_c, in_c = channel[out_i] - nudge, channel[in_i] - nudge
+        if direction == "LR":                       # lanes run below the diagram
+            s_out, d_out = sy + sh + stub, dy + dh + stub
+            pts = [(sx + sw / 2, sy + sh), (sx + sw / 2, s_out), (out_c, s_out),
+                   (out_c, lane), (in_c, lane),
+                   (in_c, d_out), (dx + dw / 2, d_out), (dx + dw / 2, dy + dh)]
+        else:                                       # lanes run right of it
+            s_out, d_out = sx + sw + stub, dx + dw + stub
+            pts = [(sx + sw, sy + sh / 2), (s_out, sy + sh / 2), (s_out, out_c),
+                   (lane, out_c), (lane, in_c),
+                   (d_out, in_c), (d_out, dy + dh / 2), (dx + dw, dy + dh / 2)]
+        return self.path(pts, dashed=True, color="grey", end="arrow", label=label)
+
+    # ====================================================================
     #  LAYOUT SANITY
     # ====================================================================
     def check_overlaps(self, min_px=1.0):  # implements: REQ-EXCALIDRAW-847
@@ -1117,17 +1371,42 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             return 0.0
         return (t1 - t0) * math.hypot(dx, dy)
 
+    def _straight_hits(self, src, dst, threshold=12.0, inset=4.0):
+        """Ids of the nodes a straight src→dst centre line would cut through.
+
+        The id-level form of check_arrow_crossings() below, which reports the
+        same geometry by label. pack() asks it BEFORE drawing, to decide whether
+        an edge can be a straight arrow or has to be routed around.
+        """
+        def centre(gid):
+            gx, gy, gw, gh, _s = self._geom[gid]
+            return (gx + gw / 2, gy + gh / 2)
+
+        p0, p1 = centre(src), centre(dst)
+        # if an endpoint is a container, stop at its border so the segment does
+        # not traverse the container's own children
+        if src in self._containers:
+            p0 = self._border_point(src, p1)
+        if dst in self._containers:
+            p1 = self._border_point(dst, p0)
+        hits = []
+        for nid, (nx, ny, nw, nh, _s) in self._geom.items():
+            if nid in (src, dst) or nid in self._containers:
+                continue
+            rw, rh = nw - 2 * inset, nh - 2 * inset
+            if rw <= 0 or rh <= 0:
+                continue
+            if self._seg_rect_overlap(
+                    p0, p1, (nx + inset, ny + inset, rw, rh)) > threshold:
+                hits.append(nid)
+        return hits
+
     def check_arrow_crossings(self, threshold=12.0, inset=4.0):  # implements: REQ-EXCALIDRAW-846
         """Return [(src, dst, crossed), ...] where a bound arrow's straight
         src→dst path runs through an unrelated node by more than `threshold`
         pixels. Endpoints, containers and unbound arrows are ignored. This is a
         heuristic readability check — a clean layout returns []."""
         labels = {nid: lab for (nid, _x, _y, _w, _h, lab) in self._nodes}
-
-        def center(gid):
-            gx, gy, gw, gh, _s = self._geom[gid]
-            return (gx + gw / 2, gy + gh / 2)
-
         hits = []
         for el in self.elements:
             if el.get("type") != "arrow":
@@ -1138,23 +1417,9 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             src, dst = sb["elementId"], eb["elementId"]
             if src not in self._geom or dst not in self._geom:
                 continue
-            p0, p1 = center(src), center(dst)
-            # if an endpoint is a container, stop at its border so the segment
-            # does not traverse the container's own children
-            if src in self._containers:
-                p0 = self._border_point(src, p1)
-            if dst in self._containers:
-                p1 = self._border_point(dst, p0)
-            for nid, (nx, ny, nw, nh, _s) in self._geom.items():
-                if nid in (src, dst) or nid in self._containers:
-                    continue
-                rw, rh = nw - 2 * inset, nh - 2 * inset
-                if rw <= 0 or rh <= 0:
-                    continue
-                if self._seg_rect_overlap(
-                        p0, p1, (nx + inset, ny + inset, rw, rh)) > threshold:
-                    hits.append((labels.get(src, "?"), labels.get(dst, "?"),
-                                 labels.get(nid, "?")))
+            for nid in self._straight_hits(src, dst, threshold, inset):
+                hits.append((labels.get(src, "?"), labels.get(dst, "?"),
+                             labels.get(nid, "?")))
         return hits
 
     def check_legend_coverage(self):  # implements: REQ-EXCALIDRAW-846
@@ -1792,6 +2057,78 @@ def _render_stub(repo_name, comps, truncated):
             .replace("__GW__", str(gw)))
 
 
+def scene_from_json(spec_path, out_dir=None, basename=None):  # implements: REQ-EXCALIDRAW-850
+    """Build and save a scene from a coordinate-free graph description.
+
+    The JSON names what connects to what; pack() decides where everything goes.
+    This is the short path — a caller who wants control over the layout writes a
+    generator against the Scene API instead, and this verb is deliberately not a
+    second authoring language: every key below maps to one Scene call.
+
+        {
+          "name": "auth_flow",              // output basename (else the file's)
+          "title": "Auth flow",             // title() + label() subtitle
+          "subtitle": "Left to right: ...",
+          "direction": "LR",                // or "TB"
+          "seed": 7,                        // byte-stable re-runs
+          "roles": {"service": "blue"},     // colour = meaning, decoded by legend()
+          "nodes": [{"id": "api", "label": "API gateway", "fill": "service",
+                     "kind": "process"}],
+          "edges": [{"src": "api", "dst": "auth", "label": "verify",
+                     "dashed": false}],
+          "groups": [{"label": "the service", "members": ["api", "auth"]}],
+          "legend": true,                   // render the roles key
+          "glossary": [["SSOT", "single source of truth"]]
+        }
+
+    Returns the (.excalidraw, .html) paths. Raises ValueError on a malformed
+    description, so the CLI reports one readable line instead of a traceback.
+    """
+    with open(spec_path, encoding="utf-8") as fh:
+        try:
+            spec = json.load(fh)
+        except ValueError as exc:      # json.JSONDecodeError is a ValueError
+            raise ValueError("%s is not valid JSON: %s" % (spec_path, exc))
+    if not isinstance(spec, dict):
+        raise ValueError("%s must hold a JSON object, not a %s"
+                         % (spec_path, type(spec).__name__))
+    nodes = spec.get("nodes")
+    if not isinstance(nodes, list) or not nodes:
+        raise ValueError("%s needs a non-empty 'nodes' list" % spec_path)
+    edges = spec.get("edges") or []
+    groups = spec.get("groups") or []
+    for name, value in (("edges", edges), ("groups", groups)):
+        if not isinstance(value, list):
+            raise ValueError("%s: '%s' must be a list" % (spec_path, name))
+
+    scene = Scene(seed=spec.get("seed"), roles=spec.get("roles") or {})
+    title, subtitle = spec.get("title"), spec.get("subtitle")
+    top = 0.0
+    if title:
+        scene.title(str(title), 40, -96 if subtitle else -60, size=30)
+    if subtitle:
+        scene.label(str(subtitle), 40, -54, size=14, align="left")
+    scene.pack(nodes, edges, direction=str(spec.get("direction", "LR")),
+               groups=groups, y=top)
+
+    # the two decoders sit below the diagram, side by side, clear of every lane
+    _x0, _y0, _x1, y1 = scene.bounds()
+    key_y = y1 + 70
+    if spec.get("legend", bool(spec.get("roles"))) and scene.roles:
+        scene.legend(x=40, y=key_y, title="What the colours mean")
+    terms = spec.get("glossary") or []
+    if terms:
+        entries = [(str(t[0]), str(t[1])) for t in terms if len(t) >= 2]
+        if entries:
+            scene.glossary(entries, 460, key_y)
+    name = str(spec.get("name") or basename
+               or os.path.splitext(os.path.basename(spec_path))[0])
+    return scene.save(name, out_dir or os.path.dirname(spec_path) or ".",
+                      crossing_check="error", legend_check="error",
+                      overflow_check="error", text_overlap_check="error",
+                      label_fit_check="error")
+
+
 def discover_stub(repo, out_path=None, max_components=20):  # implements: REQ-EXCALIDRAW-848
     """Emit a runnable Python generator stub (default: ./make_diagram.py) seeded
     from a repo scan — one box per discovered component on a no-overlap grid, with
@@ -1811,13 +2148,17 @@ def discover_stub(repo, out_path=None, max_components=20):  # implements: REQ-EX
 
 _USAGE = """usage: excalidraw_builder.py [<command>]
 
-  (no command)                         run the builder self-test (smoke test)
-  render <scene.excalidraw> [out_dir]  rebuild the .html viewer from an existing scene
-  discover <repo> [out.py]             scan a repo -> a runnable Python generator stub
+  (no command)                          run the builder self-test (smoke test)
+  scene --from-json <graph.json> [-o <dir>]
+                                        lay out a coordinate-free graph and write both files
+  render <scene.excalidraw> [out_dir]   rebuild the .html viewer from an existing scene
+  discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
 
-The skill's authoring path is Python: write (or `discover`-scaffold) a generator
-script against the Scene API, then run it. `render` re-emits the viewer for a scene
-edited elsewhere (e.g. excalidraw.com)."""
+Two authoring paths. `scene` is the short one: describe nodes, edges and groups in
+JSON with no coordinates, and pack() places everything and runs the gates. Writing a
+generator against the Scene API is the other, for a diagram whose layout you want to
+control yourself. `render` re-emits the viewer for a scene edited elsewhere (e.g.
+excalidraw.com)."""
 
 
 def _selftest():  # verifies: REQ-EXCALIDRAW-844#CASE-4  # verifies: REQ-EXCALIDRAW-845#CASE-1  # verifies: REQ-EXCALIDRAW-845#CASE-2
@@ -1927,11 +2268,28 @@ def _main(argv):  # implements: REQ-EXCALIDRAW-848
                 return 2
             print("wrote", discover_stub(argv[1], argv[2] if len(argv) > 2 else None))
             return 0
+        if verb == "scene":
+            spec, out, rest = None, None, argv[1:]
+            while rest:
+                flag, rest = rest[0], rest[1:]
+                if flag == "--from-json" and rest:
+                    spec, rest = rest[0], rest[1:]
+                elif flag in ("-o", "--out") and rest:
+                    out, rest = rest[0], rest[1:]
+                else:
+                    spec = None
+                    break
+            if not spec:
+                print("usage: excalidraw_builder.py scene --from-json <graph.json> [-o <dir>]",
+                      file=sys.stderr)
+                return 2
+            print("wrote", *scene_from_json(spec, out))
+            return 0
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-    print(f"unknown command: {verb!r} — use render, discover, or no command for the self-test",
-          file=sys.stderr)
+    print(f"unknown command: {verb!r} — use scene, render, discover, "
+          f"or no command for the self-test", file=sys.stderr)
     return 2
 
 
