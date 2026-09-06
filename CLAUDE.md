@@ -69,24 +69,25 @@ grep matches). Root-level files (`README.md`, this file, CI) are not shipped and
 
 ## Requirements
 
-This repo keeps its own requirement corpus under `plugin/requirements/` and vendors the
-engine that checks it.
+This repo keeps its own requirement corpus in `requirements/` and vendors the engine
+that checks it. Both sit at the repo root, so every command runs from there with no
+path arguments — the scan already covers every member.
 
 ```bash
-cd plugin && python -X utf8 scripts/reqmap.py gate --code ..    # THE verdict
-cd plugin && python -X utf8 scripts/reqmap.py sync --code ..    # rebuild lock + map
-cd plugin && python -X utf8 scripts/reqmap.py sync --accept-drift "why" --code ..   # after editing a confirmed contract
-cd plugin && python -X utf8 scripts/reqmap.py gate --audit --code ..
+python -X utf8 scripts/reqmap.py gate                        # THE verdict
+python -X utf8 scripts/reqmap.py sync                        # rebuild lock + map
+python -X utf8 scripts/reqmap.py sync --accept-drift "why"   # after editing a confirmed contract
+python -X utf8 scripts/reqmap.py gate --audit
 ```
 
-**`--code ..` is not optional.** The committed `_reqlock.json` and `_map.*` are generated
-from the widened scan; a run without it reports every member's path one level off and
-fails the freshness check against the real committed files.
+The corpus lived under `plugin/` until it moved out: it was being shipped to everyone
+who installed the plugin, and it forced every command to carry `--code ..` to widen the
+scan back to the repo it was describing. Neither is true now.
 
-`plugin/scripts/reqmap.py` is **vendored, not owned**. It carries the `implements:`
+`scripts/reqmap.py` is **vendored, not owned**. It carries the `implements:`
 self-tags of the repository it was written in, and those requirements do not live here —
 `.reqmapignore` excludes it for exactly that reason. Do not edit it here; update it from
-upstream. `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
+the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
 **Fifteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
@@ -128,11 +129,15 @@ plugin/skills/excalidraw-diagram/
   scripts/excalidraw_builder.py            the builder
   scripts/test_excalidraw.py               80 unit tests
   examples/make_*.py                       worked generators, each runnable standalone
-plugin/requirements/                       the corpus, its lock files and the generated map
-plugin/scripts/reqmap.py                   the vendored requirement engine
 .claude-plugin/marketplace.json            the marketplace manifest
-scripts/check_versions.py                  version coherence
+requirements/                              the corpus, its lock files and the generated map
+scripts/reqmap.py                          the vendored requirement engine
+scripts/check_versions.py + its test       version coherence
 ```
+
+**Only `plugin/` ships.** `/plugin install` hands a consumer the manifest and the skill;
+the corpus, the engine and the release check are this repo's own scaffolding and stay
+outside it.
 
 **`SKILL.md` and `SKILL.universal.md` are two hand-maintained copies of one contract.**
 Nothing generates either from the other, so a change to one that misses the other is a
