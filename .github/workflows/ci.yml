@@ -94,7 +94,12 @@ jobs:
         with:
           python-version: "3.x"
       - name: Manifest versions agree
-        run: python scripts/check_versions.py
+        run: python -X utf8 scripts/check_versions.py
+      # and the check itself works: a stale copy in either place must fail, or the
+      # job above passes for the wrong reason on the day it matters
+      - name: The version check catches a stale copy
+        working-directory: scripts
+        run: python -X utf8 -m unittest test_check_versions -v
 
   # A version bump with no CHANGELOG section ships a release nobody can read.
   changelog:

@@ -1,6 +1,9 @@
 {
   "_schema": 2,
   "members": {
+    "ARCH-RELEASE-035": {
+      "scripts/check_versions.py": "f954e868b206f0a98354d1653549793885df76b66bf060265f875605177e9c0b"
+    },
     "REQ-EXCALIDRAW-844": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#Rect": "cb0903533534e2d4ea9f371616f25b3d1e592f0abcbf4e4d3edf2e89a8fde361",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py#Style": "f903aeff80d7b6710b95541403e1a3de83186f76a8802b5cdffd5df0074f5ad0",

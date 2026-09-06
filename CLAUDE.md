@@ -34,6 +34,7 @@ cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_e
 python -X utf8 plugin/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py out/
 
 python scripts/check_versions.py          # plugin.json == marketplace.json (x2); --fix syncs
+cd scripts && python -X utf8 -m unittest test_check_versions -v   # and that the check itself catches a stale copy
 ```
 
 **On Windows always pass `-X utf8`** — the suites print non-ASCII and fail on cp1252.
@@ -88,10 +89,18 @@ self-tags of the repository it was written in, and those requirements do not liv
 upstream. `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Fourteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
-capabilities and their eight `REQ-*` children. All are `confirmed`, so the gate
-enforces them as truth. Editing a confirmed contract demotes it to `draft` — set
-`status: confirmed` back and `sync --accept-drift "<why>"`.
+**Fifteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+capabilities with their eight `REQ-*` children, and `ARCH-RELEASE-035` (the version
+match). All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
+contract demotes it to `draft` — set `status: confirmed` back and
+`sync --accept-drift "<why>"`.
+
+**`init` over-drafts in this repo, and that is expected.** It proposes a requirement
+per untagged file, so it invents nodes from directory names (`ARCH-DOCS-001`) and
+drafts the reference prose that `ARCH-EXCALIDRAW-030/031/034` already own. It says so
+itself in the files it writes. `.reqmapignore` now covers the recurring cases —
+`docs/make_*.py`, `SKILL.universal.md`, `references/**` — so a re-run stays quiet; a
+new draft it does propose is worth reading before deleting.
 
 **Tagging conventions the gate reads.** ARCH ids are `# implements:` lines at the top of
 the builder and `# tested-by:` lines at the top of the test file. REQ ids sit on the

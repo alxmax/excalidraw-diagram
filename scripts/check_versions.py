@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# implements: ARCH-RELEASE-035
 """Assert the plugin's version is spelled the same in every manifest that carries it.
 
 `plugin/.claude-plugin/plugin.json` is the source of truth. `.claude-plugin/marketplace.json`
