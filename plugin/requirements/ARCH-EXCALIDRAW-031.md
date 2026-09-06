@@ -4,7 +4,7 @@ status: confirmed
 level: architecture
 layer: feature
 owner: Alex
-milestone: v2.4
+milestone: v1.0.0
 depends_on: [ARCH-EXCALIDRAW-030]
 satisfies: [SYS-DIAGRAM-001]
 ---
@@ -75,8 +75,8 @@ CASE-7
 - `check_overlaps`, `check_arrow_crossings`, `check_legend_coverage`,
   `check_text_overflow`, `check_text_overlaps`, `check_short_arrows`,
   `check_arrow_label_fit` and the `save()` gate dispatch in
-  `skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
-- `skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).
 
 
 --------------------

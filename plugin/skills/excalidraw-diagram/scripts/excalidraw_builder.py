@@ -2,6 +2,7 @@
 # implements: ARCH-EXCALIDRAW-030
 # implements: ARCH-EXCALIDRAW-031
 # implements: ARCH-EXCALIDRAW-032
+# implements: ARCH-EXCALIDRAW-033
 """
 excalidraw_builder.py — build valid .excalidraw scenes (and a self-contained
 HTML viewer) from a small declarative API. Python standard library only.
@@ -677,7 +678,7 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
         self.roles[name] = color
         return self
 
-    def legend(self, entries=None, x=0, y=0, *, title="Legend",
+    def legend(self, entries=None, x=0, y=0, *, title="Legend",  # implements: REQ-EXCALIDRAW-849
                swatch=18, gap=10, font_size=13, pad=14):
         """A colour key mapping each fill to its meaning, so a reader with no
         context can decode the diagram. `entries` is a list of (label, colour);
@@ -714,7 +715,7 @@ class Scene:  # implements: REQ-EXCALIDRAW-844
             cy += row_h
         return fid
 
-    def glossary(self, entries, x, y, *, title="Glossary", font_size=13,
+    def glossary(self, entries, x, y, *, title="Glossary", font_size=13,  # implements: REQ-EXCALIDRAW-849
                  pad=14, gap=8):
         """A term→meaning key so a reader can decode jargon / acronyms on the
         canvas — distinct from legend() (which maps colour→role). `entries` is a

@@ -4,7 +4,7 @@ status: confirmed
 level: architecture
 layer: feature
 owner: Alex
-milestone: v2.4
+milestone: v1.0.0
 satisfies: [SYS-DIAGRAM-001]
 ---
 
@@ -50,13 +50,13 @@ CASE-5
 
 ## Context
 **Notes**
-- The authoritative usage reference is `skills/excalidraw-diagram/SKILL.md`.
+- The authoritative usage reference is `plugin/skills/excalidraw-diagram/SKILL.md`.
 - `save()` overlap detection raises on any two non-container shapes that
   overlap (co-ordinates checked after all shapes are added).
 
 **Current implementation**
 - `class Scene` and all shape/layout/arrow methods in
-  `skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
 
 **Links**
 - Used by: ARCH-EXCALIDRAW-031, ARCH-EXCALIDRAW-032

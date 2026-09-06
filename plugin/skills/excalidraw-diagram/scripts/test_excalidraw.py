@@ -2,6 +2,7 @@
 # tested-by: ARCH-EXCALIDRAW-030  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
 # tested-by: ARCH-EXCALIDRAW-031
 # tested-by: ARCH-EXCALIDRAW-032
+# tested-by: ARCH-EXCALIDRAW-033
 """Regression gate for the excalidraw-diagram skill.
 
 This is the operational definition of "professional / understandable" for a
@@ -96,7 +97,7 @@ def _install_cases():
 _install_cases()
 
 
-class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # tested-by: REQ-EXCALIDRAW-847
+class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # tested-by: REQ-EXCALIDRAW-847  # tested-by: REQ-EXCALIDRAW-849
     """Unit coverage for the Phase-1 builder helpers (gaps closed after the
     consilium pre-merge review: the example tests prove clean layouts but did
     not exercise these paths directly)."""
@@ -359,7 +360,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.path([(0, 300), (200, 300)], label="clear")   # well below the box
         self.assertEqual(s.check_overlaps(), [])
 
-    def test_glossary_renders_and_is_overlap_checked(self):
+    def test_glossary_renders_and_is_overlap_checked(self):  # verifies: REQ-EXCALIDRAW-849#CASE-3  # verifies: REQ-EXCALIDRAW-849#CASE-5
         s = eb.Scene(seed=99)
         s.glossary([("SSOT", "single source of truth"),
                     ("dogfood", "runs on its own requirements")], 0, 0)
@@ -369,9 +370,26 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.box("X", 10, 10, 80, 40, fill="blue")
         self.assertNotEqual(s.check_overlaps(), [])
 
-    def test_glossary_empty_raises(self):
+    def test_glossary_empty_raises(self):  # verifies: REQ-EXCALIDRAW-849#CASE-4
         with self.assertRaises(ValueError):
             eb.Scene(seed=99).glossary([], 0, 0)
+
+    def test_glossary_line_reads_term_dash_meaning(self):  # verifies: REQ-EXCALIDRAW-849#CASE-3
+        s = eb.Scene(seed=99)
+        s.glossary([("SSOT", "single source of truth")], 0, 0)
+        texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
+        self.assertIn("SSOT — single source of truth", texts)
+
+    def test_legend_from_declared_roles(self):  # verifies: REQ-EXCALIDRAW-849#CASE-1
+        s = eb.Scene(seed=99, roles={"agent": "violet"})
+        s.legend(x=0, y=0)
+        texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
+        self.assertIn("agent", texts)
+        self.assertIn(eb._FILL["violet"], s._legend_colours)
+
+    def test_legend_empty_raises(self):  # verifies: REQ-EXCALIDRAW-849#CASE-2
+        with self.assertRaises(ValueError):
+            eb.Scene(seed=99).legend(x=0, y=0)
 
     def test_polyline_midpoint_edges(self):
         self.assertEqual(eb.Scene._polyline_midpoint([(3, 7)]), (3, 7))
@@ -647,3 +665,43 @@ class CasesExcalidraw031(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-847
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
+    def test_legend_and_glossary_decode_colours_and_terms_on_the_canvas(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-1
+        s = eb.Scene(seed=99, roles={"engine": "violet", "plan": "indigo"})
+        a = s.box("the plan", 0, 0, fill="plan")
+        b = s.box("the engine", 300, 0, fill="engine")
+        s.arrow(a, b, label="checks")
+        s.legend(x=0, y=200)
+        s.glossary([("SSOT", "single source of truth")], 300, 200)
+        self.assertEqual(s.check_legend_coverage(), [])
+        texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
+        self.assertIn("engine", texts)
+        self.assertIn("SSOT — single source of truth", texts)
+        with tempfile.TemporaryDirectory() as d:
+            s.save("decodable", out_dir=d, legend_check="error")
+
+    def test_explainer_example_is_a_decodable_teaching_diagram(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-2
+        path = os.path.join(EXAMPLES_DIR, "make_explainer.py")
+        captured = {}
+        original_save = eb.Scene.save
+
+        def fake_save(self, *a, **k):
+            captured["scene"] = self
+            return ("(stubbed).excalidraw", "(stubbed).html")
+
+        eb.Scene.save = fake_save
+        try:
+            runpy.run_path(path, run_name="__main__")
+        finally:
+            eb.Scene.save = original_save
+        s = captured["scene"]
+        # a legend was rendered and decodes every fill in use
+        self.assertTrue(s._legend_colours, "explainer renders no legend")
+        self.assertEqual(s.check_legend_coverage(), [])
+        # a glossary box is on the canvas
+        self.assertTrue(any("glossary" in lab for *_, lab in s._nodes),
+                        "explainer renders no glossary")
+        # it opens with a title-sized heading
+        sizes = [e.get("fontSize", 0) for e in s.elements if e.get("type") == "text"]
+        self.assertTrue(any(sz >= 28 for sz in sizes), "explainer has no title")

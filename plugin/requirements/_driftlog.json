@@ -1,0 +1,9 @@
+{
+  "_schema": 1,
+  "accepted": {
+    "ARCH-EXCALIDRAW-033": {
+      "hash": "b2f679144c3f",
+      "reason": "ARCH-EXCALIDRAW-033: CASE-3 marked inspection-only"
+    }
+  }
+}
