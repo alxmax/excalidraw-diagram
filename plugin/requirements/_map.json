@@ -1,6 +1,6 @@
 {
   "engine_version": "2026-09-06.15",
-  "repo": "excalidraw-diagram",
+  "repo": "alxmax/excalidraw-diagram",
   "nodes": [
     {
       "id": "ARCH-EXCALIDRAW-030",
@@ -16,11 +16,11 @@
       ],
       "verify": [],
       "notes": [
-        "The authoritative usage reference is `skills/excalidraw-diagram/SKILL.md`.",
+        "The authoritative usage reference is `plugin/skills/excalidraw-diagram/SKILL.md`.",
         "`save()` overlap detection raises on any two non-container shapes that overlap (co-ordinates checked after all shapes are added)."
       ],
       "current_impl": [
-        "`class Scene` and all shape/layout/arrow methods in `skills/excalidraw-diagram/scripts/excalidraw_builder.py`."
+        "`class Scene` and all shape/layout/arrow methods in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`."
       ],
       "acc": [
         "CASE-1 — Given  a `Scene` with at least one `box` and one `arrow` When   `.save()` is called Then   both `<basename>.excalidraw` and `<basename>.html` are written and the `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`",
@@ -37,7 +37,8 @@
       "depends_on": [],
       "used_by": [
         "ARCH-EXCALIDRAW-031",
-        "ARCH-EXCALIDRAW-032"
+        "ARCH-EXCALIDRAW-032",
+        "ARCH-EXCALIDRAW-033"
       ],
       "satisfies": [
         "SYS-DIAGRAM-001"
@@ -57,7 +58,7 @@
         }
       ],
       "test_exempt": null,
-      "milestone": "v2.4",
+      "milestone": "v1.0.0",
       "priority": "",
       "risks": []
     },
@@ -100,19 +101,19 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:109"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:110"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:150"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:151"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:172"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:173"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:183"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:184"
         },
         {
           "role": "tested-by",
@@ -120,7 +121,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:551"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:569"
         }
       ],
       "test_exempt": null,
@@ -167,15 +168,15 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:186"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:187"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:902"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:903"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1349"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1350"
         },
         {
           "role": "tested-by",
@@ -183,7 +184,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:551"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:569"
         }
       ],
       "test_exempt": null,
@@ -210,8 +211,8 @@
         "The canonical pattern for a ship-quality diagram is all five named gates set to `\"error\"` (the two hard gates already raise by default): `save(..., crossing_check=\"error\", legend_check=\"error\", overflow_check=\"error\", text_overlap_check=\"error\", label_fit_check=\"error\")`."
       ],
       "current_impl": [
-        "`check_overlaps`, `check_arrow_crossings`, `check_legend_coverage`, `check_text_overflow`, `check_text_overlaps`, `check_short_arrows`, `check_arrow_label_fit` and the `save()` gate dispatch in `skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
-        "`skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
+        "`check_overlaps`, `check_arrow_crossings`, `check_legend_coverage`, `check_text_overflow`, `check_text_overlaps`, `check_short_arrows`, `check_arrow_label_fit` and the `save()` gate dispatch in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
         "-------------------"
       ],
       "acc": [
@@ -252,7 +253,7 @@
         }
       ],
       "test_exempt": null,
-      "milestone": "v2.4",
+      "milestone": "v1.0.0",
       "priority": "",
       "risks": []
     },
@@ -293,23 +294,23 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1119"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1120"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1159"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1160"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1188"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1189"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1349"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1350"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:99"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:100"
         }
       ],
       "test_exempt": null,
@@ -357,31 +358,31 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1071"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1072"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1212"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1213"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1236"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1237"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1273"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1274"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1349"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1350"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:99"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:100"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:636"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:654"
         }
       ],
       "test_exempt": null,
@@ -408,8 +409,8 @@
         "The smoke test (no-arg invocation) is what CI depends on — do not change the no-arg behaviour."
       ],
       "current_impl": [
-        "`_main(argv)` and the `render_html`, `discover_stub` functions in `skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
-        "`skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class).",
+        "`_main(argv)` and the `render_html`, `discover_stub` functions in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class).",
         "-------------------"
       ],
       "acc": [
@@ -446,7 +447,7 @@
         }
       ],
       "test_exempt": null,
-      "milestone": "v2.4",
+      "milestone": "v1.0.0",
       "priority": "",
       "risks": []
     },
@@ -487,19 +488,19 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1600"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1601"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1794"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1795"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1903"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1904"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:390"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:408"
         }
       ],
       "test_exempt": null,
@@ -508,6 +509,135 @@
       "risks": [],
       "clauses": 4,
       "covered": 4
+    },
+    {
+      "id": "ARCH-EXCALIDRAW-033",
+      "layer": "feature",
+      "level": "architecture",
+      "status": "confirmed",
+      "area": "ARCH",
+      "title": "Explanatory output — a diagram a reader with no context can decode",
+      "intent": "The skill is reached for most often by someone who does not understand the thing being drawn: they ask \"how does X work?\" and want the picture to teach them. A diagram that is correct but implicit — colours with no key, project jargon with no definition, no stated reading direction — fails that reader even though every gate passes. So the output carries its own decoding: the canvas explains its colours, its terms and its order, in everyday words.",
+      "contract": [
+        "`Scene` exposes two decoding helpers, `legend()` for colour → meaning and `glossary()` for term → meaning, so every colour and every project-specific term used on the canvas is explained on that same canvas. [[REQ-EXCALIDRAW-849]] details the behaviour.",
+        "A diagram produced for a reader who does not know the system opens with a `title()` and a one-line `label()` subtitle that states what the picture shows and its reading direction. Node text uses everyday words; jargon goes to the glossary rather than into a box.",
+        "`examples/make_explainer.py` is the maintained reference for this shape (a teaching diagram read top to bottom, with a legend and a glossary) and builds clean on every gate."
+      ],
+      "verify": [],
+      "notes": [
+        "The obligation on plain words and a stated reading direction is checked by reading the diagram, not by a gate: no check can tell \"Auth service\" from \"Service A\". Rule 5 of the Quality rules in `SKILL.md` is the prose form.",
+        "`legend_check` ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend is rendered, a fill it does not decode fails the build."
+      ],
+      "current_impl": [
+        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
+        "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`."
+      ],
+      "acc": [
+        "CASE-1 — — a reader with no context can decode every colour and term Given  a scene that uses role colours and at least one project-specific term When   it is saved with `legend_check=\"error\"` Then   a `legend()` decodes every fill colour used and a `glossary()` lists the term with its meaning, both on the same canvas",
+        "CASE-2 — — the explainer example stays a clean teaching diagram Given  `examples/make_explainer.py` When   `test_excalidraw.py` runs it Then   the built scene contains a legend and a glossary, opens with a title, and produces zero violations on every gate",
+        "CASE-3 — — the asker who does not know the system gets a picture that teaches it   Given  a request phrased as \"explain how X works\" or \"I don't understand X\", with no mention of a diagram When   the skill runs Then   the delivered diagram opens with a title plus a one-line subtitle naming the reading direction. Its boxes use everyday words rather than file names alone. A legend decodes every colour; a glossary decodes every term. Checked by inspection; the reference shape is `make_explainer.py`"
+      ],
+      "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `legend_check=\"error\"`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "depends_on": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "used_by": [],
+      "satisfies": [
+        "SYS-DIAGRAM-001"
+      ],
+      "satisfied_by": [
+        "REQ-EXCALIDRAW-849"
+      ],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:669"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": "v1.0.1",
+      "priority": "",
+      "risks": [],
+      "clauses": 2,
+      "covered": 2
+    },
+    {
+      "id": "REQ-EXCALIDRAW-849",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Colour and term keys: legend() and glossary()",
+      "intent": "A colour on a diagram means something only to the person who chose it, and a project term means something only to someone already inside the project. The two keys put that meaning on the canvas: `legend()` maps each fill colour to a role, `glossary()` maps each term to a one-line meaning. Both are drawn as real content, so nothing can be placed on top of them unnoticed.",
+      "contract": [
+        "`legend(entries=None, x, y, title=\"Legend\")` draws a colour key with one row per entry, each row a swatch of the colour beside its label. An entry is a `(label, colour)` pair; `colour` is a palette name, a hex string or a role name declared with `Scene(roles=...)` / `role()`.",
+        "`legend()` with no `entries` uses the Scene's declared roles as the key. With no entries and no roles it raises `ValueError`, because an empty key explains nothing.",
+        "`legend()` records the resolved colour of every entry it draws, so `check_legend_coverage()` can report a fill the key leaves undecoded.",
+        "`glossary(entries, x, y, title=\"Glossary\")` draws a term key with one left-aligned line per `(term, meaning)` pair, rendered as `TERM — meaning`. An empty `entries` list raises `ValueError`.",
+        "The glossary box counts as content for `check_overlaps()`: a shape placed over it is reported as an overlap."
+      ],
+      "verify": [],
+      "notes": [
+        "`glossary()` neither wraps nor colours its lines: keep each meaning to one short line, or the box grows past the region beside it.",
+        "The legend frame is container-exempt; the glossary box is registered in the overlap set explicitly because `frame()` alone would not be."
+      ],
+      "current_impl": [
+        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`TestBuilderUnits` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "acc": [
+        "CASE-1 — — a legend built from declared roles Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries When   `legend()` is called Then   the scene gains a key with one row labelled \"agent\", and the resolved colour of \"violet\" is recorded for legend coverage",
+        "CASE-2 — — an empty legend is refused Given  a `Scene` with no declared roles When   `legend()` is called with no entries Then   `ValueError` is raised",
+        "CASE-3 — — a glossary decodes a term on the canvas Given  a `Scene` When   `glossary([(\"SSOT\", \"single source of truth\")], 0, 0)` is called Then   the scene contains a text element reading `SSOT — single source of truth`",
+        "CASE-4 — — an empty glossary is refused Given  a `Scene` When   `glossary([], 0, 0)` is called Then   `ValueError` is raised",
+        "CASE-5 — — the glossary box is overlap-checked Given  a `Scene` with a glossary drawn at (0, 0) When   a box is placed on top of it and `check_overlaps()` is called Then   the overlap is reported"
+      ],
+      "accept": "CASE-1 — a legend built from declared roles\n  Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries\n  When   `legend()` is called\n  Then   the scene gains a key with one row labelled \"agent\", and the resolved\n         colour of \"violet\" is recorded for legend coverage\n\nCASE-2 — an empty legend is refused\n  Given  a `Scene` with no declared roles\n  When   `legend()` is called with no entries\n  Then   `ValueError` is raised\n\nCASE-3 — a glossary decodes a term on the canvas\n  Given  a `Scene`\n  When   `glossary([(\"SSOT\", \"single source of truth\")], 0, 0)` is called\n  Then   the scene contains a text element reading `SSOT — single source of truth`\n\nCASE-4 — an empty glossary is refused\n  Given  a `Scene`\n  When   `glossary([], 0, 0)` is called\n  Then   `ValueError` is raised\n\nCASE-5 — the glossary box is overlap-checked\n  Given  a `Scene` with a glossary drawn at (0, 0)\n  When   a box is placed on top of it and `check_overlaps()` is called\n  Then   the overlap is reported",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-033"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:681"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:718"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:100"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "SYS-DIAGRAM-001",
@@ -541,7 +671,8 @@
       "satisfied_by": [
         "ARCH-EXCALIDRAW-030",
         "ARCH-EXCALIDRAW-031",
-        "ARCH-EXCALIDRAW-032"
+        "ARCH-EXCALIDRAW-032",
+        "ARCH-EXCALIDRAW-033"
       ],
       "members": [],
       "test_exempt": null,
@@ -557,6 +688,10 @@
     ],
     [
       "ARCH-EXCALIDRAW-032",
+      "ARCH-EXCALIDRAW-030"
+    ],
+    [
+      "ARCH-EXCALIDRAW-033",
       "ARCH-EXCALIDRAW-030"
     ]
   ],
@@ -592,6 +727,14 @@
     [
       "REQ-EXCALIDRAW-848",
       "ARCH-EXCALIDRAW-032"
+    ],
+    [
+      "ARCH-EXCALIDRAW-033",
+      "SYS-DIAGRAM-001"
+    ],
+    [
+      "REQ-EXCALIDRAW-849",
+      "ARCH-EXCALIDRAW-033"
     ]
   ],
   "todos": [],
@@ -796,13 +939,13 @@
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
         "line": 1,
         "name": "excalidraw_builder.py",
-        "detail": "1939 lines (over 500)"
+        "detail": "1940 lines (over 500)"
       },
       {
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 117,
+        "line": 118,
         "name": "__init__",
         "detail": "h, w, x, y travel together through 15 functions: __init__, box, column, connector, data, decision"
       },
@@ -810,7 +953,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 117,
+        "line": 118,
         "name": "__init__",
         "detail": "h, x, y travel together through 16 functions: __init__, _vline, box, column, connector, data"
       },
@@ -818,7 +961,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 159,
+        "line": 160,
         "name": "__init__",
         "detail": "fill, group, stroke travel together through 3 functions: __init__, box, frame"
       },
@@ -826,7 +969,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 159,
+        "line": 160,
         "name": "__init__",
         "detail": "`__init__` takes 7 parameters (over 6)"
       },
@@ -834,7 +977,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 178,
+        "line": 179,
         "name": "__init__",
         "detail": "align, color, size travel together through 3 functions: __init__, label, title"
       },
@@ -842,7 +985,7 @@
         "pillar": "metrics",
         "kind": "high-response",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 183,
+        "line": 184,
         "name": "Scene",
         "detail": "`Scene` reaches 154 methods (over 50): 62 of its own plus 92 it calls"
       },
@@ -850,15 +993,15 @@
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 186,
+        "line": 187,
         "name": "excalidraw_builder.py",
-        "detail": "9 line(s) wider than 100 columns, first at line 186"
+        "detail": "10 line(s) wider than 100 columns, first at line 187"
       },
       {
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "h, text, w, x, y travel together through 10 functions: box, connector, data, decision, diamond, ellipse"
       },
@@ -866,7 +1009,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "group, h, x, y travel together through 3 functions: _vline, box, frame"
       },
@@ -874,7 +1017,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "font_size, x, y travel together through 7 functions: box, column, glossary, grid, legend, pipeline"
       },
@@ -882,7 +1025,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "fill, font_size, shape travel together through 5 functions: _place, box, column, grid, row"
       },
@@ -890,7 +1033,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "fill, font_size, h, shape, w, x, y travel together through 4 functions: box, column, grid, row"
       },
@@ -898,7 +1041,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "group, text, x, y travel together through 3 functions: box, label, title"
       },
@@ -906,7 +1049,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "text, x, y travel together through 12 functions: box, connector, data, decision, diamond, ellipse"
       },
@@ -914,7 +1057,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "group, x, y travel together through 5 functions: _vline, box, frame, label, title"
       },
@@ -922,7 +1065,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "fill, h, w, x, y travel together through 5 functions: box, column, frame, grid, row"
       },
@@ -930,7 +1073,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 322,
+        "line": 323,
         "name": "box",
         "detail": "`box` takes 12 parameters (over 6)"
       },
@@ -938,7 +1081,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 479,
+        "line": 480,
         "name": "section",
         "detail": "gap, title, x travel together through 3 functions: glossary, legend, section"
       },
@@ -946,7 +1089,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 479,
+        "line": 480,
         "name": "section",
         "detail": "color, size, x travel together through 3 functions: label, section, title"
       },
@@ -954,7 +1097,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 496,
+        "line": 497,
         "name": "pipeline",
         "detail": "connect, font_size, gap, x, y travel together through 3 functions: column, pipeline, row"
       },
@@ -962,7 +1105,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 496,
+        "line": 497,
         "name": "pipeline",
         "detail": "font_size, gap, x, y travel together through 5 functions: column, glossary, legend, pipeline, row"
       },
@@ -970,7 +1113,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 496,
+        "line": 497,
         "name": "pipeline",
         "detail": "`pipeline` takes 7 parameters (over 6)"
       },
@@ -978,7 +1121,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 557,
+        "line": 558,
         "name": "frame",
         "detail": "`frame` takes 8 parameters (over 6)"
       },
@@ -986,7 +1129,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 604,
+        "line": 605,
         "name": "row",
         "detail": "fill, font_size, h, items, shape, w, x, y travel together through 3 functions: column, grid, row"
       },
@@ -994,7 +1137,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 604,
+        "line": 605,
         "name": "row",
         "detail": "`row` takes 10 parameters (over 6)"
       },
@@ -1002,7 +1145,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 624,
+        "line": 625,
         "name": "column",
         "detail": "`column` takes 10 parameters (over 6)"
       },
@@ -1010,7 +1153,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 636,
+        "line": 637,
         "name": "grid",
         "detail": "`grid` takes 11 parameters (over 6)"
       },
@@ -1018,7 +1161,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 651,
+        "line": 652,
         "name": "enclose",
         "detail": "`enclose` takes 8 parameters (over 6)"
       },
@@ -1026,7 +1169,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 680,
+        "line": 681,
         "name": "legend",
         "detail": "`legend` takes 8 parameters (over 6)"
       },
@@ -1034,7 +1177,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 717,
+        "line": 718,
         "name": "glossary",
         "detail": "`glossary` takes 7 parameters (over 6)"
       },
@@ -1042,7 +1185,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 750,
+        "line": 751,
         "name": "lane",
         "detail": "`lane` takes 7 parameters (over 6)"
       },
@@ -1050,7 +1193,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 857,
+        "line": 858,
         "name": "title",
         "detail": "`title` takes 7 parameters (over 6)"
       },
@@ -1058,7 +1201,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 873,
+        "line": 874,
         "name": "label",
         "detail": "`label` takes 7 parameters (over 6)"
       },
@@ -1066,7 +1209,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 902,
+        "line": 903,
         "name": "arrow",
         "detail": "color, dashed, end, group, label, start travel together through 3 functions: arrow, free_arrow, path"
       },
@@ -1074,7 +1217,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 902,
+        "line": 903,
         "name": "arrow",
         "detail": "color, dashed, group, label travel together through 4 functions: arrow, free_arrow, path, route_under"
       },
@@ -1082,7 +1225,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 902,
+        "line": 903,
         "name": "arrow",
         "detail": "`arrow` takes 10 parameters (over 6)"
       },
@@ -1090,7 +1233,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 978,
+        "line": 979,
         "name": "free_arrow",
         "detail": "`free_arrow` takes 8 parameters (over 6)"
       },
@@ -1098,7 +1241,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1003,
+        "line": 1004,
         "name": "path",
         "detail": "`path` takes 7 parameters (over 6)"
       },
@@ -1106,7 +1249,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1055,
+        "line": 1056,
         "name": "route_under",
         "detail": "`route_under` takes 7 parameters (over 6)"
       },
@@ -1114,7 +1257,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1349,
+        "line": 1350,
         "name": "save",
         "detail": "`save` takes 9 parameters (over 6)"
       },
@@ -1138,11 +1281,11 @@
   },
   "health": {
     "score": 100,
-    "total": 9,
-    "healthy": 9,
-    "confirmed": 9,
-    "implemented": 8,
-    "tested": 8,
+    "total": 11,
+    "healthy": 11,
+    "confirmed": 11,
+    "implemented": 10,
+    "tested": 10,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

@@ -9,8 +9,10 @@ description: >-
   "diagram this repo", "schemă excalidraw", or "put the diagram in an HTML".
   Also trigger when asked to visualise how components, agents, requirements, or
   modules connect — even if the word "Excalidraw" is not used but a sketchy /
-  editable diagram is wanted. Produces a valid .excalidraw file that imports
-  into excalidraw.com plus a browser-openable .html.
+  editable diagram is wanted — and when someone does not understand a system
+  and a picture would teach it: "explain how X works", "I don't understand X",
+  "nu înțeleg cum merge X", "walk me through this". Produces a valid .excalidraw
+  file that imports into excalidraw.com plus a browser-openable .html.
 ---
 
 <!-- Universal variant: Claude Code-specific tool invocations and plugin-cache
@@ -57,6 +59,12 @@ examples** at the bottom for ❌ → ✅ variants of the common cases.
 - Flowcharts, pipelines, multi-agent / sub-agent layouts, module maps,
   state flows, decision trees.
 - "Put the diagram in an HTML I can open / share."
+- **"Explain how X works" / "I don't understand X"** — the asker wants to
+  *learn* the system, not just see it. Build a teaching diagram: everyday words
+  in the boxes, a stated reading direction, a legend and a glossary that decode
+  every colour and term on the canvas. The template is
+  [`examples/make_explainer.py`](examples/make_explainer.py); worked example 6
+  below shows the shape.
 
 For polished vector diagrams the user wants as a *static image* (PNG/SVG) with no
 sketch aesthetic, a plain SVG may fit better — but if they said Excalidraw,
@@ -162,7 +170,7 @@ it to `sys.path`. The builder lives at:
 ```
 
 Where `<plugin-install-dir>` depends on your tool:
-- **Claude Code**: `~/.claude/plugins/cache/requirement-manager/requirement-manager/<version>/`
+- **Claude Code**: `~/.claude/plugins/cache/excalidraw-diagram/excalidraw-diagram/<version>/`
 - **Other tools**: wherever the plugin was installed; check your tool's plugin docs.
 
 A portable resolver that picks the highest installed semver automatically:
@@ -173,12 +181,12 @@ import sys, os, glob, re
 def _builder_path():
     # Adapt the base path for your tool's plugin install directory
     cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                         "cache", "requirement-manager", "requirement-manager")
+                         "cache", "excalidraw-diagram", "excalidraw-diagram")
     hits = glob.glob(os.path.join(cache, "*", "skills",
                                   "excalidraw-diagram", "scripts"))
     if not hits:
         raise RuntimeError(
-            "excalidraw_builder.py not found — install the requirement-manager plugin"
+            "excalidraw_builder.py not found — install the excalidraw-diagram plugin"
         )
     def _ver(p):
         m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)
@@ -191,6 +199,46 @@ from excalidraw_builder import Scene
 
 **Never hardcode a version number** in the path — the cache may keep every
 version ever installed and the script will silently use the old API after any update.
+
+### Minimal example
+
+```python
+import sys, os, glob, re
+
+def _builder_path():
+    cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
+                         "cache", "excalidraw-diagram", "excalidraw-diagram")
+    hits = glob.glob(os.path.join(cache, "*", "skills",
+                                  "excalidraw-diagram", "scripts"))
+    if not hits:
+        raise RuntimeError("excalidraw-diagram skill not found")
+    def _ver(p):
+        m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)
+        return tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+    return max(hits, key=_ver)
+
+sys.path.insert(0, _builder_path())
+from excalidraw_builder import Scene
+
+s = Scene()                       # normal font, clean lines (the readable default)
+# Scene(font="hand", sketch=True) # the classic hand-drawn whiteboard look instead
+s.title("Auth flow", 40, -40, size=32)
+
+a = s.box("Client",        40,  60, fill="grey")
+b = s.box("API gateway",   40, 200, fill="blue")
+c = s.box("Auth service",  40, 340, fill="violet")
+d = s.diamond("Token\nvalid?", 320, 330, fill="orange")
+ok  = s.box("200 OK",   560, 250, fill="green")
+err = s.box("401",      560, 410, fill="red")
+
+s.arrow(a, b, label="request")
+s.arrow(b, c, label="verify")
+s.arrow(c, d)
+s.arrow(d, ok,  label="yes")
+s.arrow(d, err, label="no", dashed=True)
+
+s.save("auth_flow", out_dir="docs")   # -> docs/auth_flow.excalidraw + .html
+```
 
 ### Diagramming a repo's architecture (the canonical recipe)
 
@@ -278,15 +326,227 @@ fonts or overlapping shapes.
 
 **Colours**: `grey, red, orange, yellow, green, teal, blue, indigo, violet, pink` — or any hex string.
 
-## Quality rules (required)
+## Quality rules — make it understandable with no context (required)
 
-1. **Zero overlaps, zero crossings.**
-2. **Title + one-line subtitle.**
-3. **Legend whenever colour means something.**
-4. **Label cross-role edges.**
-5. **Real identifiers as node names, jargon in a glossary.**
-6. **Readable type sizes** — minimum font_size 12.
-7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into overview + detail.
+A diagram an outsider can read is not optional polish. Apply these to every
+diagram. Rules 1 and 3 are enforced mechanically by
+`scripts/test_excalidraw.py`: every example must build with **zero overlapping
+shapes, zero arrow crossings, and zero unlegended fills** — that is the
+operational definition of a "clean" diagram, not a matter of taste.
+
+1. **Zero overlaps, zero crossings.** `save()` already raises on overlap; for a
+   crossing-free guarantee use `route_under()`/`path()` and, when you want it
+   enforced, `save(..., crossing_check="error")`.
+2. **Title + one-line subtitle.** Open with `s.title(...)` and a one-sentence
+   `s.label(...)` stating what the diagram shows and the reading direction
+   (e.g. "Left → right: a request enters at Client and exits at Auth").
+3. **Legend whenever colour means something.** If any `fill=` encodes a role,
+   call `s.legend(...)` (or declare `Scene(roles=…)` then `s.legend()`). Colour
+   is the single source of truth for role; the legend lists every colour used.
+   An undecodable palette turns the diagram into guesswork. **Enforced:** once a
+   `legend()` is rendered, `save()` warns on any fill used but missing from the
+   key (`check_legend_coverage()`), so an unlegended colour can't ship silently;
+   `save(..., legend_check="error")` makes it a hard failure. Build the key with
+   `legend()` — a hand-rolled row of `box()` swatches is invisible to this gate.
+   Give each *distinct meaning* its own colour: don't reuse a voice/role colour
+   for an unrelated box (e.g. a storage tier), or the legend decodes it wrong.
+4. **Label cross-role edges.** Any arrow whose endpoints are different roles (or
+   is otherwise non-obvious) carries a short verb phrase (`label="validates"`,
+   `"returns token"`). Self-evident same-role edges may stay unlabelled.
+5. **Real identifiers as node names, jargon in a glossary.** Name the actual
+   file / function / component (`reqmap.py`, `check_overlaps()`), never
+   "Service A" / "Module". When a label must use an acronym or project term a
+   newcomer can't decode (`SSOT`, `dogfood`, `CI action`, `@v1`), add a
+   `s.glossary([(term, meaning), …])` box next to the legend (bottom, outside the
+   main region) so every term is explained on the canvas.
+6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
+   size (~14–16). Never go below font_size 12.
+7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into a
+   high-level overview region and a detail region below (stack with
+   `s.bounds()`); never cram 30 boxes into one region.
+
+## Tips for good diagrams
+
+- **Keep labels short.** Two or three words per box; push detail into a caption
+  `label()` underneath rather than cramming the box.
+- **One reading direction.** Don't mix left-to-right and top-down in the same
+  region; separate regions (like "pipeline" vs "modes") with a `title()`.
+- **Use colour by role**, consistently (e.g. always violet = creative voice),
+  not decoratively.
+- **Dashed arrows** for feedback / optional / skip paths; solid for the main
+  flow.
+- **Parallel nodes → one frame, two arrows.** If N nodes do the same thing in
+  parallel, group them in a `frame()` and connect the frame — not each node.
+  This is the single biggest source of spaghetti diagrams.
+- **No arrow should cross an unrelated box.** If a straight line from A to B
+  passes through C (which it is not connected to), restructure the layout or
+  route around with `route_under()`.
+- **Reflect reality.** When diagramming a codebase, name the real files /
+  scripts / functions so the picture is useful to someone reading the code.
+- **Font & style.** `Scene()` defaults to a normal font with clean outlines —
+  the most readable choice for "anyone should understand this". Pass
+  `Scene(font="hand", sketch=True)` only when the sketchy whiteboard aesthetic
+  is wanted. Arrows already start and end a few pixels *outside* each box, so
+  heads and tails never touch the shapes.
+
+## Worked examples — ❌ → ✅ variants
+
+For each common case, the ❌ shows the mistake that makes a diagram unreadable;
+the ✅ is what to do instead. The ✅ is always the smaller amount of code *and*
+the clearer picture.
+
+### 1 · Repo architecture ("diagram how this repo works")
+
+❌ One dense region: 30 boxes of every file, arrows everywhere, no legend, no
+subtitle. An outsider can't tell entry points from internals, and it trips the
+overlap/crossing gates.
+
+```python
+# ❌ everything jammed into one region
+for f in all_files: s.box(f, rand_x(), rand_y())   # spaghetti, no story
+```
+
+✅ Stacked **sections** (one per layer), role colours, one legend + glossary, all
+gates on. This is `make_full_architecture.py`.
+
+```python
+# ✅ a layered poster — structure / workflow / integration
+y = s.section("1 - STRUCTURE   the components")
+parts = [s.box("reqmap.py\nparse-scan-gate", 80, y, fill="engine"), ...]
+s.enclose(parts, label="requirement-manager plugin")
+y = s.section("2 - WORKFLOW   run order (left -> right)")
+s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
+y = s.section("3 - INTEGRATION   invoked, gated, shipped")
+# ... external systems + arrows ...
+s.legend(...); s.glossary(...)
+s.save("full_architecture", out_dir, crossing_check="error",
+       legend_check="error", overflow_check="error", text_overlap_check="error",
+       label_fit_check="error")
+```
+
+### 2 · Pipeline / data flow
+
+❌ Hand-placed boxes with guessed x-coordinates that drift into overlaps, arrows
+added one by one.
+
+```python
+a = s.box("ingest", 0, 0); b = s.box("process", 150, 0)   # gaps by eye -> overlap
+s.arrow(a, b); s.arrow(b, c)                               # tedious + error-prone
+```
+
+✅ `row(..., connect=True)` (or `pipeline()` for a flowchart band) — even spacing,
+arrows auto-chained, returns the ids.
+
+```python
+ids = s.row(["ingest", "process", "store"], 0, 0, connect=True, fill="source")
+# many steps / a poster band? use the ISO pipeline instead:
+ids = s.pipeline([("Start","terminator"),("parse","process"),("Done","terminator")], 80, y)
+```
+
+### 2b · Multi-tool repo workflow (one lane per tool)
+
+❌ A repo that bundles several tools/skills drawn as **one** pipeline — it shows
+one tool's flow and silently hides the rest.
+
+```python
+# repo has 3 skills, but only the engine's flow is drawn:
+s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
+```
+
+✅ One labelled `lane()` per tool — every tool's real flow is visible, stacked.
+*(Only for repos that bundle 2+ distinct tools; a single-tool repo keeps one pipeline.)*
+
+```python
+y = s.section("2 - WORKFLOWS   one pipeline per skill")
+a = s.pipeline([("init","process"),("gate","decision"),("map","process")], 120, y + 40)
+s.lane(a, "requirement-manager - SSOT + drift gate")
+b = s.pipeline([("review","data"),("check","process"),("findings","terminator")], 120, y + 210)
+s.lane(b, "requirement-quality-review - advisory")
+```
+
+### 3 · Parallel agents / sub-agents (the #1 spaghetti source)
+
+❌ N nodes with arrows between each → N×N crossing lines, unreadable.
+
+```python
+for w in workers:            # ❌ every dispatch drawn individually
+    s.arrow(dispatch, w); s.arrow(w, merge)
+```
+
+✅ `grid()` + `enclose()`, then **one arrow in, one arrow out** of the frame.
+
+```python
+workers = s.grid([f"agent {i}" for i in range(9)], 900, 120, 3, fill="worker")
+group   = s.enclose(workers, label="9 parallel sub-agents")
+s.arrow(dispatch, group); s.arrow(group, merge)   # 2 arrows, not 18
+```
+
+### 4 · Decision / branch flow
+
+❌ A plain rectangle for the choice and unlabelled branches — the reader can't
+tell which arrow is "yes" vs "no".
+
+```python
+q = s.box("valid?", x, y)                 # ❌ looks like a step, not a decision
+s.arrow(q, ok); s.arrow(q, err)           # which branch is which?
+```
+
+✅ A `diamond()` (or `decision` in a pipeline) with **labelled** branches; dashed
+for the failure path.
+
+```python
+q = s.diamond("token\nvalid?", x, y, fill="gate")
+s.arrow(q, ok,  label="yes")
+s.arrow(q, err, label="no", dashed=True)
+```
+
+### 5 · Feedback loop / backward edge
+
+❌ A right-to-left arrow drawn straight back across the whole flow — it overlaps
+every box in between.
+
+```python
+s.arrow(gate, resync)        # ❌ gate is downstream of resync -> crosses everything
+```
+
+✅ `route_under()` drops below the row and returns, clear of the forward flow;
+label it with the trigger.
+
+```python
+s.route_under(gate, resync, label="no - fix & re-sync", drop=70)
+```
+
+### 6 · "Explain how X works" (the reader does not know the system)
+
+❌ An accurate architecture poster for an insider: file names in every box,
+project jargon unexplained, colours with no key. The asker still does not
+understand it — the diagram is correct and teaches nothing.
+
+```python
+s.box("reqmap.py", x, y, fill="violet")          # ❌ what is it? why violet?
+s.box("SSOT drift gate", x2, y, fill="orange")   # ❌ two undefined terms in one box
+```
+
+✅ A teaching diagram, read top to bottom: a subtitle that says what it is and
+how to read it, everyday words in the boxes, one `section()` per idea
+("the problem", "how you use it", "what is inside"), and a `legend()` +
+`glossary()` that decode every colour and term. This is `make_explainer.py`.
+
+```python
+s.title("requirement-manager — how it works", 40, -96, size=32)
+s.label("A tool that stops a project's PLAN and its CODE from quietly drifting "
+        "apart. Read top to bottom. Every special word is explained in the "
+        "Glossary at the bottom.", 40, -52, size=15, align="left")
+y = s.section("1 - THE PROBLEM IT SOLVES")
+plan = s.box("What the project
+SHOULD do
+(the plan)", 120, y, fill="plan")
+code = s.box("What the code
+ACTUALLY does", 880, y, fill="outside")
+s.arrow(plan, code, dashed=True, color="red", label="over time they silently disagree = 'drift'")
+# ... 2 - HOW YOU USE IT, 3 - WHAT IS INSIDE ...
+s.legend([...]); s.glossary([("drift", "plan and code no longer say the same thing"), ...])
+```
 
 ## Output
 

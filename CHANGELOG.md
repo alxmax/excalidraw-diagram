@@ -1,5 +1,35 @@
 # Changelog
 
+## plugin `v1.0.1` — 2026-09-06
+
+**The skill now says out loud that it is for people who do not understand the thing.**
+Most of the time this skill is reached for by someone who wants a picture *because*
+the prose did not land. The contract only implied that: the readability rules were
+there, `examples/make_explainer.py` was there, but nothing in the trigger phrases or
+the worked examples named the case, and no requirement held the obligation.
+
+- `SKILL.md` / `SKILL.universal.md` — "explain how X works" / "I don't understand X"
+  (and the Romanian forms) are now triggers; a **When to use** bullet and worked
+  example **6** show the teaching-diagram shape, with `make_explainer.py` as the
+  template.
+- `ARCH-EXCALIDRAW-033` (explanatory output) and `REQ-EXCALIDRAW-849` (the `legend()`
+  and `glossary()` keys) are the requirement-side of that promise, tagged into the
+  builder and covered by five new tests (60 → 65).
+
+**Fixed: the import resolver pointed at the old plugin.** Both contracts told an
+external generator to look in `~/.claude/plugins/cache/requirement-manager/...` and,
+on failure, to `/plugin install requirement-manager`. That was where the skill lived
+before the split; installing *this* plugin put the builder somewhere the resolver
+never looked. Now `excalidraw-diagram/excalidraw-diagram`.
+
+**Fixed: `SKILL.universal.md` had drifted.** It was missing the minimal example, the
+full quality rules, the tips and all the worked examples — none of which are Claude
+Code-specific. Re-synced; the two files differ only in the tool-specific parts again.
+
+**Housekeeping in `requirements/`.** `ARCH-EXCALIDRAW-030/031/032` still carried
+`milestone: v2.4` and `skills/...` paths from the repository they came from; now
+`v1.0.0` and `plugin/skills/...`.
+
 ## plugin `v1.0.0` — 2026-09-06
 
 First release as its own plugin. The skill was developed inside

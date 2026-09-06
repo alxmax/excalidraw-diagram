@@ -4,7 +4,7 @@ status: confirmed
 level: architecture
 layer: feature
 owner: Alex
-milestone: v2.4
+milestone: v1.0.0
 depends_on: [ARCH-EXCALIDRAW-030]
 satisfies: [SYS-DIAGRAM-001]
 ---
@@ -52,8 +52,8 @@ CASE-4
 
 **Current implementation**
 - `_main(argv)` and the `render_html`, `discover_stub` functions in
-  `skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
-- `skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class).
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class).
 
 
 --------------------

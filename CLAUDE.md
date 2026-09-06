@@ -78,7 +78,7 @@ plugin/skills/excalidraw-diagram/
   SKILL.md                                 the authoritative contract (Claude Code)
   SKILL.universal.md                       the same for any assistant — keep the two in step
   scripts/excalidraw_builder.py            the builder
-  scripts/test_excalidraw.py               60 unit tests
+  scripts/test_excalidraw.py               65 unit tests
   references/excalidraw_format.md          the format notes the builder encodes
   examples/make_*.py                       worked generators, each runnable standalone
 .claude-plugin/marketplace.json            the marketplace manifest

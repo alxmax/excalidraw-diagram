@@ -9,8 +9,10 @@ description: >-
   "diagram this repo", "schemă excalidraw", or "put the diagram in an HTML".
   Also trigger when asked to visualise how components, agents, requirements, or
   modules connect — even if the word "Excalidraw" is not used but a sketchy /
-  editable diagram is wanted. Produces a valid .excalidraw file that imports
-  into excalidraw.com plus a browser-openable .html.
+  editable diagram is wanted — and when someone does not understand a system
+  and a picture would teach it: "explain how X works", "I don't understand X",
+  "nu înțeleg cum merge X", "walk me through this". Produces a valid .excalidraw
+  file that imports into excalidraw.com plus a browser-openable .html.
 ---
 
 # Excalidraw diagram
@@ -53,6 +55,12 @@ examples** at the bottom for ❌ → ✅ variants of the common cases.
 - Flowcharts, pipelines, multi-agent / sub-agent layouts, module maps,
   state flows, decision trees.
 - "Put the diagram in an HTML I can open / share."
+- **"Explain how X works" / "I don't understand X"** — the asker wants to
+  *learn* the system, not just see it. Build a teaching diagram: everyday words
+  in the boxes, a stated reading direction, a legend and a glossary that decode
+  every colour and term on the canvas. The template is
+  [`examples/make_explainer.py`](examples/make_explainer.py); worked example 6
+  below shows the shape.
 
 For polished vector diagrams the user wants as a *static image* (PNG/SVG) with no
 sketch aesthetic, a plain SVG may fit better — but if they said Excalidraw,
@@ -351,12 +359,12 @@ import sys, os, glob, re
 
 def _builder_path():
     cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                         "cache", "requirement-manager", "requirement-manager")
+                         "cache", "excalidraw-diagram", "excalidraw-diagram")
     hits = glob.glob(os.path.join(cache, "*", "skills",
                                   "excalidraw-diagram", "scripts"))
     if not hits:
         raise RuntimeError(
-            "excalidraw-diagram skill not found — run: /plugin install requirement-manager"
+            "excalidraw-diagram skill not found — run: /plugin install excalidraw-diagram"
         )
     def _ver(p):
         m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)
@@ -378,7 +386,7 @@ import sys, os, glob, re
 
 def _builder_path():
     cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                         "cache", "requirement-manager", "requirement-manager")
+                         "cache", "excalidraw-diagram", "excalidraw-diagram")
     hits = glob.glob(os.path.join(cache, "*", "skills",
                                   "excalidraw-diagram", "scripts"))
     if not hits:
@@ -660,6 +668,38 @@ label it with the trigger.
 
 ```python
 s.route_under(gate, resync, label="no - fix & re-sync", drop=70)
+```
+
+### 6 · "Explain how X works" (the reader does not know the system)
+
+❌ An accurate architecture poster for an insider: file names in every box,
+project jargon unexplained, colours with no key. The asker still does not
+understand it — the diagram is correct and teaches nothing.
+
+```python
+s.box("reqmap.py", x, y, fill="violet")          # ❌ what is it? why violet?
+s.box("SSOT drift gate", x2, y, fill="orange")   # ❌ two undefined terms in one box
+```
+
+✅ A teaching diagram, read top to bottom: a subtitle that says what it is and
+how to read it, everyday words in the boxes, one `section()` per idea
+("the problem", "how you use it", "what is inside"), and a `legend()` +
+`glossary()` that decode every colour and term. This is `make_explainer.py`.
+
+```python
+s.title("requirement-manager — how it works", 40, -96, size=32)
+s.label("A tool that stops a project's PLAN and its CODE from quietly drifting "
+        "apart. Read top to bottom. Every special word is explained in the "
+        "Glossary at the bottom.", 40, -52, size=15, align="left")
+y = s.section("1 - THE PROBLEM IT SOLVES")
+plan = s.box("What the project
+SHOULD do
+(the plan)", 120, y, fill="plan")
+code = s.box("What the code
+ACTUALLY does", 880, y, fill="outside")
+s.arrow(plan, code, dashed=True, color="red", label="over time they silently disagree = 'drift'")
+# ... 2 - HOW YOU USE IT, 3 - WHAT IS INSIDE ...
+s.legend([...]); s.glossary([("drift", "plan and code no longer say the same thing"), ...])
 ```
 
 ## Output
