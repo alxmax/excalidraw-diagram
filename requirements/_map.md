@@ -1,35 +1,12 @@
 ---
-generated: 2026-09-07
-engine: 2026-09-07
+generated: 2026-09-16
+engine: 2026-09-15.1
 nodes: 15
 edges: 5
 design OOP: 0/100 (0/2 source files without a design candidate)
 ---
 
 # Requirement Map
-
-## Specification Hierarchy
-
-_The spec hierarchy: system needs -> architecture requirements (`satisfies:`), each box showing how many code-level requirements sit under it. The code level itself is counted, not drawn._
-
-```mermaid
-graph TD
-  ARCH_EXCALIDRAW_030[ARCH-EXCALIDRAW-030<br/>2 code]
-  ARCH_EXCALIDRAW_031[ARCH-EXCALIDRAW-031<br/>2 code]
-  ARCH_EXCALIDRAW_032[ARCH-EXCALIDRAW-032<br/>2 code]
-  ARCH_EXCALIDRAW_033[ARCH-EXCALIDRAW-033<br/>1 code]
-  ARCH_EXCALIDRAW_034[ARCH-EXCALIDRAW-034<br/>1 code]
-  ARCH_RELEASE_035[[ARCH-RELEASE-035]]
-  SYS_DIAGRAM_001[[SYS-DIAGRAM-001]]
-  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_030
-  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_031
-  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_032
-  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_033
-  SYS_DIAGRAM_001 --> ARCH_EXCALIDRAW_034
-  SYS_DIAGRAM_001 --> ARCH_RELEASE_035
-  style ARCH_RELEASE_035 stroke-width:3px
-  style SYS_DIAGRAM_001 stroke-width:3px
-```
 
 ## System Map
 

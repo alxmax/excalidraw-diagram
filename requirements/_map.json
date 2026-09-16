@@ -1,5 +1,5 @@
 {
-  "engine_version": "2026-09-07",
+  "engine_version": "2026-09-15.1",
   "repo": "alxmax/excalidraw-diagram",
   "nodes": [
     {
@@ -1020,6 +1020,22 @@
     ]
   ],
   "todos": [],
+  "roadmap": [],
+  "history": [
+    {
+      "month": "2026-09",
+      "count": 3,
+      "first": "2026-09-06",
+      "last": "2026-09-07",
+      "versions": [
+        "v1.0.0",
+        "v1.0.1",
+        "v1.1.0"
+      ],
+      "landmark": "v1.0.0",
+      "headline": "First release as its own plugin. The skill was developed inside"
+    }
+  ],
   "commands": [
     {
       "name": "init",
@@ -1072,7 +1088,7 @@
     {
       "name": "gate",
       "group": "read",
-      "summary": "The commit/CI verdict, and every read-only question you can ask the corpus. Bare, it verifies that every code tag resolves to a real requirement, that every confirmed requirement has at least one implements: member, and that drift has not been introduced since the last sync, then checks requirement readability and map freshness. Exits non-zero on link-sync errors only. Never writes anything. The mode flags answer one question each instead of running the verdict: --audit for the whole problem report, --risk for what to do next, --show for one requirement's dossier, --search to rank by relevance, --dupes for overlapping contracts, --design for the code review, --review and --implement for the two machine-readable plans.",
+      "summary": "The commit/CI verdict, and every read-only question you can ask the corpus. Bare, it verifies that every code tag resolves to a real requirement, that every confirmed requirement has at least one implements: member, and that drift has not been introduced since the last sync, then checks requirement readability and map freshness. Exits non-zero on link-sync errors only. Never writes anything. The mode flags answer one question each instead of running the verdict: --audit for the whole problem report, --risk for what to do next, --show for one requirement's dossier, --search to rank by relevance, --dupes for overlapping contracts, --design for the code review, --review for the machine-readable review plan.",
       "arg": null,
       "flags": [
         {
@@ -1102,10 +1118,6 @@
         {
           "flag": "--review",
           "help": "Emit the deterministic review plan for one requirement, as JSON."
-        },
-        {
-          "flag": "--implement",
-          "help": "Emit the implementation brief for one requirement: obligations, required tags, similar existing code."
         },
         {
           "flag": "--all",
@@ -1148,7 +1160,7 @@
     {
       "name": "sync",
       "group": "build",
-      "summary": "The write path. Rescan code members, advance the drift baseline, and regenerate the map, the findings file and the generated integration artifacts in one step. Run after editing requirement files or tagging new code members. --accept-drift is required when a confirmed or implemented contract changed. --suggest-verifies proposes per-criterion verifies: tags, and writes them with --apply.",
+      "summary": "The write path. Rescan code members, advance the drift baseline, and regenerate the map, the findings file and the generated integration artifacts in one step. Run after editing requirement files or tagging new code members. --accept-drift is required when a confirmed or implemented contract changed.",
       "arg": null,
       "flags": [
         {
@@ -1161,15 +1173,11 @@
         },
         {
           "flag": "--apply",
-          "help": "With --retire or --suggest-verifies: actually write the change. Without it, the run is a dry report."
+          "help": "With --retire: actually write the change. Without it, the run is a dry report."
         },
         {
           "flag": "--force",
           "help": "With --retire: proceed even though dependents still point at this requirement, or the working tree is dirty. Dependents that are already deprecated, and those retired in the same call, never block."
-        },
-        {
-          "flag": "--suggest-verifies",
-          "help": "Propose per-criterion `verifies:` tags for tests already named after the criterion they check."
         },
         {
           "flag": "--findings",
@@ -1197,7 +1205,7 @@
         },
         {
           "flag": "--levels",
-          "help": "Propose a V-model rung for every requirement that declares no `level:`; --apply writes them, each marked `level_source: auto`."
+          "help": "Propose a V-model rung for every requirement that declares no `level:`, plus the rungs above: one draft `ARCH-<FAMILY>-001` per id-prefix family, `SYS-NEEDS-A-NAME-001` at the apex, and the `satisfies:` edges between them. --apply writes all of it, each line marked `level_source: auto`."
         },
         {
           "flag": "--json",

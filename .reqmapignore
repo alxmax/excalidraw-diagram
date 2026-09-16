@@ -6,6 +6,7 @@
 # posture the engine seeds itself (`_reqmapignore_seed`); this repo is a consumer of
 # reqmap, not its home.
 scripts/reqmap.py
+scripts/reqmap_engine/**
 scripts/_map_viewer.html
 
 # Isolated agent worktrees. Each holds a FULL second copy of this repo, so a local scan
