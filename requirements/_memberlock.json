@@ -1,6 +1,9 @@
 {
   "_schema": 2,
   "members": {
+    "ARCH-EXCALIDRAW-030": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "6f29a95326c44e755ac3af960e9f753a5a8f986d848279eabec6af77b8a7520b"
+    },
     "ARCH-RELEASE-035": {
       "scripts/check_versions.py": "4ca665005dc092be248f411c106463abff80d95bc0f37ab60dc955266f6f07df"
     },
@@ -19,6 +22,7 @@
     "REQ-EXCALIDRAW-848": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py#main": "8e4fafcd960087b0e81e68333cad6d0eaec51b1f20b4fccc6bb82ef845504f68",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py#discover_stub": "9db1082e73b0f5c51748fc9a3c5b1f581ab1607cb4d2b6dc110b0ee13a142dcf",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py": "2ab4ec16a84ecca62ea43d92978222c2377004b3f94bceabeedc263314afc483",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py#render_html": "3a6a2515111663f543e91fe3306e5672570f2071694858eead1910999937c0a7"
     },
     "REQ-EXCALIDRAW-849": {
