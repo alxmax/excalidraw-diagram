@@ -32,6 +32,9 @@ jobs:
       - name: Builder unit tests
         working-directory: plugin/skills/excalidraw-diagram/scripts
         run: python -X utf8 -m unittest test_excalidraw -v
+      - name: MCP server tests
+        working-directory: plugin/skills/excalidraw-diagram/scripts
+        run: python -X utf8 -m unittest test_mcp_server -v
 
   # Every example generator must still run. They are the skill's worked examples, so a
   # generator that raises is a documentation defect, not just a broken script. They write

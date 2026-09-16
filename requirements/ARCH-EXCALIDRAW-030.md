@@ -18,6 +18,7 @@ satisfies: [SYS-DIAGRAM-001]
 
 Every bullet below is binding.
 - `Scene` exposes shape primitives, ISO 5807 flowchart aliases, layout helpers, and annotation helpers for building a diagram declaratively. [[REQ-EXCALIDRAW-844]] details the behaviour.
+- Every drawing call takes its position, colour and text setting as one `at`, one `paint` and one `font` value. [[REQ-EXCALIDRAW-853]] details the behaviour.
 - `Scene` exposes connector helpers and a `.save(basename, out_dir)` that writes both a `.excalidraw` scene and a self-contained `.html` viewer once, deterministically when seeded. [[REQ-EXCALIDRAW-845]] details the behaviour.
 
 ## Cases
@@ -29,7 +30,7 @@ CASE-1
 
 CASE-2
   Given  two `box` shapes placed at overlapping coordinates
-  When   `.save()` is called without `allow_overlap=True`
+  When   `.save()` is called with the default `Gates()`
   Then   a `ValueError` is raised naming the overlapping shapes
 
 CASE-3
@@ -55,8 +56,11 @@ CASE-5
   overlap (co-ordinates checked after all shapes are added).
 
 **Current implementation**
-- `class Scene` and all shape/layout/arrow methods in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `Scene` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`,
+  assembled from one mixin per call family (`shapes.py`, `connectors.py`,
+  `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared
+  state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable
+  import name and the command line.
 
 **Links**
 - Used by: ARCH-EXCALIDRAW-031, ARCH-EXCALIDRAW-032
@@ -89,8 +93,9 @@ Every bullet below is binding.
 - `Scene` exposes shape primitives: `box`, `ellipse`, `diamond`, `frame`.
 - `Scene` exposes ISO 5807 flowchart aliases: `process`, `terminator`,
   `decision`, `data`, `predefined_process`, `preparation`, `connector`.
-- `Scene` exposes layout helpers: `row`, `column`, `grid`, `enclose`,
-  `lane`, `pipeline`, `section`, `align`, `distribute`.
+- `Scene` exposes layout helpers: `arrange` and its three forms `row`,
+  `column`, `grid`, plus `enclose`, `lane`, `pipeline`, `section`, `align`,
+  `distribute`.
 - `Scene` exposes annotation helpers: `title`, `label`, `legend`,
   `glossary`, `role`.
 
@@ -145,7 +150,7 @@ satisfies: [ARCH-EXCALIDRAW-030]
 Every bullet below is binding.
 - `Scene` exposes connector helpers: `arrow`, `free_arrow`, `path`,
   `route_under`.
-- `.save(basename, out_dir)` writes both `<basename>.excalidraw` (the
+- `.save(basename, out_dir, gates)` writes both `<basename>.excalidraw` (the
   scene JSON) and `<basename>.html` (a self-contained viewer) in one call and
   raises `RuntimeError` if called more than once on the same `Scene`.
 - `Scene(seed=<int>)` produces byte-identical output across re-runs.
@@ -168,7 +173,69 @@ CASE-3 — a fixed seed reproduces byte-identical output
   Then   the two `.excalidraw` files are byte-for-byte identical
 
 CASE-4 — the builder imports only the standard library
-  Given  `excalidraw_builder.py`
-  When   its top-level imports are inspected
-  Then   every imported module belongs to the Python standard library
+  Given  `excalidraw_builder.py` and every module of `excalidraw_engine/`
+  When   their imports are inspected
+  Then   every imported module belongs to the Python standard library or to
+         `excalidraw_engine` itself
 
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-853
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-030]
+---
+
+# The three call values: at, paint and font
+
+## Description
+> Every drawing call takes the same few values — where a thing goes, how it is
+> painted, how its text is set — so learning one call teaches the rest. Each value
+> travels as one object instead of four loose arguments, which keeps a width from
+> landing where a height belongs and a 1.x keyword from being silently ignored.
+
+Every bullet below is binding.
+- A call takes its position as one `at` value: a `Rect`, an `(x, y, w, h)`
+  tuple, or an `(x, y)` point. A point on a shape call takes the shape's own
+  default size.
+- A call takes its colour as one `paint` value and its text setting as one
+  `font` value. A bare colour string stands for a `Paint` and a bare number for a
+  `Font` size. A `Font` field left unset keeps the calling method's own default.
+- An `arrange()` item or cell carrying an option name `box()` does not accept
+  raises `ValueError` that lists the accepted names.
+
+## Cases
+CASE-1 — the three forms of `at` place a shape identically
+  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point
+         `(10, 20)` given to `process()`, whose default size is 170 x 64
+  When   each places one shape in its own scene
+  Then   the three shape elements carry the same x, y, width and height
+
+CASE-2 — a shorthand value means what the full object would
+  Given  a caller writing `paint="blue"` and `font=20` on `box()`, and `font=Font(20)`
+         on `label()`
+  When   the elements are built
+  Then   the box has blue's fill and 20px text, and the label keeps its grey colour
+
+CASE-3 — a mistyped option is refused, not ignored
+  Given  a 1.x-style item `{"text": "a", "fill": "blue"}` passed to `row()`
+  When   the row is placed
+  Then   `ValueError` is raised naming `fill` and listing the accepted names
+
+## Context
+**Notes**
+- A bare paint string is the element's natural colour: a shape's fill, a
+  connector's stroke. That is why `paint="red"` on an arrow colours its line.
+
+**Current implementation**
+- `Paint` and `Font` in
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and
+  `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in
+  `excalidraw_engine/arrange.py`.
+- `CasesExcalidrawValues` in
+  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

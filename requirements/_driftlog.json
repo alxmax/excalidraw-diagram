@@ -1,21 +1,49 @@
 {
   "_schema": 1,
   "accepted": {
+    "ARCH-EXCALIDRAW-030": {
+      "hash": "a747ec74d268",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "ARCH-EXCALIDRAW-031": {
+      "hash": "f6bf8d91c8d6",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
     "ARCH-EXCALIDRAW-032": {
-      "hash": "ae42616891ef",
-      "reason": "wording"
+      "hash": "84271fe3667b",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "ARCH-EXCALIDRAW-033": {
-      "hash": "b2f679144c3f",
-      "reason": "ARCH-EXCALIDRAW-033: CASE-3 marked inspection-only"
+      "hash": "63ce80ee2482",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "ARCH-EXCALIDRAW-034": {
-      "hash": "21b13f139a51",
-      "reason": "four CLI verbs, and the auto-layout they reach"
+      "hash": "55262e21aa48",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "REQ-EXCALIDRAW-844": {
+      "hash": "b4c3cc05737b",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "REQ-EXCALIDRAW-845": {
+      "hash": "93c0f5a395cb",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "REQ-EXCALIDRAW-846": {
+      "hash": "cb52435ead2e",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "REQ-EXCALIDRAW-847": {
+      "hash": "95ae703e8178",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+    },
+    "REQ-EXCALIDRAW-849": {
+      "hash": "0abfd9b89884",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "REQ-EXCALIDRAW-850": {
-      "hash": "9408a7a9cb69",
-      "reason": "four CLI verbs, and the auto-layout they reach"
+      "hash": "f230995409f5",
+      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "REQ-EXCALIDRAW-851": {
       "hash": "53788ea2b943",

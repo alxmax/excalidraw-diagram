@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "excalidraw-diagram": {
+      "command": "python",
+      "args": [
+        "-X",
+        "utf8",
+        "${CLAUDE_PLUGIN_ROOT}/skills/excalidraw-diagram/scripts/mcp_server.py"
+      ]
+    }
+  }
+}

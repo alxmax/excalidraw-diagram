@@ -33,6 +33,7 @@ def _dump(path, data):
 
 
 def main(argv=None):
+    """Compare (or with --fix, sync) the three version copies; returns the exit code."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fix", action="store_true",
                     help="rewrite marketplace.json from plugin.json instead of failing")

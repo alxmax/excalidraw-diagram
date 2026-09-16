@@ -12,8 +12,10 @@ not understand a system asks for a picture of it, so the output must decode itse
 reference for that shape and `ARCH-EXCALIDRAW-033` is the requirement that holds it.
 
 **Stdlib only, no dependencies.** `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`
-is the whole builder. Nothing here installs from PyPI or npm; if a change would need a
-dependency, that is a design question, not an implementation detail.
+is the builder's import name and CLI; the code is the `excalidraw_engine/` package beside it,
+one module per responsibility (its `__init__` has the map). `mcp_server.py` beside both
+offers the same entry points as MCP tools. Nothing here installs from PyPI or npm; if a
+change would need a dependency, that is a design question, not an implementation detail.
 
 ## Commands
 
@@ -27,7 +29,7 @@ python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py sc
 # valid while the diagram becomes unreadable.
 cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 excalidraw_builder.py
 
-cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw -v
+cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw test_mcp_server -v
 cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw.ClassName.test_name -v
 
 # every worked example must still run; each takes an output directory
@@ -90,8 +92,8 @@ self-tags of the repository it was written in, and those requirements do not liv
 the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Fifteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
-capabilities with their eight `REQ-*` children, and `ARCH-RELEASE-035` (the version
+**Sixteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+capabilities with their nine `REQ-*` children, and `ARCH-RELEASE-035` (the version
 match). All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
 contract demotes it to `draft` — set `status: confirmed` back and
 `sync --accept-drift "<why>"`.
@@ -120,14 +122,20 @@ into sentences; sentences stay under 25 words; a binding line names its subject.
 
 ```
 plugin/.claude-plugin/plugin.json          the manifest
+plugin/.mcp.json                           registers the MCP server on install
 plugin/skills/excalidraw-diagram/
   SKILL.md                                 the authoritative contract (Claude Code)
   SKILL.universal.md                       the same for any assistant — keep the two in step
   references/builder_api.md                every call, imports, the graph.json schema
   references/worked_examples.md            the repo-poster recipe and the ❌ → ✅ variants
   references/excalidraw_format.md          the format notes the builder encodes
-  scripts/excalidraw_builder.py            the builder
-  scripts/test_excalidraw.py               80 unit tests
+  scripts/excalidraw_builder.py            the import name + CLI (a facade)
+  scripts/excalidraw_engine/               the builder: style, geometry, canvas, shapes,
+                                           connectors, arrange, annotate, pack, checks,
+                                           gates, scene, viewer, discover, spec, cli
+  scripts/mcp_server.py                    the MCP server (stdio JSON-RPC)
+  scripts/test_excalidraw.py               the builder's tests, every example included
+  scripts/test_mcp_server.py               the MCP server's tests
   examples/make_*.py                       worked generators, each runnable standalone
 .claude-plugin/marketplace.json            the marketplace manifest
 requirements/                              the corpus, its lock files and the generated map

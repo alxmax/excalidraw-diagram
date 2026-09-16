@@ -9,7 +9,7 @@ depends_on: [ARCH-EXCALIDRAW-030]
 satisfies: [SYS-DIAGRAM-001]
 ---
 
-# Excalidraw builder CLI verbs
+# Excalidraw builder entry points: CLI verbs and MCP tools
 
 ## Description
 > A diagram gets rebuilt from four different starting points: a description of
@@ -21,6 +21,7 @@ satisfies: [SYS-DIAGRAM-001]
 Every bullet below is binding.
 - The CLI exposes four verbs, each a single unambiguous entry point: no-arg runs the CI smoke test, `render` rebuilds a viewer HTML from an existing `.excalidraw` file, and `discover` scaffolds a generator stub from a repo. Any other verb exits 2 with usage. [[REQ-EXCALIDRAW-848]]
 - `scene --from-json <graph.json>` lays out a coordinate-free graph description and writes both output files, so a caller gets a diagram without writing Python. [[REQ-EXCALIDRAW-850]]
+- An MCP server offers the same entry points as tools to an assistant, so no client has to shell out to the CLI. [[REQ-EXCALIDRAW-852]]
 
 ## Cases
 CASE-1
@@ -49,6 +50,11 @@ CASE-5
   When   `scene --from-json graph.json -o <dir>` is run
   Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`
 
+CASE-6
+  Given  an MCP client connected to `mcp_server.py`
+  When   it calls `build_scene` with a graph description
+  Then   both files are written, as they would be by `scene --from-json`
+
 ## Context
 **Notes**
 - `discover` only scaffolds the *components* it can see; inferring real data
@@ -60,8 +66,9 @@ CASE-5
   A caller who wants control over the layout writes a generator instead.
 
 **Current implementation**
-- `_main(argv)` and the `render_html`, `discover_stub`, `scene_from_json`
-  functions in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html`
+  (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).
+- `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.
 - `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class,
   and `CasesExcalidrawSceneVerb` for the `scene` verb).
 
@@ -153,8 +160,10 @@ Every bullet below is binding.
 - Every key the description accepts maps to one `Scene` call: `title` and
   `subtitle` to `title()` and `label()`, `roles` and `legend` to `legend()`,
   `glossary` to `glossary()`, `seed` to `Scene(seed=...)`.
-- `scene_from_json` saves with all five named gates set to `"error"`, so a
-  description that cannot be drawn readably fails instead of shipping.
+- `scene_from_json` saves with every gate set to `"error"` (`Gates.strict()`),
+  so a description that cannot be drawn readably fails instead of shipping.
+  `scene_from_spec(spec, out_dir, name)` does the same for a description
+  already in memory.
 - A description the builder cannot use raises `ValueError`, and the CLI turns that
   into one line on stderr and exit code 1. Invoking `scene` with no description
   prints usage and exits 2.
@@ -199,8 +208,92 @@ CASE-5 — the verb without a description prints usage and exits 2
   malformed file take the same exit path as a malformed description.
 
 **Current implementation**
-- `scene_from_json()` and the `scene` branch of `_main()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `scene_from_spec()` and `scene_from_json()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the
+  `scene` verb in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.
 - `CasesExcalidrawSceneVerb` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-852
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-032]
+---
+
+# The MCP server: the same entry points as tools
+
+## Description
+> An assistant that speaks the Model Context Protocol (MCP, the standard way an AI
+> client calls external tools) should not have to shell out and parse text to draw a
+> diagram. `mcp_server.py` offers the builder's entry points as MCP tools over stdio
+> (JSON-RPC 2.0 messages, one per line, on stdin and stdout), with nothing to install.
+
+Every bullet below is binding.
+- `mcp_server.py` answers `initialize`, `ping`, `tools/list` and `tools/call`, and
+  sends no reply to a notification. It negotiates a protocol version the client
+  offers when it supports one, else answers with its latest.
+- `tools/list` names exactly four tools: `build_scene` for a graph description,
+  `render_html` for a scene path, `discover_repo` for a repository, and
+  `graph_schema` for the description format.
+- A tool whose input is valid but whose work fails returns `isError: true` with a
+  one-line message. An unknown tool or an invalid argument is a JSON-RPC error
+  instead.
+- `graph_schema` reads the format from `references/builder_api.md` at call time.
+  The documented schema is the single source, so the tool cannot drift from it.
+- `mcp_server.py` writes only protocol messages to stdout. Text the builder prints
+  during a call is captured and returned inside that call's result.
+- `plugin/.mcp.json` registers the server, so installing the plugin makes the
+  tools available with no further setup.
+
+## Cases
+CASE-1 — the handshake and the tool list
+  Given  a client that sends `initialize`, the `initialized` notification and
+         `tools/list`
+  When   the server handles them
+  Then   it answers the request with its capabilities, sends nothing for the
+         notification, and lists exactly the four tools
+
+CASE-2 — build_scene writes both files
+  Given  a three-node graph description and an output directory
+  When   `tools/call` runs `build_scene`
+  Then   both files exist and the result is not an error
+
+CASE-3 — a failing build is a tool error, not a crash
+  Given  a description with an edge to a node that does not exist
+  When   `build_scene` runs
+  Then   the result carries `isError: true` and one line, and the server keeps
+         serving
+
+CASE-4 — render_html and discover_repo reach the builder
+  Given  a scene the server just built, and a directory holding one `.py` file
+  When   `render_html` and `discover_repo` run on them
+  Then   the viewer page and the generator stub are written
+
+CASE-5 — graph_schema comes from the documentation
+  Given  the plugin as shipped
+  When   `graph_schema` runs
+  Then   the text names `nodes` and `edges`; with the reference file missing, the
+         result is an error saying so
+
+CASE-6 — stdout carries only protocol
+  Given  the server started as a subprocess
+  When   it receives an initialize, a notification, a tools/list and a malformed
+         line, and then stdin closes
+  Then   every stdout line parses as JSON-RPC and the process exits 0
+
+## Context
+**Notes**
+- The server is stdlib only, like the builder. The official MCP SDK would need
+  Python 3.10 and a dependency, and the protocol subset used here is small.
+- Relative paths in tool arguments resolve against the server process's working
+  directory.
+
+**Current implementation**
+- `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.
+- `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.

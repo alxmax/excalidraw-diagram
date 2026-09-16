@@ -17,7 +17,7 @@ satisfies: [ARCH-EXCALIDRAW-033]
 > real content, so nothing can be placed on top of them unnoticed.
 
 Every bullet below is binding.
-- `legend(entries=None, x, y, title="Legend")` draws a colour key with one row
+- `legend(entries=None, at, title="Legend")` draws a colour key with one row
   per entry, each row a swatch of the colour beside its label. An entry is a
   `(label, colour)` pair; `colour` is a palette name, a hex string or a role
   name declared with `Scene(roles=...)` / `role()`.
@@ -26,7 +26,7 @@ Every bullet below is binding.
   explains nothing.
 - `legend()` records the resolved colour of every entry it draws, so
   `check_legend_coverage()` can report a fill the key leaves undecoded.
-- `glossary(entries, x, y, title="Glossary")` draws a term key with one
+- `glossary(entries, at, title="Glossary")` draws a term key with one
   left-aligned line per `(term, meaning)` pair, rendered as `TERM — meaning`.
   An empty `entries` list raises `ValueError`.
 - The glossary box counts as content for `check_overlaps()`: a shape placed
@@ -46,12 +46,12 @@ CASE-2 — an empty legend is refused
 
 CASE-3 — a glossary decodes a term on the canvas
   Given  a `Scene`
-  When   `glossary([("SSOT", "single source of truth")], 0, 0)` is called
+  When   `glossary([("SSOT", "single source of truth")], (0, 0))` is called
   Then   the scene contains a text element reading `SSOT — single source of truth`
 
 CASE-4 — an empty glossary is refused
   Given  a `Scene`
-  When   `glossary([], 0, 0)` is called
+  When   `glossary([], (0, 0))` is called
   Then   `ValueError` is raised
 
 CASE-5 — the glossary box is overlap-checked
@@ -68,6 +68,6 @@ CASE-5 — the glossary box is overlap-checked
 
 **Current implementation**
 - `Scene.legend()` and `Scene.glossary()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
 - `TestBuilderUnits` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

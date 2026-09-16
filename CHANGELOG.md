@@ -1,5 +1,48 @@
 # Changelog
 
+## plugin `v2.0.0` — 2026-09-16
+
+**Breaking: the `Scene` API takes values, not argument lists.** A 1.x generator
+passed `x, y, w=, h=, fill=, stroke=, dashed=, font_size=, color=, align=` to
+nearly every call, and the same few names travelled through forty signatures.
+Each call now takes one `at`, one `paint` and one `font`:
+
+```python
+s.box("API", (320, 60), paint="blue", font=14)          # was box("API", 320, 60, fill="blue", font_size=14)
+s.label("note", (40, 90), font=Font(12, align="left"))  # was label("note", 40, 90, size=12, align="left")
+s.save("flow", out_dir, gates=Gates.strict())           # was five *_check="error" arguments
+```
+
+`at` is `(x, y)`, `(x, y, w, h)` or a `Rect`. `paint` and `font` accept a plain
+colour or size. A mistyped 1.x key raises instead of being silently dropped.
+`row`/`column`/`grid` are now forms of one `arrange()`. `save()` takes one `Gates`
+value in place of seven keyword arguments. `Gates.strict()` is the ship setting,
+and `"off"` replaces `allow_overlap=` / `allow_short_arrows=`. `references/builder_api.md`
+ends with a 1.x → 2.x migration table. **The graph JSON did not change.**
+
+**Output did not change either.** Every example and `docs/repo_graph.json` was
+rendered before and after, and the `.excalidraw` files match value for value.
+
+**The 2,298-line file is now a package.** `excalidraw_builder.py` keeps the import
+name and the CLI. The code lives in `excalidraw_engine/`, one module per
+responsibility, none over 500 lines. `Scene` is assembled from focused mixins over
+a shared `Canvas`. `pack()` is a run object with one method per step. The
+requirement engine's design review goes from 48 candidates to none.
+
+**An MCP server.** `scripts/mcp_server.py`, registered by `plugin/.mcp.json`, gives
+an MCP client `build_scene`, `render_html`, `discover_repo` and `graph_schema`. It is
+stdlib only, and new `REQ-EXCALIDRAW-852` covers it with 16 tests.
+
+- Gate warnings print to stderr, not stdout.
+- `Scene(font=…)` is `Scene(typeface=…)`; the `hand_drawn=` alias is gone.
+- `s.rect(node)` replaces reaching into `s._geom`.
+- `fit_text()` is a module function taking `size=` and `min_size=(w, h)`.
+- `pipeline()` and `arrange()` refuse an unknown step kind or item key.
+- `ARCH-EXCALIDRAW-031` CASE-2 described a legend check that fires with no legend
+  drawn; it now matches the behaviour its child requirement always stated.
+- `test_excalidraw.py` called `unittest.main()` mid-file, so running it as a
+  script skipped the last three test classes. The call is now at the end.
+
 ## plugin `v1.1.0` — 2026-09-07
 
 **A diagram without writing Python.** Until now the only way in was to write a

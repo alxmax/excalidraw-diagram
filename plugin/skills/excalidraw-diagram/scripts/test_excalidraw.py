@@ -29,6 +29,8 @@ EXAMPLES_DIR = os.path.join(HERE, "..", "examples")
 sys.path.insert(0, HERE)
 
 import excalidraw_builder as eb  # noqa: E402
+from excalidraw_engine.discover import render_stub  # noqa: E402
+from excalidraw_engine.geometry import polyline_midpoint  # noqa: E402
 
 
 def _example_files():
@@ -106,7 +108,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_move_node_updates_element_coordinates(self):
         s = eb.Scene(seed=99)
-        nid = s.box("X", 0, 0, 80, 40)
+        nid = s.box("X", (0, 0, 80, 40))
         s._move_node(nid, 100, 200)
         el = next(e for e in s.elements if e["id"] == nid)
         self.assertEqual((el["x"], el["y"]), (100.0, 200.0))
@@ -114,7 +116,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_move_node_shifts_bound_text(self):
         s = eb.Scene(seed=99)
-        nid = s.box("Hello", 0, 0, 80, 40)
+        nid = s.box("Hello", (0, 0, 80, 40))
         el = next(e for e in s.elements if e["id"] == nid)
         txt = next(e for e in s.elements if e["id"] == el["boundElements"][0]["id"])
         ox, oy = txt["x"], txt["y"]
@@ -124,74 +126,74 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_move_node_textless_box_ok(self):
         s = eb.Scene(seed=99)
-        nid = s.box("", 0, 0, 40, 40)        # no bound text -> no children to shift
+        nid = s.box("", (0, 0, 40, 40))        # no bound text -> no children to shift
         s._move_node(nid, 10, 10)            # must not raise
         self.assertEqual(s._geom[nid][:2], (10, 10))
 
     def test_save_crossing_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1  # verifies: REQ-EXCALIDRAW-846#CASE-2
         s = eb.Scene(seed=99)
-        left = s.box("L", 0, 0, 80, 40)
-        s.box("M", 200, 0, 80, 40)
-        right = s.box("R", 400, 0, 80, 40)
+        left = s.box("L", (0, 0, 80, 40))
+        s.box("M", (200, 0, 80, 40))
+        right = s.box("R", (400, 0, 80, 40))
         s.arrow(left, right)                 # straight line passes through M
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, crossing_check="error")
+                s.save("x", out_dir=d, gates=eb.Gates(crossing="error"))
 
     def test_save_crossing_check_warn_default_does_not_raise(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1
         s = eb.Scene(seed=99)
-        left = s.box("L", 0, 0, 80, 40)
-        s.box("M", 200, 0, 80, 40)
-        right = s.box("R", 400, 0, 80, 40)
+        left = s.box("L", (0, 0, 80, 40))
+        s.box("M", (200, 0, 80, 40))
+        right = s.box("R", (400, 0, 80, 40))
         s.arrow(left, right)
         with tempfile.TemporaryDirectory() as d:
             s.save("x", out_dir=d)           # default "warn" — must not raise
 
     def test_fill_none_is_transparent(self):
         s = eb.Scene(seed=99, roles={"agent": "blue"})
-        nid = s.box("T", 0, 0, fill=None)
+        nid = s.box("T", (0, 0), paint=None)
         el = next(e for e in s.elements if e["id"] == nid)
         self.assertEqual(el["backgroundColor"], "transparent")
 
     def test_fill_role_resolves(self):
         s = eb.Scene(seed=99, roles={"agent": "blue"})
-        nid = s.box("T", 0, 0, fill="agent")
+        nid = s.box("T", (0, 0), paint="agent")
         el = next(e for e in s.elements if e["id"] == nid)
-        self.assertEqual(el["backgroundColor"], eb._FILL["blue"])
+        self.assertEqual(el["backgroundColor"], eb.FILL["blue"])
 
     def test_legend_coverage_clean_when_legend_covers_fills(self):
         s = eb.Scene(seed=99)
-        s.box("a", 0, 0, fill="blue")
-        s.box("b", 0, 200, fill="green")
-        s.legend([("input", "blue"), ("output", "green")], x=400, y=0)
+        s.box("a", (0, 0), paint="blue")
+        s.box("b", (0, 200), paint="green")
+        s.legend([("input", "blue"), ("output", "green")], at=(400, 0))
         self.assertEqual(s.check_legend_coverage(), [])
 
     def test_legend_coverage_flags_unlegended_fill(self):
         s = eb.Scene(seed=99)
-        s.box("a", 0, 0, fill="blue")
-        s.box("b", 0, 200, fill="indigo")          # not in the legend below
-        s.legend([("input", "blue")], x=400, y=0)
-        self.assertEqual(s.check_legend_coverage(), [eb._FILL["indigo"]])
+        s.box("a", (0, 0), paint="blue")
+        s.box("b", (0, 200), paint="indigo")          # not in the legend below
+        s.legend([("input", "blue")], at=(400, 0))
+        self.assertEqual(s.check_legend_coverage(), [eb.FILL["indigo"]])
 
     def test_legend_coverage_noop_without_legend(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3
         s = eb.Scene(seed=99)
-        s.box("a", 0, 0, fill="indigo")            # no legend() -> nothing to enforce
+        s.box("a", (0, 0), paint="indigo")            # no legend() -> nothing to enforce
         self.assertEqual(s.check_legend_coverage(), [])
 
     def test_save_legend_check_error_raises_on_uncovered_fill(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3
         s = eb.Scene(seed=99)
-        s.box("a", 0, 0, fill="blue")
-        s.box("b", 0, 200, fill="violet")          # uncovered
-        s.legend([("input", "blue")], x=400, y=0)
+        s.box("a", (0, 0), paint="blue")
+        s.box("b", (0, 200), paint="violet")          # uncovered
+        s.legend([("input", "blue")], at=(400, 0))
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, legend_check="error")
+                s.save("x", out_dir=d, gates=eb.Gates(legend="error"))
 
     def test_save_legend_check_warn_default_does_not_raise(self):
         s = eb.Scene(seed=99)
-        s.box("a", 0, 0, fill="blue")
-        s.box("b", 0, 200, fill="violet")          # uncovered, but warn-only
-        s.legend([("input", "blue")], x=400, y=0)
+        s.box("a", (0, 0), paint="blue")
+        s.box("b", (0, 200), paint="violet")          # uncovered, but warn-only
+        s.legend([("input", "blue")], at=(400, 0))
         with tempfile.TemporaryDirectory() as d:
             s.save("x", out_dir=d)                  # default "warn" — must not raise
 
@@ -199,70 +201,70 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s = eb.Scene(seed=99)
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, legend_check="nope")
+                s.save("x", out_dir=d, gates=eb.Gates(legend="nope"))
 
     # -- text-overflow gate (label bigger than its box) -------------------
     def test_check_text_overflow_detects_oversized_label(self):
         s = eb.Scene(seed=99)
-        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
         self.assertTrue(s.check_text_overflow(),
                         "bound text wider than its box must be flagged")
 
     def test_check_text_overflow_clean_when_box_fits(self):
         s = eb.Scene(seed=99)
-        s.box("ok", 0, 0, 160, 70, fill="blue")
+        s.box("ok", (0, 0, 160, 70), paint="blue")
         self.assertEqual(s.check_text_overflow(), [])
 
     def test_fit_text_box_clears_overflow_check(self):
         s = eb.Scene(seed=99)
-        wrapped, w, h = eb.Scene.fit_text("a label far too wide for one line",
-                                          font=14, max_chars=16)
-        s.box(wrapped, 0, 0, w, h, fill="blue")
+        wrapped, w, h = eb.fit_text("a label far too wide for one line",
+                                    size=14, max_chars=16)
+        s.box(wrapped, (0, 0, w, h), paint="blue")
         self.assertEqual(s.check_text_overflow(), [],
                          "a box sized by fit_text must clear the overflow check")
 
     def test_save_overflow_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-4
         s = eb.Scene(seed=99)
-        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, overflow_check="error")
+                s.save("x", out_dir=d, gates=eb.Gates(overflow="error"))
 
     def test_save_overflow_check_warn_default_does_not_raise(self):
         s = eb.Scene(seed=99)
-        s.box("a label far too wide for this tiny box", 0, 0, 40, 30, fill="blue")
+        s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
         with tempfile.TemporaryDirectory() as d:
             s.save("x", out_dir=d)                  # default "warn" — must not raise
 
     # -- free-text-overlap gate (caption colliding with header) -----------
     def test_check_text_overlaps_detects_overlapping_captions(self):
         s = eb.Scene(seed=99)
-        s.label("a caption sitting right here", 100, 100, size=14)
-        s.label("another caption on top of it", 100, 103, size=14)
+        s.label("a caption sitting right here", (100, 100), font=14)
+        s.label("another caption on top of it", (100, 103), font=14)
         self.assertTrue(s.check_text_overlaps(),
                         "two overlapping free captions must be flagged")
 
     def test_check_text_overlaps_ignores_bound_labels(self):
         s = eb.Scene(seed=99)
-        s.box("one", 0, 0, 160, 70, fill="blue")
-        s.box("two", 0, 100, 160, 70, fill="green")
-        s.legend([("input", "blue"), ("output", "green")], x=400, y=0)
+        s.box("one", (0, 0, 160, 70), paint="blue")
+        s.box("two", (0, 100, 160, 70), paint="green")
+        s.legend([("input", "blue"), ("output", "green")], at=(400, 0))
         self.assertEqual(s.check_text_overlaps(), [],
                          "bound labels (box + legend rows) must not be flagged")
 
     def test_save_text_overlap_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-1
         s = eb.Scene(seed=99)
-        s.label("caption one is here", 100, 100, size=14)
-        s.label("caption two is here", 100, 103, size=14)
+        s.label("caption one is here", (100, 100), font=14)
+        s.label("caption two is here", (100, 103), font=14)
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, text_overlap_check="error")
+                s.save("x", out_dir=d, gates=eb.Gates(text_overlap="error"))
 
     def test_save_rejects_bad_overflow_check(self):
         s = eb.Scene(seed=99)
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, overflow_check="nope")
+                s.save("x", out_dir=d, gates=eb.Gates(overflow="nope"))
 
     # -- short-arrow gate (shapes too close -> invisible connector) --------
     def test_check_short_arrows_flags_close_boxes(self):
@@ -271,8 +273,8 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         # exact "text without arrow" defect; the boxes do NOT overlap, so
         # check_overlaps() is blind to it and check_short_arrows() must catch it.
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 124, 0, 120, 60)        # 4px gap
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (124, 0, 120, 60))        # 4px gap
         s.arrow(a, b, label="x")
         self.assertEqual(s.check_overlaps(), [],
                          "boxes 4px apart do not overlap")
@@ -282,8 +284,8 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_check_short_arrows_clean_when_boxes_spaced(self):
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 320, 0, 120, 60)        # 196px gap -> visible arrow
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (320, 0, 120, 60))        # 196px gap -> visible arrow
         s.arrow(a, b, label="x")
         self.assertEqual(s.check_short_arrows(), [])
 
@@ -296,8 +298,8 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_save_short_arrow_raises_by_default(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 124, 0, 120, 60)
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (124, 0, 120, 60))
         s.arrow(a, b, label="x")
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
@@ -305,11 +307,11 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_save_short_arrow_allow_escape(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 124, 0, 120, 60)
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (124, 0, 120, 60))
         s.arrow(a, b, label="x")
         with tempfile.TemporaryDirectory() as d:
-            s.save("x", out_dir=d, allow_short_arrows=True)   # opt-out: must not raise
+            s.save("x", out_dir=d, gates=eb.Gates(short_arrows="off"))   # opt-out: must not raise
 
     # -- arrow-label-fit gate (label wider than its connector) -------------
     def test_check_arrow_label_fit_flags_wide_label(self):
@@ -317,8 +319,8 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         # arrow, so it spills onto both boxes — invisible to the box/free-text
         # checks, caught here.
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 240, 0, 120, 60)        # 120px gap
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (240, 0, 120, 60))        # 120px gap
         s.arrow(a, b, label="a very long label that is wider than the arrow")
         hits = s.check_arrow_label_fit()
         self.assertEqual(len(hits), 1, f"wide label not flagged: {hits}")
@@ -326,31 +328,31 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_check_arrow_label_fit_clean_when_spaced(self):
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 600, 0, 120, 60)        # far apart -> short label fits
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (600, 0, 120, 60))        # far apart -> short label fits
         s.arrow(a, b, label="ok")
         self.assertEqual(s.check_arrow_label_fit(), [])
 
     def test_save_label_fit_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-2
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 240, 0, 120, 60)
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (240, 0, 120, 60))
         s.arrow(a, b, label="a very long label that is wider than the arrow")
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaises(ValueError):
-                s.save("x", out_dir=d, label_fit_check="error")
+                s.save("x", out_dir=d, gates=eb.Gates(label_fit="error"))
 
     def test_save_label_fit_warn_default_does_not_raise(self):
         s = eb.Scene(seed=99)
-        a = s.box("A", 0, 0, 120, 60)
-        b = s.box("B", 240, 0, 120, 60)
+        a = s.box("A", (0, 0, 120, 60))
+        b = s.box("B", (240, 0, 120, 60))
         s.arrow(a, b, label="a very long label that is wider than the arrow")
         with tempfile.TemporaryDirectory() as d:
             s.save("x", out_dir=d)             # default "warn" — must not raise
 
     def test_path_label_overlapping_a_box_is_detected(self):
         s = eb.Scene(seed=99)
-        s.box("B", 0, 0, 200, 80, fill="blue")
+        s.box("B", (0, 0, 200, 80), paint="blue")
         s.path([(0, 40), (200, 40)], label="routed label over the box")
         hits = s.check_overlaps()
         self.assertTrue(any("label" in a or "label" in b for a, b in hits),
@@ -358,45 +360,45 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
 
     def test_path_label_in_clear_space_is_not_flagged(self):
         s = eb.Scene(seed=99)
-        s.box("B", 0, 0, 100, 40, fill="blue")
+        s.box("B", (0, 0, 100, 40), paint="blue")
         s.path([(0, 300), (200, 300)], label="clear")   # well below the box
         self.assertEqual(s.check_overlaps(), [])
 
     def test_glossary_renders_and_is_overlap_checked(self):  # verifies: REQ-EXCALIDRAW-849#CASE-3  # verifies: REQ-EXCALIDRAW-849#CASE-5
         s = eb.Scene(seed=99)
         s.glossary([("SSOT", "single source of truth"),
-                    ("dogfood", "runs on its own requirements")], 0, 0)
+                    ("dogfood", "runs on its own requirements")], (0, 0))
         # the glossary box is registered as checkable content
         self.assertTrue(any("glossary" in lab for *_, lab in s._nodes))
         # a box dropped on top of it must be flagged
-        s.box("X", 10, 10, 80, 40, fill="blue")
+        s.box("X", (10, 10, 80, 40), paint="blue")
         self.assertNotEqual(s.check_overlaps(), [])
 
     def test_glossary_empty_raises(self):  # verifies: REQ-EXCALIDRAW-849#CASE-4
         with self.assertRaises(ValueError):
-            eb.Scene(seed=99).glossary([], 0, 0)
+            eb.Scene(seed=99).glossary([], (0, 0))
 
     def test_glossary_line_reads_term_dash_meaning(self):  # verifies: REQ-EXCALIDRAW-849#CASE-3
         s = eb.Scene(seed=99)
-        s.glossary([("SSOT", "single source of truth")], 0, 0)
+        s.glossary([("SSOT", "single source of truth")], (0, 0))
         texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
         self.assertIn("SSOT — single source of truth", texts)
 
     def test_legend_from_declared_roles(self):  # verifies: REQ-EXCALIDRAW-849#CASE-1
         s = eb.Scene(seed=99, roles={"agent": "violet"})
-        s.legend(x=0, y=0)
+        s.legend(at=(0, 0))
         texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
         self.assertIn("agent", texts)
-        self.assertIn(eb._FILL["violet"], s._legend_colours)
+        self.assertIn(eb.FILL["violet"], s._legend_colours)
 
     def test_legend_empty_raises(self):  # verifies: REQ-EXCALIDRAW-849#CASE-2
         with self.assertRaises(ValueError):
-            eb.Scene(seed=99).legend(x=0, y=0)
+            eb.Scene(seed=99).legend(at=(0, 0))
 
     def test_polyline_midpoint_edges(self):
-        self.assertEqual(eb.Scene._polyline_midpoint([(3, 7)]), (3, 7))
-        self.assertEqual(eb.Scene._polyline_midpoint([(0, 0), (0, 0)]), (0, 0))
-        mid = eb.Scene._polyline_midpoint([(0, 0), (0, 100), (200, 100), (200, 0)])
+        self.assertEqual(polyline_midpoint([(3, 7)]), (3, 7))
+        self.assertEqual(polyline_midpoint([(0, 0), (0, 0)]), (0, 0))
+        mid = polyline_midpoint([(0, 0), (0, 100), (200, 100), (200, 0)])
         self.assertAlmostEqual(mid[0], 100)
         self.assertAlmostEqual(mid[1], 100)
 
@@ -416,8 +418,8 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
     def test_render_rebuilds_html_from_scene(self):  # verifies: REQ-EXCALIDRAW-848#CASE-2
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=7)
-            s.box("A", 0, 0)
-            s.box("B", 0, 120)
+            s.box("A", (0, 0))
+            s.box("B", (0, 120))
             pj, ph = s.save("demo", out_dir=d)
             os.remove(ph)                          # delete html so render must recreate it
             out = eb.render_html(pj)
@@ -461,7 +463,7 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
             self.assertNotIn("node_modules", comps)
             self.assertEqual(comps, sorted(comps))           # deterministic
 
-    def test_discover_stub_is_runnable(self):  # verifies: REQ-EXCALIDRAW-848#CASE-3
+    def test_discover_stub_is_runnable(self):  # verifies: REQ-EXCALIDRAW-848#CASE-3  # verifies: ARCH-EXCALIDRAW-032#CASE-3
         with tempfile.TemporaryDirectory() as d:
             os.makedirs(os.path.join(d, "core"))
             with open(os.path.join(d, "core", "engine.py"), "w") as f:
@@ -523,20 +525,20 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
         self.assertIn("s.lane(", code)                 # per-tool sub-workflow hint
         self.assertIn("except ModuleNotFoundError", code)   # portable fallback import
         self.assertIn("plugins", code)                 # cache resolver present
-        self.assertIn('overflow_check="error"', code)  # ships gates at error
+        self.assertIn("Gates.strict()", code)        # ships every gate at error
 
     # --- the no-arg invocation must still be the smoke test (CI depends on it) ---
-    def test_cli_no_args_runs_selftest(self):  # verifies: REQ-EXCALIDRAW-848#CASE-1
+    def test_cli_no_args_runs_selftest(self):  # verifies: REQ-EXCALIDRAW-848#CASE-1  # verifies: ARCH-EXCALIDRAW-032#CASE-1
         env = dict(os.environ, PYTHONPATH=HERE)
         r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER],
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("OK smoke test", r.stdout)
 
-    def test_cli_render_subcommand(self):  # verifies: REQ-EXCALIDRAW-848#CASE-2
+    def test_cli_render_subcommand(self):  # verifies: REQ-EXCALIDRAW-848#CASE-2  # verifies: ARCH-EXCALIDRAW-032#CASE-2
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=8)
-            s.box("X", 0, 0)
+            s.box("X", (0, 0))
             pj, ph = s.save("scene", out_dir=d)
             os.remove(ph)
             r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "render", pj],
@@ -546,11 +548,11 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
 
     def test_render_stub_handles_hostile_repo_name(self):
         # a repo dir name with quotes/triple-quotes must not break the generated
-        # stub's docstring or string literals (FS-independent: call _render_stub direct)
-        code = eb._render_stub('a"""b\'c"d', ["x"], False)
+        # stub's docstring or string literals (FS-independent: call render_stub direct)
+        code = render_stub('a"""b\'c"d', ["x"], False)
         compile(code, "<stub>", "exec")            # must not raise SyntaxError
 
-    def test_cli_unknown_verb_exits_nonzero(self):  # verifies: REQ-EXCALIDRAW-848#CASE-4
+    def test_cli_unknown_verb_exits_nonzero(self):  # verifies: REQ-EXCALIDRAW-848#CASE-4  # verifies: ARCH-EXCALIDRAW-032#CASE-4
         r = subprocess.run([sys.executable, "-X", "utf8", self.BUILDER, "bogus"],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 2)
@@ -572,7 +574,7 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
     def test_scene_save_produces_importable_json(self):  # verifies: REQ-EXCALIDRAW-844#CASE-1
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=1)
-            s.box("Hello", 0, 0)
+            s.box("Hello", (0, 0))
             p_json, _p_html = s.save("t1", out_dir=d)
             with open(p_json, encoding="utf-8") as f:
                 scene = _json.load(f)
@@ -583,10 +585,10 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
 
     def test_shape_primitives_each_add_one_element_of_their_kind(self):  # verifies: REQ-EXCALIDRAW-844#CASE-2
         s = eb.Scene(seed=1)
-        s.box("B", 0, 0)
-        s.ellipse("E", 300, 0)
-        s.diamond("D", 600, 0)
-        s.frame(0, 400, 100, 100)
+        s.box("B", (0, 0))
+        s.ellipse("E", (300, 0))
+        s.diamond("D", (600, 0))
+        s.frame((0, 400, 100, 100))
         types = [el["type"] for el in s.elements]
         self.assertEqual(types.count("rectangle"), 2)   # box() + frame() both render "rectangle"
         self.assertEqual(types.count("ellipse"), 1)
@@ -595,13 +597,13 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
     def test_iso5807_aliases_add_elements_without_raising(self):  # verifies: REQ-EXCALIDRAW-844#CASE-3
         s = eb.Scene(seed=1)
         before = len(s.elements)
-        s.process("P", 0, 0)
-        s.terminator("T", 300, 0)
-        s.decision("D", 600, 0)
-        s.data("Dt", 0, 200)
-        s.predefined_process("PP", 300, 200)
-        s.preparation("Pr", 600, 200)
-        s.connector("C", 900, 0)
+        s.process("P", (0, 0))
+        s.terminator("T", (300, 0))
+        s.decision("D", (600, 0))
+        s.data("Dt", (0, 200))
+        s.predefined_process("PP", (300, 200))
+        s.preparation("Pr", (600, 200))
+        s.connector("C", (900, 0))
         self.assertGreater(len(s.elements), before)
         types = {el["type"] for el in s.elements}
         self.assertIn("diamond", types)     # decision -> diamond
@@ -610,13 +612,13 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
     def test_annotation_helpers_do_not_raise_and_save_succeeds(self):  # verifies: REQ-EXCALIDRAW-844#CASE-5
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=1)
-            s.box("A", 0, 0, fill="blue")
+            s.box("A", (0, 0), paint="blue")
             before = len(s.elements)
-            s.title("Title", 0, -60)
-            s.label("A label", 0, -20)
+            s.title("Title", (0, -60))
+            s.label("A label", (0, -20))
             s.role("agent", "blue")
-            s.legend(x=0, y=200)
-            s.glossary([("TERM", "meaning")], 400, 200)
+            s.legend(at=(0, 200))
+            s.glossary([("TERM", "meaning")], (400, 200))
             self.assertGreater(len(s.elements), before)   # title/label/legend/glossary all draw
             p_json, p_html = s.save("ann", out_dir=d)
             self.assertTrue(os.path.exists(p_json))
@@ -625,8 +627,8 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
     def test_seeded_scene_reproduces_byte_identical_output(self):  # verifies: REQ-EXCALIDRAW-845#CASE-3
         def _build():
             s = eb.Scene(seed=42)
-            a = s.box("A", 0, 0)
-            b = s.box("B", 300, 0)
+            a = s.box("A", (0, 0))
+            b = s.box("B", (300, 0))
             s.arrow(a, b)
             return s
         with tempfile.TemporaryDirectory() as d:
@@ -639,49 +641,168 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
         self.assertEqual(c1, c2)
 
     def test_builder_imports_stdlib_only(self):  # verifies: REQ-EXCALIDRAW-845#CASE-4
-        path = os.path.join(HERE, "excalidraw_builder.py")
-        with open(path, encoding="utf-8") as f:
-            tree = _ast.parse(f.read(), filename=path)
+        paths = [os.path.join(HERE, "excalidraw_builder.py")] + sorted(
+            glob.glob(os.path.join(HERE, "excalidraw_engine", "*.py")))
         names = []
-        for node in tree.body:            # top-level only, not nested inside functions
-            if isinstance(node, _ast.Import):
-                names.extend(a.name.split(".")[0] for a in node.names)
-            elif isinstance(node, _ast.ImportFrom) and node.level == 0 and node.module:
-                names.append(node.module.split(".")[0])
-        self.assertTrue(names, "no top-level imports found")
+        for path in paths:
+            with open(path, encoding="utf-8") as f:
+                tree = _ast.parse(f.read(), filename=path)
+            for node in _ast.walk(tree):
+                if isinstance(node, _ast.Import):
+                    names.extend(a.name.split(".")[0] for a in node.names)
+                elif isinstance(node, _ast.ImportFrom) and node.level == 0 and node.module:
+                    names.append(node.module.split(".")[0])
+        self.assertTrue(names, "no imports found")
         for name in names:
+            if name == "excalidraw_engine":       # the builder's own package
+                continue
             self.assertIn(name, _STDLIB, "%r is not a stdlib module" % name)
+
+
+class CasesExcalidrawValues(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-853
+    """The 2.0 call shape: one `at`, one `paint`, one `font` — and their shorthands."""
+
+    @staticmethod
+    def _shape(scene, nid):
+        el = next(e for e in scene.elements if e["id"] == nid)
+        return (el["x"], el["y"], el["width"], el["height"])
+
+    def test_rect_tuple_and_point_place_a_shape_identically(self):  # verifies: REQ-EXCALIDRAW-853#CASE-1
+        placed = []
+        for at in (eb.Rect(10, 20, 170, 64), (10, 20, 170, 64), (10, 20)):
+            s = eb.Scene(seed=1)
+            placed.append(self._shape(s, s.process("P", at)))
+        self.assertEqual(placed[0], placed[1])
+        self.assertEqual(placed[0], placed[2])
+        self.assertEqual(placed[0], (10.0, 20.0, 170.0, 64.0))
+
+    def test_rect_reads_back_a_placed_node(self):  # verifies: REQ-EXCALIDRAW-853#CASE-1
+        s = eb.Scene(seed=1)
+        nid = s.box("A", (5, 6, 70, 30))
+        self.assertEqual(s.rect(nid), eb.Rect(5, 6, 70, 30))
+        self.assertEqual(s.rect(nid).bottom, 36.0)
+
+    def test_shorthand_paint_and_font_mean_the_full_objects(self):  # verifies: REQ-EXCALIDRAW-853#CASE-2
+        s = eb.Scene(seed=1)
+        nid = s.box("A", (0, 0), paint="blue", font=20)
+        lid = s.label("caption", (0, 200), font=eb.Font(20))
+        by_id = {e["id"]: e for e in s.elements}
+        text = by_id[by_id[nid]["boundElements"][0]["id"]]
+        self.assertEqual(by_id[nid]["backgroundColor"], eb.FILL["blue"])
+        self.assertEqual(text["fontSize"], 20)
+        self.assertEqual(by_id[lid]["fontSize"], 20)
+        self.assertEqual(by_id[lid]["strokeColor"], eb.STROKE["grey"],
+                         "a Font with no colour keeps label()'s grey")
+        self.assertEqual(by_id[lid]["textAlign"], "center")
+
+    def test_arrow_paint_string_is_the_stroke(self):  # verifies: REQ-EXCALIDRAW-853#CASE-2
+        s = eb.Scene(seed=1)
+        aid = s.arrow(s.box("A", (0, 0)), s.box("B", (400, 0)), paint="red")
+        el = next(e for e in s.elements if e["id"] == aid)
+        self.assertEqual(el["strokeColor"], eb.STROKE["red"])
+
+    def test_a_1x_item_key_is_refused_with_the_accepted_names(self):  # verifies: REQ-EXCALIDRAW-853#CASE-3
+        with self.assertRaises(ValueError) as ctx:
+            eb.Scene(seed=1).row([{"text": "a", "fill": "blue"}], (0, 0))
+        self.assertIn("fill", str(ctx.exception))
+        self.assertIn("paint", str(ctx.exception))
+
+    def test_arrange_forms_agree_with_their_wrappers(self):
+        a, b = eb.Scene(seed=1), eb.Scene(seed=1)
+        grid = a.grid(["1", "2", "3", "4"], (0, 0), 2)
+        arranged = b.arrange(["1", "2", "3", "4"], (0, 0), across=2)
+        self.assertEqual([self._shape(a, i) for i in grid],
+                         [self._shape(b, i) for i in arranged])
+        self.assertEqual(a.rect(grid[3]), eb.Rect(200, 100, 160, 70))
+
+    def test_bad_values_raise_early(self):
+        s = eb.Scene(seed=1)
+        for build in (lambda: s.box("x", (0, 0), shape="blob"),
+                      lambda: s.box("x", (1, 2, 3)),
+                      lambda: s.frame((0, 0)),
+                      lambda: s.arrange(["a"], (0, 0), across="z"),
+                      lambda: s.pipeline([("a", "blob")], (0, 0)),
+                      lambda: s.arrow(s.box("a", (0, 0)), s.box("b", (400, 0)), heads="up"),
+                      lambda: eb.Gates(bogus="error"),
+                      lambda: eb.Gates(crossing="loud"),
+                      lambda: eb.Scene(typeface="comic")):
+            with self.assertRaises(ValueError):
+                build()
+        with self.assertRaises(TypeError):
+            s.box("x", (0, 0), paint=3)
+
+    def test_gates_strict_sets_every_gate_to_error(self):
+        self.assertEqual(set(eb.Gates.strict().modes.values()), {"error"})
+        default = eb.Gates().modes
+        self.assertEqual(default["overlap"], "error")
+        self.assertEqual(default["crossing"], "warn")
+
+
+class TestReferenceDocs(unittest.TestCase):
+    """The snippets in the contract and references are what an assistant copies. A
+    stale one is a broken generator waiting to be written, and nothing runs it."""
+
+    SKILL_DIR = os.path.join(HERE, "..")
+    REMOVED_1X = ("fill=", "font_size=", "_check=", "allow_overlap", "allow_short_arrows",
+                  "hand_drawn", "gap_x=", "._geom")
+
+    def _python_blocks(self):
+        paths = glob.glob(os.path.join(self.SKILL_DIR, "references", "*.md"))
+        paths += glob.glob(os.path.join(self.SKILL_DIR, "SKILL*.md"))
+        for path in sorted(paths):
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+            for block in text.split("```python\n")[1:]:
+                yield os.path.basename(path), block.split("```", 1)[0]
+
+    def test_every_python_snippet_parses_and_uses_the_current_api(self):
+        blocks = list(self._python_blocks())
+        self.assertTrue(blocks, "no python snippets found")
+        for name, code in blocks:
+            _ast.parse(code, filename=name)
+            for old in self.REMOVED_1X:
+                self.assertNotIn(old, code, "%s still shows the 1.x %r" % (name, old))
+
+    def test_the_minimal_example_runs_gate_clean(self):
+        with open(os.path.join(self.SKILL_DIR, "references", "builder_api.md"),
+                  encoding="utf-8") as fh:
+            text = fh.read()
+        section = text.split("## Minimal example", 1)[1]
+        code = section.split("```python\n", 1)[1].split("```", 1)[0]
+        with tempfile.TemporaryDirectory() as d:
+            code = code.replace('out_dir="docs"', "out_dir=%r" % d)
+            namespace = {}
+            exec(compile(code, "builder_api.md", "exec"), namespace)
+            self.assertTrue(os.path.exists(os.path.join(d, "auth_flow.excalidraw")))
+        self.assertEqual(_all_gates(namespace["s"]), {})
 
 
 class CasesExcalidraw031(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-847
     def test_check_arrow_crossings_returns_items_without_saving(self):  # verifies: REQ-EXCALIDRAW-847#CASE-4
         s = eb.Scene(seed=99)
-        left = s.box("L", 0, 0, 80, 40)
-        s.box("M", 200, 0, 80, 40)
-        right = s.box("R", 400, 0, 80, 40)
+        left = s.box("L", (0, 0, 80, 40))
+        s.box("M", (200, 0, 80, 40))
+        right = s.box("R", (400, 0, 80, 40))
         s.arrow(left, right)                 # straight line passes through M
         crossings = s.check_arrow_crossings()
         self.assertEqual(len(crossings), 1)
         self.assertEqual(s.check_text_overflow(), [])   # an unaffected check stays clean
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
-
 class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
     def test_legend_and_glossary_decode_colours_and_terms_on_the_canvas(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-1
         s = eb.Scene(seed=99, roles={"engine": "violet", "plan": "indigo"})
-        a = s.box("the plan", 0, 0, fill="plan")
-        b = s.box("the engine", 300, 0, fill="engine")
+        a = s.box("the plan", (0, 0), paint="plan")
+        b = s.box("the engine", (300, 0), paint="engine")
         s.arrow(a, b, label="checks")
-        s.legend(x=0, y=200)
-        s.glossary([("SSOT", "single source of truth")], 300, 200)
+        s.legend(at=(0, 200))
+        s.glossary([("SSOT", "single source of truth")], (300, 200))
         self.assertEqual(s.check_legend_coverage(), [])
         texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
         self.assertIn("engine", texts)
         self.assertIn("SSOT — single source of truth", texts)
         with tempfile.TemporaryDirectory() as d:
-            s.save("decodable", out_dir=d, legend_check="error")
+            s.save("decodable", out_dir=d, gates=eb.Gates(legend="error"))
 
     def test_explainer_example_is_a_decodable_teaching_diagram(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-2
         path = os.path.join(EXAMPLES_DIR, "make_explainer.py")
@@ -758,8 +879,8 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
     def test_layered_graph_with_feedback_edge_is_gate_clean(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-1
         for direction in ("LR", "TB"):
             s = eb.Scene(seed=11)
-            placed = s.pack(self.NODES, self.EDGES, direction=direction,
-                            groups=self.GROUPS)
+            placed = s.pack(self.NODES, self.EDGES, groups=self.GROUPS,
+                            options=eb.PackOptions(direction=direction))
             self.assertEqual(len(placed), len(self.NODES))
             self.assertEqual(_all_gates(s), {}, "%s layout is not clean" % direction)
 
@@ -777,7 +898,7 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                  {"src": "b", "dst": "e", "label": "fast path"}]    # forward skip
         for direction in ("LR", "TB"):
             s = eb.Scene(seed=12)
-            s.pack(nodes, edges, direction=direction)
+            s.pack(nodes, edges, options=eb.PackOptions(direction=direction))
             self.assertEqual(_all_gates(s), {}, "%s layout is not clean" % direction)
 
     def test_back_edges_are_routed_never_drawn_straight(self):  # verifies: REQ-EXCALIDRAW-851#CASE-1
@@ -833,7 +954,7 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                [{"src": "a", "dst": "b"}])
         kinds = [e["type"] for e in s.elements if e.get("type") in ("rectangle", "diamond")]
         self.assertIn("diamond", kinds, "kind='decision' must reach the element")
-        self.assertIn(eb._FILL["orange"], [e.get("backgroundColor") for e in s.elements])
+        self.assertIn(eb.FILL["orange"], [e.get("backgroundColor") for e in s.elements])
 
     def test_a_malformed_graph_raises_valueerror_not_something_else(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-4  # verifies: REQ-EXCALIDRAW-851#CASE-5
         for build, why in (
@@ -847,7 +968,8 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                                                 [{"src": "a", "dst": "a"}]),
                  "self-edge"),
                 (lambda: eb.Scene(seed=19).pack([{"id": ""}], []), "empty id"),
-                (lambda: eb.Scene(seed=19).pack([{"id": "a"}], [], direction="up"),
+                (lambda: eb.Scene(seed=19).pack([{"id": "a"}], [],
+                                                options=eb.PackOptions(direction="up")),
                  "bad direction"),
         ):
             with self.assertRaises(ValueError, msg=why):
@@ -947,7 +1069,7 @@ class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-
             self.assertEqual(r.returncode, 2, r.stderr)
             self.assertIn("usage:", r.stderr)
 
-    def test_the_cli_writes_both_files_and_the_other_verbs_are_untouched(self):  # verifies: REQ-EXCALIDRAW-850#CASE-1
+    def test_the_cli_writes_both_files_and_the_other_verbs_are_untouched(self):  # verifies: REQ-EXCALIDRAW-850#CASE-1  # verifies: ARCH-EXCALIDRAW-032#CASE-5
         with tempfile.TemporaryDirectory() as d:
             spec = self._write(d, self.GRAPH)
             r = subprocess.run(
@@ -970,3 +1092,6 @@ class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-
         self.assertEqual(unknown.returncode, 2, unknown.stderr)
         self.assertIn("scene", unknown.stderr)   # the new verb is offered
 
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

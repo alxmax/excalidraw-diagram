@@ -21,7 +21,7 @@ satisfies: [SYS-DIAGRAM-001]
 > result exactly as they judge a hand-placed one.
 
 Every bullet below is binding.
-- `Scene.pack(nodes, edges)` places a directed graph whose description carries no
+- `Scene.pack(nodes, edges, groups, at, options)` places a directed graph whose description carries no
   coordinates, and returns the scene id of every node it placed.
   [[REQ-EXCALIDRAW-851]] details the behaviour.
 - A layout `pack()` produces passes the same gates a hand-written generator's does.
@@ -34,7 +34,8 @@ Every bullet below is binding.
 CASE-1 — a described graph with groups and a feedback edge lays out cleanly
   Given  a 13-node graph with two groups, one feedback edge and one edge that
          skips a layer, none of them carrying coordinates
-  When   `pack()` runs over it, once with `direction="LR"` and once with `"TB"`
+  When   `pack()` runs over it, once with `PackOptions(direction="LR")` and once
+         with `"TB"`
   Then   in both orientations all seven inspection checks return empty
 
 CASE-2 — a second graph of a different shape lays out cleanly too
@@ -71,9 +72,9 @@ CASE-4 — a graph that cannot be laid out is refused, and says why
   excludes bound labels by design.
 
 **Current implementation**
-- `Scene.pack()`, `Scene._route_around()` and the three static helpers
-  `_back_edges`, `_layer_of`, `_by_barycenter` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`,
+  `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`,
+  `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
 - `CasesExcalidraw034` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
@@ -171,8 +172,8 @@ CASE-5 — an unlayoutable description raises ValueError
   same geometry so the layout cannot disagree with the check that judges it.
 
 **Current implementation**
-- `Scene.pack()`, `Scene._route_around()`, `Scene._straight_hits()` and the
-  static helpers `_back_edges`, `_layer_of`, `_by_barycenter` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+- `pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`,
+  `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.
 - `CasesExcalidraw034` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

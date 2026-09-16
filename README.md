@@ -2,7 +2,7 @@
 
 A Claude Code plugin that turns a description of a system, flow or architecture into an
 **editable Excalidraw scene** plus a **self-contained HTML viewer**. No npm, no service,
-no API key: the builder is one stdlib-only Python file.
+no API key: the builder is stdlib-only Python.
 
 You describe the thing; the skill writes `<name>.excalidraw` (imports into excalidraw.com,
 every element still hand-editable) and `<name>.html` (opens by double-click).
@@ -51,6 +51,22 @@ Or write a short Python generator against the `Scene` API, for a diagram whose
 layout itself carries meaning — stacked layers, a lane per tool, a poster. Both
 paths end at the same seven gates.
 
+```python
+s = Scene(seed=7)
+a = s.box("Client", (40, 60), paint="grey")
+b = s.box("API gateway", (320, 60), paint="blue")
+s.arrow(a, b, label="request")
+s.save("auth_flow", out_dir="out", gates=Gates.strict())
+```
+
+## MCP tools
+
+Installing the plugin also registers an MCP server (`plugin/.mcp.json`), so an assistant
+can call the builder as tools instead of shelling out: `build_scene` takes the same graph
+description as `scene --from-json`, plus `render_html`, `discover_repo`, and `graph_schema`
+for the description format. It speaks JSON-RPC over stdio and, like the builder, needs
+nothing but Python.
+
 ## Why a builder rather than an LLM writing JSON
 
 Excalidraw's format is picky in ways that are easy to get wrong and hard to see: bound
@@ -63,7 +79,6 @@ So the model does not author JSON. It writes a short Python script against a sma
 ```
 $ python plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py
 wrote /tmp/excd/smoke.excalidraw /tmp/excd/smoke.html
-overlaps: [] crossings: []
 OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)
 ```
 
@@ -75,17 +90,16 @@ unreadable.
 At `save()` time the builder runs seven gates: overlapping shapes, arrows crossing an
 unrelated box, a fill colour missing from the legend, text spilling out of its box, captions
 overlapping, arrows too short to draw, and arrow labels wider than their connector. Two of
-them always raise; the other five can be turned from warnings into hard failures.
+them raise by default; the other five warn until `Gates.strict()` turns them into hard
+failures.
 
 ![What save() refuses, next to what it writes](docs/gate_demo.png)
 
-The left half only exists because `docs/make_gate_demo.py` opts out of the gates. Without
-the opt-out, this is what the run prints instead of writing a file:
+The left half only exists because `docs/make_gate_demo.py` passes `Gates(overlap="warn")`.
+Without it, this is what the run prints instead of writing a file:
 
 ```
-WARNING: arrow(s) may run through an unrelated box — reroute or move the box: ingest->store crosses 'parse'
-WARNING: fill colour(s) used but not in the legend — a reader decoding by the key gets no meaning for: #fcc2d7
-ValueError: 1 overlapping shape(s): 'ingest' overlaps 'parse'. Move the coordinates apart, wrap a grouping shape with container=True, or pass allow_overlap=True if intentional.
+ValueError: 1 overlapping shape(s): 'ingest' overlaps 'parse'. Move the coordinates apart, wrap a grouping shape with container=True, or pass Gates(overlap='off') if intentional.
 ```
 
 ## What is in here
@@ -94,12 +108,15 @@ ValueError: 1 overlapping shape(s): 'ingest' overlaps 'parse'. Move the coordina
 plugin/skills/excalidraw-diagram/
   SKILL.md                  the authoritative contract (Claude Code), 196 lines
   SKILL.universal.md        the same, for any assistant
-  scripts/excalidraw_builder.py   the builder — stdlib only, no dependencies
-  scripts/test_excalidraw.py      80 unit tests
+  scripts/excalidraw_builder.py   the import name and CLI — stdlib only, no dependencies
+  scripts/excalidraw_engine/      the builder, one module per responsibility
+  scripts/mcp_server.py           the MCP server over the same entry points
+  scripts/test_excalidraw.py      the builder's tests, every example included
   references/builder_api.md       every call, the graph.json schema
   references/worked_examples.md   the repo-poster recipe and ❌ → ✅ variants
   references/excalidraw_format.md the file-format notes the builder encodes
   examples/make_*.py        four worked generators, each runnable on its own
+plugin/.mcp.json            registers the MCP server on install
 requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py + *.png      the generators behind the pictures in this README
 scripts/check_versions.py   plugin.json and marketplace.json must agree

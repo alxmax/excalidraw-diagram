@@ -27,8 +27,7 @@ condition holds**, in this order, all in the one scene:
 | **6. DATA / SCHEMA** | it produces a core record / output shape | a record `box()` + enum/annotation satellites |
 
 Then **one** `s.legend(...)` (colour = role) and **one** `s.glossary(...)` decode
-the *whole* poster, and `s.save(..., crossing_check="error", legend_check="error",
-overflow_check="error", text_overlap_check="error", label_fit_check="error")`.
+the *whole* poster, and `s.save(..., gates=Gates.strict())`.
 
 **Colour discipline across layers:** the single legend must decode every layer, so
 give each *distinct* meaning its own colour — do not let two layers reuse one
@@ -76,7 +75,7 @@ doesn't need, fill in the rest from the real code, and run it.
   scripts / functions so the picture is useful to someone reading the code.
 - **Font & style.** `Scene()` defaults to a normal font with clean outlines —
   the most readable choice for "anyone should understand this". Pass
-  `Scene(font="hand", sketch=True)` only when the sketchy whiteboard aesthetic
+  `Scene(typeface="hand", sketch=True)` only when the sketchy whiteboard aesthetic
   is wanted. Arrows already start and end a few pixels *outside* each box, so
   heads and tails never touch the shapes.
 
@@ -94,7 +93,7 @@ overlap/crossing gates.
 
 ```python
 # ❌ everything jammed into one region
-for f in all_files: s.box(f, rand_x(), rand_y())   # spaghetti, no story
+for f in all_files: s.box(f, (rand_x(), rand_y()))   # spaghetti, no story
 ```
 
 ✅ Stacked **sections** (one per layer), role colours, one legend + glossary, all
@@ -103,16 +102,14 @@ gates on. This is `make_full_architecture.py`.
 ```python
 # ✅ a layered poster — structure / workflow / integration
 y = s.section("1 - STRUCTURE   the components")
-parts = s.row([("excalidraw_builder.py\nstdlib only", "engine"), ...], 80, y)
+parts = s.row([("excalidraw_builder.py\nstdlib only", "engine"), ...], (80, y))
 s.enclose(parts, label="excalidraw-diagram plugin")
 y = s.section("2 - WORKFLOW   run order (left -> right)")
-s.pipeline([("layer","process"),("clear?","decision"),("route","process")], 80, y)
+s.pipeline([("layer","process"),("clear?","decision"),("route","process")], (80, y))
 y = s.section("3 - INTEGRATION   invoked, checked, shipped")
 # ... external systems + arrows ...
 s.legend(...); s.glossary(...)
-s.save("full_architecture", out_dir, crossing_check="error",
-       legend_check="error", overflow_check="error", text_overlap_check="error",
-       label_fit_check="error")
+s.save("full_architecture", out_dir, gates=Gates.strict())
 ```
 
 ### 2 · Pipeline / data flow
@@ -121,7 +118,7 @@ s.save("full_architecture", out_dir, crossing_check="error",
 added one by one.
 
 ```python
-a = s.box("ingest", 0, 0); b = s.box("process", 150, 0)   # gaps by eye -> overlap
+a = s.box("ingest", (0, 0)); b = s.box("process", (150, 0))   # gaps by eye -> overlap
 s.arrow(a, b); s.arrow(b, c)                               # tedious + error-prone
 ```
 
@@ -129,9 +126,9 @@ s.arrow(a, b); s.arrow(b, c)                               # tedious + error-pro
 arrows auto-chained, returns the ids.
 
 ```python
-ids = s.row(["ingest", "process", "store"], 0, 0, connect=True, fill="source")
+ids = s.row(["ingest", "process", "store"], (0, 0), connect=True, cell={"paint": "source"})
 # many steps / a poster band? use the ISO pipeline instead:
-ids = s.pipeline([("Start","terminator"),("parse","process"),("Done","terminator")], 80, y)
+ids = s.pipeline([("Start","terminator"),("parse","process"),("Done","terminator")], (80, y))
 ```
 
 ### 2b · Multi-tool repo workflow (one lane per tool)
@@ -141,7 +138,7 @@ one tool's flow and silently hides the rest.
 
 ```python
 # repo has 3 skills, but only the engine's flow is drawn:
-s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
+s.pipeline([("init","process"),("gate","decision"),("map","process")], (80, y))
 ```
 
 ✅ One labelled `lane()` per tool — every tool's real flow is visible, stacked.
@@ -149,9 +146,9 @@ s.pipeline([("init","process"),("gate","decision"),("map","process")], 80, y)
 
 ```python
 y = s.section("2 - WORKFLOWS   one pipeline per tool")
-a = s.pipeline([("ingest","data"),("validate","decision"),("store","process")], 120, y + 40)
+a = s.pipeline([("ingest","data"),("validate","decision"),("store","process")], (120, y + 40))
 s.lane(a, "api  -  takes the request, writes the record")
-b = s.pipeline([("poll","process"),("render","process"),("upload","terminator")], 120, y + 210)
+b = s.pipeline([("poll","process"),("render","process"),("upload","terminator")], (120, y + 210))
 s.lane(b, "worker  -  picks the job up later, renders it")
 ```
 
@@ -167,7 +164,7 @@ for w in workers:            # ❌ every dispatch drawn individually
 ✅ `grid()` + `enclose()`, then **one arrow in, one arrow out** of the frame.
 
 ```python
-workers = s.grid([f"agent {i}" for i in range(9)], 900, 120, 3, fill="worker")
+workers = s.grid([f"agent {i}" for i in range(9)], (900, 120), 3, cell={"paint": "worker"})
 group   = s.enclose(workers, label="9 parallel sub-agents")
 s.arrow(dispatch, group); s.arrow(group, merge)   # 2 arrows, not 18
 ```
@@ -178,7 +175,7 @@ s.arrow(dispatch, group); s.arrow(group, merge)   # 2 arrows, not 18
 tell which arrow is "yes" vs "no".
 
 ```python
-q = s.box("valid?", x, y)                 # ❌ looks like a step, not a decision
+q = s.box("valid?", (x, y))               # ❌ looks like a step, not a decision
 s.arrow(q, ok); s.arrow(q, err)           # which branch is which?
 ```
 
@@ -186,9 +183,9 @@ s.arrow(q, ok); s.arrow(q, err)           # which branch is which?
 for the failure path.
 
 ```python
-q = s.diamond("token\nvalid?", x, y, fill="gate")
+q = s.diamond("token\nvalid?", (x, y), paint="gate")
 s.arrow(q, ok,  label="yes")
-s.arrow(q, err, label="no", dashed=True)
+s.arrow(q, err, label="no", paint=DASHED)
 ```
 
 ### 5 · Feedback loop / backward edge
@@ -214,8 +211,8 @@ project jargon unexplained, colours with no key. The asker still does not
 understand it — the diagram is correct and teaches nothing.
 
 ```python
-s.box("pack()", x, y, fill="violet")             # ❌ what is it? why violet?
-s.box("barycenter ordering", x2, y, fill="orange")   # ❌ jargon, undefined
+s.box("pack()", (x, y), paint="violet")             # ❌ what is it? why violet?
+s.box("barycenter ordering", (x2, y), paint="orange")   # ❌ jargon, undefined
 ```
 
 ✅ A teaching diagram, read top to bottom: a subtitle that says what it is and
@@ -224,15 +221,15 @@ how to read it, everyday words in the boxes, one `section()` per idea
 `glossary()` that decode every colour and term. This is `make_explainer.py`.
 
 ```python
-s.title("excalidraw-diagram — how it works", 40, -96, size=32)
+s.title("excalidraw-diagram — how it works", (40, -96), font=32)
 s.label("A tool that turns a DESCRIPTION of a system into a PICTURE of it, and "
         "refuses to hand you one that cannot be read. Read top to bottom. Every "
         "special word is explained in the Glossary at the bottom.",
-        40, -52, size=15, align="left")
+        (40, -52), font=Font(15, align="left"))
 y = s.section("1 - THE PROBLEM IT SOLVES")
-know = s.box("What someone\nUNDERSTANDS\nabout a system", 120, y, fill="words")
-draw = s.box("What a diagram\nof it would show", 880, y, fill="outside")
-s.arrow(know, draw, dashed=True, color="red",
+know = s.box("What someone\nUNDERSTANDS\nabout a system", (120, y, 230, 84), paint="words")
+draw = s.box("What a diagram\nof it would show", (880, y, 230, 84), paint="outside")
+s.arrow(know, draw, paint=Paint(stroke="red", dashed=True), heads="both",
         label="the picture nobody has the afternoon to draw")
 # ... 2 - HOW YOU USE IT, 3 - WHAT'S INSIDE, 4 - WHERE IT RUNS ...
 s.legend([...]); s.glossary([("gate", "a check that refuses an unreadable diagram"), ...])
