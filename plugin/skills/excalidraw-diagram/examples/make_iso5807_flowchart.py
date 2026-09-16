@@ -22,7 +22,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from excalidraw_builder import Scene
+from excalidraw_builder import Font, Gates, Scene
 
 # colour by ISO category (the 20% we add on top of the standard shapes)
 ROLES = {
@@ -39,14 +39,14 @@ s = Scene(seed=23, roles=ROLES)
 cx = 360  # centre line of the main flow column
 
 
-def at(w, y):  # x so a width-w box is centred on cx
-    return cx - w / 2, y
+def at(w, h, y):  # a w x h box centred on cx, top at y
+    return (cx - w / 2, y, w, h)
 
 
-s.title("From a description to two files — ISO 5807 flowchart", 40, -78, size=28)
+s.title("From a description to two files — ISO 5807 flowchart", (40, -78), font=28)
 s.label("Top -> bottom. ~80% ISO 5807 (shape = meaning) + colour by category for "
         "readability. A crossing edge is routed, then resumes at on-page connector A.",
-        cx, -44, size=14)
+        (cx, -44), font=14)
 
 # ── main flow (top -> bottom) ─────────────────────────────────────────────
 # Stack with >=70px of clear space between consecutive boxes so every vertical
@@ -63,21 +63,23 @@ def below(h):            # return the top y for a height-h box, then advance
     return top
 
 
-start = s.terminator("Start", *at(150, below(52)), w=150, h=52, fill="startend")
-init = s.preparation("Scene(seed=…)\n(canvas + roles)", *at(240, below(78)), w=240, h=78, fill="init")
-inp = s.data("nodes, edges, groups\n(no coordinates)", *at(250, below(64)), w=250, h=64, fill="io")
-layer = s.process("layer by depth", *at(220, below(60)), w=220, h=60, fill="step")
-order = s.process("order each layer\n(barycenter)", *at(220, below(60)), w=220, h=60, fill="step")
-clear = s.decision("edge's line\nclears every\nbox?", *at(230, below(120)), w=230, h=120, fill="branch")
-gates = s.process("run the\nseven gates", *at(220, below(60)), w=220, h=60, fill="step")
-outp = s.data("scene.excalidraw\n+ viewer.html", *at(250, below(66)), w=250, h=66, fill="io")
-done = s.terminator("Open it", *at(150, below(52)), w=150, h=52, fill="startend")
+start = s.terminator("Start", at(150, 52, below(52)), paint="startend")
+init = s.preparation("Scene(seed=…)\n(canvas + roles)", at(240, 78, below(78)), paint="init")
+inp = s.data("nodes, edges, groups\n(no coordinates)", at(250, 64, below(64)), paint="io")
+layer = s.process("layer by depth", at(220, 60, below(60)), paint="step")
+order = s.process("order each layer\n(barycenter)", at(220, 60, below(60)), paint="step")
+clear = s.decision("edge's line\nclears every\nbox?", at(230, 120, below(120)),
+                   paint="branch")
+gates = s.process("run the\nseven gates", at(220, 60, below(60)), paint="step")
+outp = s.data("scene.excalidraw\n+ viewer.html", at(250, 66, below(66)), paint="io")
+done = s.terminator("Open it", at(150, 52, below(52)), paint="startend")
 
 # ── the "no" branch: route the edge instead of drawing it straight ────────
-cy = s._geom[clear][1]                    # decision's top y (layout-driven)
-route = s.predefined_process("route_around()\n(out, along, back)", 620, cy, w=210, h=70, fill="sub")
-connA1 = s.connector("A", 702, cy + 140, w=46, h=46, fill="conn")
-connA2 = s.connector("A", 36, s._geom[gates][1] + 7, w=46, h=46, fill="conn")
+cy = s.rect(clear).y                      # decision's top y (layout-driven)
+route = s.predefined_process("route_around()\n(out, along, back)", (620, cy, 210, 70),
+                             paint="sub")
+connA1 = s.connector("A", (702, cy + 140), paint="conn")
+connA2 = s.connector("A", (36, s.rect(gates).y + 7), paint="conn")
 
 # ── connectors ────────────────────────────────────────────────────────────
 s.arrow(start, init)
@@ -92,11 +94,11 @@ s.arrow(clear, route, label="no")
 s.arrow(route, connA1)
 s.arrow(connA2, gates, label="resume (A)")
 s.label("on-page connector A: once routed, the edge rejoins at the gates",
-        740, cy + 200, size=12)
+        (740, cy + 200))
 
 # ── shape key (ISO 5807 symbol + colour → meaning) ────────────────────────
 kx, ky = 920, 40
-s.label("ISO 5807 shape key", kx + 30, ky - 26, size=13, align="left")
+s.label("ISO 5807 shape key", (kx + 30, ky - 26), font=Font(13, align="left"))
 key = [
     (s.terminator,         "startend", "terminator — start / end"),
     (s.preparation,        "init",     "preparation — initialise"),
@@ -108,8 +110,8 @@ key = [
 ]
 row_y = ky
 for fn, role, meaning in key:
-    fn("", kx, row_y, w=64, h=34, fill=role)
-    s.label(meaning, kx + 76, row_y + 9, size=12, align="left")
+    fn("", (kx, row_y, 64, 34), paint=role)
+    s.label(meaning, (kx + 76, row_y + 9), font=Font(12, align="left"))
     row_y += 58
 
 # ── glossary (the builder's own terms) ────────────────────────────────────
@@ -118,8 +120,8 @@ s.glossary([
     ("barycenter", "put a node near the average position of its neighbours"),
     ("routed edge", "one drawn around the diagram because a straight line would cut a box"),
     ("gate", "a check run before writing; a failed one refuses the file"),
-], 235, s.bounds()[3] + 60, title="Glossary")
+], (235, s.bounds()[3] + 60), title="Glossary")
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
-s.save("builder_flow_iso5807", out_dir=out_dir, crossing_check="error")
+s.save("builder_flow_iso5807", out_dir=out_dir, gates=Gates(crossing="error"))
 print("wrote builder_flow_iso5807.excalidraw + .html")

@@ -65,11 +65,12 @@ and flow, never a generic template. Pretty-but-shallow fails. Three things pass:
 | Path | Use it when | How |
 |---|---|---|
 | **`scene --from-json`** | the subject is a graph you can describe — parts and connections — and you do not care where each box lands | write `graph.json` (schema in `references/builder_api.md`), then `python scripts/excalidraw_builder.py scene --from-json graph.json -o out/` |
-| **A generator script** | the layout itself carries meaning: stacked layers, a lane per tool, a poster | write Python against the `Scene` API and run it |
+| **A generator script** | the layout itself carries meaning: stacked layers, a lane per tool, a poster | write Python against the `Scene` API — position as `at=(x, y)`, colour as `paint=`, type as `font=` — and run it |
 
 Two more verbs: `render <scene.excalidraw> [out_dir]` rebuilds the `.html` for a
-scene edited elsewhere; `discover <repo> [out.py]` scaffolds a poster stub from a
-repo. **No arguments is the smoke test CI depends on — never shadow it.**
+scene edited elsewhere; `discover <repo> [out.py]` scaffolds a poster stub. **No
+arguments is the smoke test CI depends on — never shadow it.** An MCP client gets
+them all as tools (`build_scene`, `render_html`, `discover_repo`, `graph_schema`).
 
 ## Workflow
 
@@ -117,8 +118,8 @@ repo. **No arguments is the smoke test CI depends on — never shadow it.**
   note the feedback in a `label()`.
 - **Reference columns.** A column that only lists possible values is a legend,
   not a stage; do not draw a long arrow to it across the diagram.
-- **Box sizing.** Start from `h ≥ lines × font_size × 1.6 + 16` and
-  `w ≥ longest_line_chars × font_size × 0.65 + 20`; `overflow_check` confirms.
+- **Box sizing.** Start from `h ≥ lines × font size × 1.6 + 16` and
+  `w ≥ longest_line_chars × font size × 0.65 + 20`; the `overflow` gate confirms.
   Keep labels to 2–3 words, push detail into a `label()` caption.
 - **One file, many diagrams.** ONE `.excalidraw` + ONE `.html` per request, from
   a single `.save()`. Several views stack as labelled regions in the *same* scene
@@ -126,9 +127,9 @@ repo. **No arguments is the smoke test CI depends on — never shadow it.**
   `RuntimeError`, so splitting into several files fails at once.
 - **Expand, don't cram.** The canvas is unlimited. Spread out rather than
   shrinking fonts or overlapping shapes.
-- **Centered captions anchor at the point.** `label(text, x, y)` and
-  `title(..., align="center")` treat `x` as the text's centre (`align="right"` as
-  its right edge) — pass the coordinate you want it centred on.
+- **Centered captions anchor at the point.** `label(text, (x, y))` and a `title()`
+  with `font=Font(align="center")` treat `x` as the text's centre (`"right"` as its
+  right edge) — pass the coordinate you want it centred on.
 - **Frame and group captions** sit ≥24px ABOVE the frame's top edge
   (`y = frame_y - 24`), never on the border; keep free `label()` text ≥16px clear
   of every shape and arrowhead.
@@ -141,15 +142,15 @@ every example must build with zero overlaps, zero crossings and zero unlegended
 fills. That is the operational definition of "clean", not a matter of taste.
 
 1. **Zero overlaps, zero crossings.** `save()` raises on overlap already; for
-   crossings use `route_under()`/`path()` and `crossing_check="error"`.
+   crossings use `route_under()`/`path()` and `Gates(crossing="error")`.
 2. **Title + one-line subtitle.** Open with `s.title(...)` and one `s.label(...)`
    sentence saying what the diagram shows and its reading direction.
-3. **Legend whenever colour means something.** If any `fill=` encodes a role,
+3. **Legend whenever colour means something.** If any `paint=` encodes a role,
    call `s.legend(...)` (or `Scene(roles=…)` then `s.legend()`). Colour is the
    single source of truth for role and the legend lists every colour used; give
    each *distinct meaning* its own colour. **Enforced:** once a legend is
    rendered, `save()` flags any fill missing from the key, and
-   `legend_check="error"` makes that fatal. Build the key with `legend()` — a
+   `Gates(legend="error")` makes that fatal. Build the key with `legend()` — a
    hand-rolled row of swatches is invisible to the gate.
 4. **Label cross-role edges.** Any arrow whose ends are different roles, or is
    otherwise non-obvious, carries a short verb phrase (`label="validates"`).
@@ -159,25 +160,24 @@ fills. That is the operational definition of "clean", not a matter of taste.
    `s.glossary([(term, meaning), …])` beside the legend, so every term is
    explained on the canvas.
 6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
-   size (~14–16). Never below font_size 12.
+   size (~14–16). Never below 12px.
 7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into an
    overview region and a detail one below; never cram 30 boxes into one.
 
-**The seven gates.** Two always raise unless allowed: overlapping shapes
-(`allow_overlap=True`) and an arrow too short to draw (`allow_short_arrows=True`).
-Five take `"warn"` (default) or `"error"` (raises): `crossing_check` (an arrow
-through an unrelated box), `legend_check` (a fill missing from the key),
-`overflow_check` (bound text bigger than its shape), `text_overlap_check` (two
-captions on each other), `label_fit_check` (an arrow's label wider than its
-connector — bound labels are excluded from the other two, so this is their only
-gate). Ship with all five at `"error"`.
+**The seven gates**, each set in one `Gates` value to `"error"` (raises), `"warn"`
+(prints) or `"off"`. Two default to `"error"`: `overlap` and `short_arrows` (an
+arrow too short to draw). Five default to `"warn"`: `crossing` (an arrow through
+an unrelated box), `legend` (a fill missing from the key), `overflow` (bound text
+bigger than its shape), `text_overlap` (two captions on each other), `label_fit`
+(an arrow's label wider than its connector — bound labels are excluded from the
+other two, so this is their only gate). Ship with `Gates.strict()`.
 
 ## Output
 
 **Pre-delivery checklist.**
 
 *The builder enforces these:*
-- [ ] `save(..., crossing_check="error", legend_check="error", overflow_check="error", text_overlap_check="error", label_fit_check="error")`
+- [ ] `save(..., gates=Gates.strict())`
 - [ ] `Scene(seed=<int>)` if the diagram is committed
 
 *You must check these — the builder cannot:*

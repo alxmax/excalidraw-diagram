@@ -35,7 +35,7 @@ Every bullet below is binding.
 ## Cases
 CASE-1 — a reader with no context can decode every colour and term
   Given  a scene that uses role colours and at least one project-specific term
-  When   it is saved with `legend_check="error"`
+  When   it is saved with `Gates(legend="error")`
   Then   a `legend()` decodes every fill colour used and a `glossary()` lists the
          term with its meaning, both on the same canvas
 
@@ -64,12 +64,12 @@ CASE-3 — the asker who does not know the system gets a picture that teaches it
   here so `grep` can confirm the rule still exists. Cite it by name, never by
   number: renumbering the list would break this link silently, and neither the
   gate, the tests nor a line count would notice.
-- `legend_check` ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend
+- The `legend` gate ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend
   is rendered, a fill it does not decode fails the build.
 
 **Current implementation**
 - `Scene.legend()` and `Scene.glossary()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
 - `plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference
   teaching diagram); `TestExampleDiagrams` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.

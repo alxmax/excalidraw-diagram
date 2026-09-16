@@ -9,7 +9,7 @@ Run from the repo root:
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from excalidraw_builder import Scene
+from excalidraw_builder import DASHED, Font, Gates, Paint, Scene
 
 ROLES = {
     "input":    "blue",      # user-provided system description
@@ -23,11 +23,11 @@ ROLES = {
 s = Scene(seed=42, roles=ROLES)
 
 # ── Title & subtitle ──────────────────────────────────────────────────────
-s.title("excalidraw-diagram skill — end-to-end workflow", 40, -70, size=30)
+s.title("excalidraw-diagram skill — end-to-end workflow", (40, -70), font=30)
 s.label(
     "Top → bottom: from a system description to .excalidraw + .html.  "
     "Right panels detail the two variable steps (Explore branching, Validate).",
-    40, -28, size=14, color="grey", align="left"
+    (40, -28), font=Font(14, align="left"),
 )
 
 # ── Pipeline (centre column, x=300–700) ───────────────────────────────────
@@ -36,14 +36,14 @@ PX, PW, BH = 300, 400, 70
 def Y(n):
     return 80 + n * 150      # 70px box + 80px vertical gap
 
-inp   = s.box("System description",     PX, Y(0), PW, BH, fill="input",  font_size=14)
-expl  = s.box("Explore the system",     PX, Y(1), PW, BH, fill="agent",  font_size=14)
-plan  = s.box("Plan the layout",        PX, Y(2), PW, BH, fill="agent",  font_size=14)
-code  = s.box("Write generator script", PX, Y(3), PW, BH, fill="agent",  font_size=14)
-run   = s.box("python make_*.py",       PX, Y(4), PW, BH, fill="engine", font_size=14)
-valid = s.box("save()  validates",      PX, Y(5), PW, BH, fill="gate",   font_size=14)
-out   = s.box(".excalidraw  +  .html",  PX, Y(6), PW, BH, fill="output", font_size=14)
-deliv = s.box("3-point delivery",       PX, Y(7), PW, BH, fill="agent",  font_size=14)
+inp   = s.box("System description",     (PX, Y(0), PW, BH), paint="input",  font=14)
+expl  = s.box("Explore the system",     (PX, Y(1), PW, BH), paint="agent",  font=14)
+plan  = s.box("Plan the layout",        (PX, Y(2), PW, BH), paint="agent",  font=14)
+code  = s.box("Write generator script", (PX, Y(3), PW, BH), paint="agent",  font=14)
+run   = s.box("python make_*.py",       (PX, Y(4), PW, BH), paint="engine", font=14)
+valid = s.box("save()  validates",      (PX, Y(5), PW, BH), paint="gate",   font=14)
+out   = s.box(".excalidraw  +  .html",  (PX, Y(6), PW, BH), paint="output", font=14)
+deliv = s.box("3-point delivery",       (PX, Y(7), PW, BH), paint="agent",  font=14)
 
 for a, b in zip(
     [inp, expl, plan, code, run, valid, out],
@@ -57,20 +57,20 @@ s.path(
      (210, Y(5) + BH // 2),
      (210, Y(2) + BH // 2),
      (PX, Y(2) + BH // 2)],
-    color="orange", dashed=True, end="arrow", label="fix → retry",
+    paint=Paint(stroke="orange", dashed=True), label="fix → retry",
 )
 
 # Step annotations (text labels, below each box; exempt from overlap check)
 s.label("reads README, counts source files, maps components + edges",
-        PX, Y(1) + BH + 6, size=12, color="grey", align="left")
+        (PX, Y(1) + BH + 6), font=Font(12, align="left"))
 s.label("columns · ≥80px gaps · no arrow crosses an unrelated box",
-        PX, Y(2) + BH + 6, size=12, color="grey", align="left")
+        (PX, Y(2) + BH + 6), font=Font(12, align="left"))
 s.label("imports excalidraw_builder.py; declares shapes + arrows; calls save()",
-        PX, Y(3) + BH + 6, size=12, color="grey", align="left")
+        (PX, Y(3) + BH + 6), font=Font(12, align="left"))
 s.label("save() runs 3 gates; pass → both files written",
-        PX, Y(5) + BH + 6, size=12, color="grey", align="left")
+        (PX, Y(5) + BH + 6), font=Font(12, align="left"))
 s.label("what it shows · how to read it · colour legend",
-        PX, Y(7) + BH + 6, size=12, color="grey", align="left")
+        (PX, Y(7) + BH + 6), font=Font(12, align="left"))
 
 # ── Right panel A: Exploration alternatives (aligned with EXPLORE) ─────────
 RX = PX + PW + 200   # = 900  (wide enough that the side-panel labels clear)
@@ -78,9 +78,9 @@ RX = PX + PW + 200   # = 900  (wide enough that the side-panel labels clear)
 # Small repo: Claude reads directly — same y as EXPLORE
 seq = s.box(
     "≤ 80 source files:\nClaude reads README + sources directly",
-    RX, Y(1), 340, BH, fill="agent", font_size=12,
+    (RX, Y(1), 340, BH), paint="agent", font=12,
 )
-s.arrow(expl, seq, label="small repo", dashed=True)
+s.arrow(expl, seq, label="small repo", paint=DASHED)
 
 # Large repo: 3 parallel subagents (50px below seq)
 PAR_Y = Y(1) + BH + 50   # = 350
@@ -88,13 +88,13 @@ par_boxes = s.grid(
     [("structure +\nentry-points\n(haiku)", "parallel"),
      ("data-flow +\nintegration\n(sonnet)", "parallel"),
      ("distribution +\npackaging\n(haiku)", "parallel")],
-    RX, PAR_Y, cols=3, w=140, h=84, gap_x=12, font_size=11,
+    (RX, PAR_Y), 3, cell={"size": (140, 84), "font": 11}, gap=(12, 30),
 )
 par_frame = s.enclose(
     par_boxes, pad=14,
     label="> 80 source files: 3 parallel Explore subagents",
 )
-s.arrow(expl, par_frame, dashed=True)
+s.arrow(expl, par_frame, paint=DASHED)
 
 # ── Right panel B: Builder API (aligned with CODE) ────────────────────────
 api = s.box(
@@ -103,19 +103,19 @@ api = s.box(
     "  arrow()  route_under()  frame()\n"
     "  row()  grid()  enclose()\n"
     "  legend()  glossary()  save()",
-    RX, Y(3), 360, 130, fill="engine", font_size=11,
+    (RX, Y(3), 360, 130), paint="engine", font=11,
 )
-s.arrow(code, api, label="imports", dashed=True)
+s.arrow(code, api, label="imports", paint=DASHED)
 
 # ── Right panel C: Validation gates (aligned with VALIDATE) ───────────────
 gate_boxes = s.row(
     [("Overlap check\n→ error if fails", "gate"),
      ("Crossing check\n→ warn / error",  "gate"),
      ("Legend coverage\n→ warn / error", "gate")],
-    RX, Y(5), gap=12, w=150, h=BH, font_size=11,
+    (RX, Y(5)), gap=12, cell={"size": (150, BH), "font": 11},
 )
 gate_frame = s.enclose(gate_boxes, pad=12, label="save() checks")
-s.arrow(valid, gate_frame, dashed=True)
+s.arrow(valid, gate_frame, paint=DASHED)
 
 # ── Colour legend ─────────────────────────────────────────────────────────
 s.legend(
@@ -125,14 +125,14 @@ s.legend(
      ("Validation gate",     "gate"),
      ("Output file",         "output"),
      ("Parallel subagent",   "parallel")],
-    1440, 300, title="What the colours mean",
+    (1440, 300), title="What the colours mean",
 )
 
 # ── Save ──────────────────────────────────────────────────────────────────
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "docs"
 pj, ph = s.save(
     "excalidraw_skill_flow", out_dir=out_dir,
-    crossing_check="error", legend_check="error",
+    gates=Gates(crossing="error", legend="error"),
 )
 print("elements:", len(s.elements))
 print("overlaps:", s.check_overlaps())

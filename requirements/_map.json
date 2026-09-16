@@ -12,6 +12,7 @@
       "intent": "The excalidraw-diagram skill needs a stdlib-only Python library that turns declarative shape and arrow declarations into a valid Excalidraw scene file and a self-contained HTML viewer, with no external dependencies, so the skill can be vendored into any environment without install friction.",
       "contract": [
         "`Scene` exposes shape primitives, ISO 5807 flowchart aliases, layout helpers, and annotation helpers for building a diagram declaratively. [[REQ-EXCALIDRAW-844]] details the behaviour.",
+        "Every drawing call takes its position, colour and text setting as one `at`, one `paint` and one `font` value. [[REQ-EXCALIDRAW-853]] details the behaviour.",
         "`Scene` exposes connector helpers and a `.save(basename, out_dir)` that writes both a `.excalidraw` scene and a self-contained `.html` viewer once, deterministically when seeded. [[REQ-EXCALIDRAW-845]] details the behaviour."
       ],
       "verify": [],
@@ -20,16 +21,16 @@
         "`save()` overlap detection raises on any two non-container shapes that overlap (co-ordinates checked after all shapes are added)."
       ],
       "current_impl": [
-        "`class Scene` and all shape/layout/arrow methods in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`."
+        "`Scene` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`, assembled from one mixin per call family (`shapes.py`, `connectors.py`, `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable import name and the command line."
       ],
       "acc": [
         "CASE-1 — Given  a `Scene` with at least one `box` and one `arrow` When   `.save()` is called Then   both `<basename>.excalidraw` and `<basename>.html` are written and the `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`",
-        "CASE-2 — Given  two `box` shapes placed at overlapping coordinates When   `.save()` is called without `allow_overlap=True` Then   a `ValueError` is raised naming the overlapping shapes",
+        "CASE-2 — Given  two `box` shapes placed at overlapping coordinates When   `.save()` is called with the default `Gates()` Then   a `ValueError` is raised naming the overlapping shapes",
         "CASE-3 — Given  `Scene(seed=42)` with identical shape declarations run twice When   both outputs are compared byte-for-byte Then   they are identical",
         "CASE-4 — Given  `.save()` has already been called once on a `Scene` When   `.save()` is called again Then   a `RuntimeError` is raised",
         "CASE-5 — Given  a `pipeline([...])` call with step dicts When   `.save()` is called Then   the resulting scene contains connected flowchart nodes with no overlapping shapes"
       ],
-      "accept": "CASE-1\n  Given  a `Scene` with at least one `box` and one `arrow`\n  When   `.save()` is called\n  Then   both `<basename>.excalidraw` and `<basename>.html` are written and the\n         `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`\n\nCASE-2\n  Given  two `box` shapes placed at overlapping coordinates\n  When   `.save()` is called without `allow_overlap=True`\n  Then   a `ValueError` is raised naming the overlapping shapes\n\nCASE-3\n  Given  `Scene(seed=42)` with identical shape declarations run twice\n  When   both outputs are compared byte-for-byte\n  Then   they are identical\n\nCASE-4\n  Given  `.save()` has already been called once on a `Scene`\n  When   `.save()` is called again\n  Then   a `RuntimeError` is raised\n\nCASE-5\n  Given  a `pipeline([...])` call with step dicts\n  When   `.save()` is called\n  Then   the resulting scene contains connected flowchart nodes with no\n         overlapping shapes",
+      "accept": "CASE-1\n  Given  a `Scene` with at least one `box` and one `arrow`\n  When   `.save()` is called\n  Then   both `<basename>.excalidraw` and `<basename>.html` are written and the\n         `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`\n\nCASE-2\n  Given  two `box` shapes placed at overlapping coordinates\n  When   `.save()` is called with the default `Gates()`\n  Then   a `ValueError` is raised naming the overlapping shapes\n\nCASE-3\n  Given  `Scene(seed=42)` with identical shape declarations run twice\n  When   both outputs are compared byte-for-byte\n  Then   they are identical\n\nCASE-4\n  Given  `.save()` has already been called once on a `Scene`\n  When   `.save()` is called again\n  Then   a `RuntimeError` is raised\n\nCASE-5\n  Given  a `pipeline([...])` call with step dicts\n  When   `.save()` is called\n  Then   the resulting scene contains connected flowchart nodes with no\n         overlapping shapes",
       "input": "",
       "output": "",
       "desc": "",
@@ -46,7 +47,8 @@
       ],
       "satisfied_by": [
         "REQ-EXCALIDRAW-844",
-        "REQ-EXCALIDRAW-845"
+        "REQ-EXCALIDRAW-845",
+        "REQ-EXCALIDRAW-853"
       ],
       "members": [
         {
@@ -75,7 +77,7 @@
         "`Scene()` produces a valid Excalidraw JSON scene (schema version 2) with a `type: \"excalidraw\"` root and a `elements` list compatible with excalidraw.com import.",
         "`Scene` exposes shape primitives: `box`, `ellipse`, `diamond`, `frame`.",
         "`Scene` exposes ISO 5807 flowchart aliases: `process`, `terminator`, `decision`, `data`, `predefined_process`, `preparation`, `connector`.",
-        "`Scene` exposes layout helpers: `row`, `column`, `grid`, `enclose`, `lane`, `pipeline`, `section`, `align`, `distribute`.",
+        "`Scene` exposes layout helpers: `arrange` and its three forms `row`, `column`, `grid`, plus `enclose`, `lane`, `pipeline`, `section`, `align`, `distribute`.",
         "`Scene` exposes annotation helpers: `title`, `label`, `legend`, `glossary`, `role`."
       ],
       "verify": [],
@@ -101,28 +103,36 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:111"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:152"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:174"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:185"
-        },
-        {
           "role": "tested-by",
           "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:571"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:573"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:58"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:8"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py:19"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:36"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:101"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:119"
         }
       ],
       "test_exempt": null,
@@ -142,7 +152,7 @@
       "intent": "Shapes alone are not a diagram until they are linked, and a caller needs one predictable moment where the scene becomes files on disk. Connector helpers bind arrows to shape ids; `.save()` writes the `.excalidraw` scene and its HTML viewer together, exactly once, and — when the scene was seeded — byte-identically on every run, so a regenerated diagram never shows as a spurious diff.",
       "contract": [
         "`Scene` exposes connector helpers: `arrow`, `free_arrow`, `path`, `route_under`.",
-        "`.save(basename, out_dir)` writes both `<basename>.excalidraw` (the scene JSON) and `<basename>.html` (a self-contained viewer) in one call and raises `RuntimeError` if called more than once on the same `Scene`.",
+        "`.save(basename, out_dir, gates)` writes both `<basename>.excalidraw` (the scene JSON) and `<basename>.html` (a self-contained viewer) in one call and raises `RuntimeError` if called more than once on the same `Scene`.",
         "`Scene(seed=<int>)` produces byte-identical output across re-runs.",
         "The builder has no external dependencies — stdlib only."
       ],
@@ -153,9 +163,9 @@
         "CASE-1 — — connector helpers link two shapes Given  two boxes already placed in a `Scene` When   `arrow(a, b)` is called Then   the scene gains an arrow element bound to both shapes' ids",
         "CASE-2 — — one .save() call writes both output files Given  a `Scene` with at least one shape When   `.save(\"demo\", out_dir)` is called Then   both `demo.excalidraw` and `demo.html` exist in `out_dir` after the single call",
         "CASE-3 — — a fixed seed reproduces byte-identical output Given  the same shape declarations built twice with `Scene(seed=42)` When   each is saved to its own file Then   the two `.excalidraw` files are byte-for-byte identical",
-        "CASE-4 — — the builder imports only the standard library Given  `excalidraw_builder.py` When   its top-level imports are inspected Then   every imported module belongs to the Python standard library"
+        "CASE-4 — — the builder imports only the standard library Given  `excalidraw_builder.py` and every module of `excalidraw_engine/` When   their imports are inspected Then   every imported module belongs to the Python standard library or to `excalidraw_engine` itself --------------------"
       ],
-      "accept": "CASE-1 — connector helpers link two shapes\n  Given  two boxes already placed in a `Scene`\n  When   `arrow(a, b)` is called\n  Then   the scene gains an arrow element bound to both shapes' ids\n\nCASE-2 — one .save() call writes both output files\n  Given  a `Scene` with at least one shape\n  When   `.save(\"demo\", out_dir)` is called\n  Then   both `demo.excalidraw` and `demo.html` exist in `out_dir` after the single call\n\nCASE-3 — a fixed seed reproduces byte-identical output\n  Given  the same shape declarations built twice with `Scene(seed=42)`\n  When   each is saved to its own file\n  Then   the two `.excalidraw` files are byte-for-byte identical\n\nCASE-4 — the builder imports only the standard library\n  Given  `excalidraw_builder.py`\n  When   its top-level imports are inspected\n  Then   every imported module belongs to the Python standard library",
+      "accept": "CASE-1 — connector helpers link two shapes\n  Given  two boxes already placed in a `Scene`\n  When   `arrow(a, b)` is called\n  Then   the scene gains an arrow element bound to both shapes' ids\n\nCASE-2 — one .save() call writes both output files\n  Given  a `Scene` with at least one shape\n  When   `.save(\"demo\", out_dir)` is called\n  Then   both `demo.excalidraw` and `demo.html` exist in `out_dir` after the single call\n\nCASE-3 — a fixed seed reproduces byte-identical output\n  Given  the same shape declarations built twice with `Scene(seed=42)`\n  When   each is saved to its own file\n  Then   the two `.excalidraw` files are byte-for-byte identical\n\nCASE-4 — the builder imports only the standard library\n  Given  `excalidraw_builder.py` and every module of `excalidraw_engine/`\n  When   their imports are inspected\n  Then   every imported module belongs to the Python standard library or to\n         `excalidraw_engine` itself\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
@@ -168,24 +178,24 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:188"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:904"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1615"
-        },
-        {
           "role": "tested-by",
           "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:571"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:573"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py:21"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:73"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:91"
         }
       ],
       "test_exempt": null,
@@ -196,6 +206,72 @@
       "covered": 4
     },
     {
+      "id": "REQ-EXCALIDRAW-853",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "The three call values: at, paint and font",
+      "intent": "Every drawing call takes the same few values — where a thing goes, how it is painted, how its text is set — so learning one call teaches the rest. Each value travels as one object instead of four loose arguments, which keeps a width from landing where a height belongs and a 1.x keyword from being silently ignored.",
+      "contract": [
+        "A call takes its position as one `at` value: a `Rect`, an `(x, y, w, h)` tuple, or an `(x, y)` point. A point on a shape call takes the shape's own default size.",
+        "A call takes its colour as one `paint` value and its text setting as one `font` value. A bare colour string stands for a `Paint` and a bare number for a `Font` size. A `Font` field left unset keeps the calling method's own default.",
+        "An `arrange()` item or cell carrying an option name `box()` does not accept raises `ValueError` that lists the accepted names."
+      ],
+      "verify": [],
+      "notes": [
+        "A bare paint string is the element's natural colour: a shape's fill, a connector's stroke. That is why `paint=\"red\"` on an arrow colours its line."
+      ],
+      "current_impl": [
+        "`Paint` and `Font` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in `excalidraw_engine/arrange.py`.",
+        "`CasesExcalidrawValues` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "acc": [
+        "CASE-1 — — the three forms of `at` place a shape identically Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point `(10, 20)` given to `process()`, whose default size is 170 x 64 When   each places one shape in its own scene Then   the three shape elements carry the same x, y, width and height",
+        "CASE-2 — — a shorthand value means what the full object would Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)` on `label()` When   the elements are built Then   the box has blue's fill and 20px text, and the label keeps its grey colour",
+        "CASE-3 — — a mistyped option is refused, not ignored Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()` When   the row is placed Then   `ValueError` is raised naming `fill` and listing the accepted names"
+      ],
+      "accept": "CASE-1 — the three forms of `at` place a shape identically\n  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point\n         `(10, 20)` given to `process()`, whose default size is 170 x 64\n  When   each places one shape in its own scene\n  Then   the three shape elements carry the same x, y, width and height\n\nCASE-2 — a shorthand value means what the full object would\n  Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)`\n         on `label()`\n  When   the elements are built\n  Then   the box has blue's fill and 20px text, and the label keeps its grey colour\n\nCASE-3 — a mistyped option is refused, not ignored\n  Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()`\n  When   the row is placed\n  Then   `ValueError` is raised naming `fill` and listing the accepted names",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:662"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:27"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:56"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:43"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:71"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3
+    },
+    {
       "id": "ARCH-EXCALIDRAW-031",
       "layer": "feature",
       "level": "architecture",
@@ -204,28 +280,29 @@
       "title": "Excalidraw quality gates",
       "intent": "A diagram that ships with overlapping shapes, arrows that cut through unrelated boxes, unlegended colours, text that spills outside its box, an arrow too short to draw a visible line, or a label wider than the arrow it sits on is unreadable to an outsider. Hard-fail gates at `.save()` time make these defects impossible to ship silently.",
       "contract": [
-        "`.save()` supports five named gates (`crossing_check`, `legend_check`, `overflow_check`, `text_overlap_check`, `label_fit_check`), each accepting `\"warn\"` (default, prints) or `\"error\"` (raises `ValueError`). [[REQ-EXCALIDRAW-846]]",
-        "`.save()` additionally enforces two hard gates that raise `ValueError` by default — overlapping shapes and arrows clamped too short to render — each with its own opt-out flag for a deliberate exception. [[REQ-EXCALIDRAW-847]]"
+        "`.save(gates=Gates(...))` runs five advisory gates (`crossing`, `legend`, `overflow`, `text_overlap`, `label_fit`), each set to `\"warn\"` (the default, prints to stderr), `\"error\"` (raises `ValueError`) or `\"off\"`. [[REQ-EXCALIDRAW-846]]",
+        "`.save()` additionally enforces two hard gates that raise `ValueError` by default — overlapping shapes and arrows clamped too short to render — each switchable through the same `Gates` object for a deliberate exception. [[REQ-EXCALIDRAW-847]]"
       ],
       "verify": [],
       "notes": [
-        "The canonical pattern for a ship-quality diagram is all five named gates set to `\"error\"` (the two hard gates already raise by default): `save(..., crossing_check=\"error\", legend_check=\"error\", overflow_check=\"error\", text_overlap_check=\"error\", label_fit_check=\"error\")`."
+        "The canonical pattern for a ship-quality diagram is every gate at `\"error\"`: `save(..., gates=Gates.strict())`.",
+        "Until 2.0.0 the gates were five `*_check=` keyword arguments plus `allow_overlap=` / `allow_short_arrows=`. One `Gates` value replaced the seven."
       ],
       "current_impl": [
-        "`check_overlaps`, `check_arrow_crossings`, `check_legend_coverage`, `check_text_overflow`, `check_text_overlaps`, `check_short_arrows`, `check_arrow_label_fit` and the `save()` gate dispatch in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "The seven `check_*` methods in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`, and `Gates` with the `save()` gate dispatch in `excalidraw_engine/gates.py`.",
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
         "-------------------"
       ],
       "acc": [
-        "CASE-1 — Given  a scene where a bound arrow's path passes through an unrelated box When   `save(crossing_check=\"error\")` is called Then   a `ValueError` is raised; `save(crossing_check=\"warn\")` emits a warning and exits normally",
-        "CASE-2 — Given  a scene with `fill=\"blue\"` on a box and no `legend()` rendered When   `save(legend_check=\"error\")` is called Then   a `ValueError` is raised naming the unlegended colour",
-        "CASE-3 — Given  a box whose bound text is wider than the box width When   `save(overflow_check=\"error\")` is called Then   a `ValueError` is raised; `check_text_overflow()` returns the offending shape id",
-        "CASE-4 — Given  two `label()` elements placed at overlapping coordinates When   `save(text_overlap_check=\"error\")` is called Then   a `ValueError` is raised naming the overlapping pair",
-        "CASE-5 — Given  each maintained example generator in `examples/` When   `test_excalidraw.py` runs it Then   the generator produces zero violations on every gate (the five named gates and both hard gates)",
-        "CASE-6 — Given  two boxes placed close but not overlapping, joined by a bound arrow When   `save()` is called with defaults Then   a `ValueError` is raised (the connector is too short to render); `save(allow_short_arrows=True)` writes the files, and `check_short_arrows()` returns the offending pair",
-        "CASE-7 — Given  a bound arrow whose label is wider than the arrow's visible line When   `save(label_fit_check=\"error\")` is called Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the offending label"
+        "CASE-1 — Given  a scene where a bound arrow's path passes through an unrelated box When   `save(gates=Gates(crossing=\"error\"))` is called Then   a `ValueError` is raised; with the default `Gates()` a warning is printed and the files are written",
+        "CASE-2 — Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue When   `save(gates=Gates(legend=\"error\"))` is called Then   a `ValueError` is raised naming the unlegended colour",
+        "CASE-3 — Given  a box whose bound text is wider than the box width When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised; `check_text_overflow()` returns the offending shape",
+        "CASE-4 — Given  two `label()` elements placed at overlapping coordinates When   `save(gates=Gates(text_overlap=\"error\"))` is called Then   a `ValueError` is raised naming the overlapping pair",
+        "CASE-5 — Given  each maintained example generator in `examples/` When   `test_excalidraw.py` runs it Then   the generator produces zero violations on every gate (the five advisory gates and both hard gates)",
+        "CASE-6 — Given  two boxes placed close but not overlapping, joined by a bound arrow When   `save()` is called with defaults Then   a `ValueError` is raised (the connector is too short to render); `save(gates=Gates(short_arrows=\"off\"))` writes the files, and `check_short_arrows()` returns the offending pair",
+        "CASE-7 — Given  a bound arrow whose label is wider than the arrow's visible line When   `save(gates=Gates(label_fit=\"error\"))` is called Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the offending label"
       ],
-      "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(crossing_check=\"error\")` is called\n  Then   a `ValueError` is raised; `save(crossing_check=\"warn\")` emits a\n         warning and exits normally\n\nCASE-2\n  Given  a scene with `fill=\"blue\"` on a box and no `legend()` rendered\n  When   `save(legend_check=\"error\")` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(overflow_check=\"error\")` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape id\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(text_overlap_check=\"error\")` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five named\n         gates and both hard gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(allow_short_arrows=True)` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(label_fit_check=\"error\")` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
+      "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` is raised; with the default `Gates()` a warning is\n         printed and the files are written\n\nCASE-2\n  Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five\n         advisory gates and both hard gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(gates=Gates(short_arrows=\"off\"))` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
       "input": "",
       "output": "",
       "desc": "",
@@ -267,23 +344,23 @@
       "status": "confirmed",
       "area": "REQ",
       "title": "Named gates: crossing, legend, and overflow checks",
-      "intent": "`.save()` runs five named checks before it writes a scene. Each accepts `\"warn\"` (print and continue, the default) or `\"error\"` (raise `ValueError`), so a generator can ship diagrams where readability defects — an arrow cutting through an unrelated box, an unlegended colour, text spilling out of its shape — fail the build instead of shipping silently.",
+      "intent": "`.save()` runs five advisory checks before it writes a scene. Each is set through a `Gates` value to `\"warn\"` (print to stderr and continue, the default), `\"error\"` (raise `ValueError`) or `\"off\"`, so a generator can ship diagrams where readability defects — an arrow cutting through an unrelated box, an unlegended colour, text spilling out of its shape — fail the build instead of shipping silently.",
       "contract": [
-        "`.save()` supports five named gates, each accepting `\"warn\"` (default, prints) or `\"error\"` (raises `ValueError`): `crossing_check`, `legend_check`, `overflow_check`, `text_overlap_check`, `label_fit_check`.",
-        "`crossing_check`: a bound arrow whose straight centre-to-centre path passes through an unrelated box triggers the gate.",
-        "`legend_check`: a fill colour used on any shape but absent from the `legend()` key triggers the gate (fires only after `legend()` is rendered; a scene with no legend is exempt).",
-        "`overflow_check`: a shape whose bound text is larger than the shape bounds (text spills outside) triggers the gate."
+        "`Gates(...)` sets each of five advisory gates to `\"warn\"` (default, prints to stderr), `\"error\"` (raises `ValueError`) or `\"off\"`: `crossing`, `legend`, `overflow`, `text_overlap`, `label_fit`. An unknown gate name or mode raises `ValueError`.",
+        "`crossing`: a bound arrow whose straight centre-to-centre path passes through an unrelated box triggers the gate.",
+        "`legend`: a fill colour used on any shape but absent from the `legend()` key triggers the gate (fires only after `legend()` is rendered; a scene with no legend is exempt).",
+        "`overflow`: a shape whose bound text is larger than the shape bounds (text spills outside) triggers the gate."
       ],
       "verify": [],
       "notes": [],
       "current_impl": [],
       "acc": [
-        "CASE-1 — — each named gate accepts warn or error mode Given  a scene with a crossing_check violation When   `save(crossing_check=\"warn\")` and `save(crossing_check=\"error\")` are each called Then   the warn call prints a warning and returns normally, the error call raises `ValueError`",
-        "CASE-2 — — crossing_check fires when an arrow's path crosses an unrelated box Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated box When   `save(crossing_check=\"error\")` is called Then   a `ValueError` naming the crossing is raised",
-        "CASE-3 — — legend_check fires for an unlegended colour, exempt with no legend Given  a shape filled \"blue\" with `legend()` rendered but \"blue\" absent from its key When   `save(legend_check=\"error\")` is called Then   a `ValueError` naming the unlegended colour is raised; the same scene with no `legend()` call raises nothing",
-        "CASE-4 — — overflow_check fires when bound text exceeds the shape bounds Given  a box whose bound text is wider than the box When   `save(overflow_check=\"error\")` is called Then   a `ValueError` is raised --------------------"
+        "CASE-1 — — each named gate accepts warn or error mode Given  a scene with a crossing violation When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")` Then   the warn call prints a warning and returns normally, the error call raises `ValueError`",
+        "CASE-2 — — the crossing gate fires when an arrow's path crosses an unrelated box Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated box When   `save(gates=Gates(crossing=\"error\"))` is called Then   a `ValueError` naming the crossing is raised",
+        "CASE-3 — — the legend gate fires for an unlegended colour, exempt with no legend Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key When   `save(gates=Gates(legend=\"error\"))` is called Then   a `ValueError` naming the unlegended colour is raised; the same scene with no `legend()` call raises nothing",
+        "CASE-4 — — the overflow gate fires when bound text exceeds the shape bounds Given  a box whose bound text is wider than the box When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised --------------------"
       ],
-      "accept": "CASE-1 — each named gate accepts warn or error mode\n  Given  a scene with a crossing_check violation\n  When   `save(crossing_check=\"warn\")` and `save(crossing_check=\"error\")` are each called\n  Then   the warn call prints a warning and returns normally, the error call raises `ValueError`\n\nCASE-2 — crossing_check fires when an arrow's path crosses an unrelated box\n  Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated\n         box\n  When   `save(crossing_check=\"error\")` is called\n  Then   a `ValueError` naming the crossing is raised\n\nCASE-3 — legend_check fires for an unlegended colour, exempt with no legend\n  Given  a shape filled \"blue\" with `legend()` rendered but \"blue\" absent from its key\n  When   `save(legend_check=\"error\")` is called\n  Then   a `ValueError` naming the unlegended colour is raised; the same scene with no\n         `legend()` call raises nothing\n\nCASE-4 — overflow_check fires when bound text exceeds the shape bounds\n  Given  a box whose bound text is wider than the box\n  When   `save(overflow_check=\"error\")` is called\n  Then   a `ValueError` is raised\n\n\n--------------------",
+      "accept": "CASE-1 — each named gate accepts warn or error mode\n  Given  a scene with a crossing violation\n  When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")`\n  Then   the warn call prints a warning and returns normally, the error call raises `ValueError`\n\nCASE-2 — the crossing gate fires when an arrow's path crosses an unrelated box\n  Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated\n         box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` naming the crossing is raised\n\nCASE-3 — the legend gate fires for an unlegended colour, exempt with no legend\n  Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` naming the unlegended colour is raised; the same scene with no\n         `legend()` call raises nothing\n\nCASE-4 — the overflow gate fires when bound text exceeds the shape bounds\n  Given  a box whose bound text is wider than the box\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
@@ -296,24 +373,24 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1404"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1425"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1454"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1615"
-        },
-        {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:102"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:65"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:82"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:102"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:91"
         }
       ],
       "test_exempt": null,
@@ -330,24 +407,24 @@
       "status": "confirmed",
       "area": "REQ",
       "title": "Text-overlap, label-fit gates, and the two hard gates",
-      "intent": "Two more named checks (`text_overlap_check`, `label_fit_check`) catch overlapping captions and labels that crowd their arrow. Beyond those, `.save()` enforces two hard gates that always raise unless explicitly opted out — overlapping shapes and arrows too short to render — because those two defects have no legitimate \"warn and ship\" case.",
+      "intent": "Two more advisory checks (`text_overlap`, `label_fit`) catch overlapping captions and labels that crowd their arrow. Beyond those, `.save()` enforces two hard gates that raise unless explicitly switched — overlapping shapes and arrows too short to render — because those two defects have no legitimate \"warn and ship\" default.",
       "contract": [
-        "`text_overlap_check`: two free captions or label elements that geometrically overlap each other trigger the gate.",
-        "`label_fit_check`: a bound arrow whose text label is wider than the connector it sits on — leaving less than ~24px of visible line on each side, measuring the label box projected onto the arrow direction — triggers the gate (the label crowds the arrowheads or spills onto the joined boxes).",
-        "`.save()` additionally enforces two hard gates that raise `ValueError` by default (no `\"warn\"`/`\"error\"` mode), each with an opt-out flag for a deliberate exception: overlapping non-container shapes (`allow_overlap=True`) and a bound arrow clamped too short to render a visible line — only its label would show — (`allow_short_arrows=True`).",
+        "`text_overlap`: two free captions or label elements that geometrically overlap each other trigger the gate.",
+        "`label_fit`: a bound arrow whose text label is wider than the connector it sits on — leaving less than ~24px of visible line on each side, measuring the label box projected onto the arrow direction — triggers the gate (the label crowds the arrowheads or spills onto the joined boxes).",
+        "`.save()` additionally enforces two hard gates that default to `\"error\"`: `overlap` (overlapping non-container shapes) and `short_arrows` (a bound arrow clamped too short to render a visible line, so only its label would show). `Gates(overlap=\"off\")` or `Gates(short_arrows=\"off\")` ships a deliberate exception.",
         "The inspection methods `check_overlaps()`, `check_arrow_crossings()`, `check_legend_coverage()`, `check_text_overflow()`, `check_text_overlaps()`, `check_short_arrows()`, `check_arrow_label_fit()` each return a list of offending items (empty list = clean) and are callable before `.save()`.",
-        "`test_excalidraw.py` exercises the five named gates in both `\"warn\"` and `\"error\"` modes, and the two hard gates, for each maintained example generator."
+        "`test_excalidraw.py` exercises the five advisory gates in both `\"warn\"` and `\"error\"` modes, and the two hard gates, for each maintained example generator."
       ],
       "verify": [],
       "notes": [],
       "current_impl": [],
       "acc": [
-        "CASE-1 — — text_overlap_check fires when two labels geometrically overlap Given  two `label()` elements placed at overlapping coordinates When   `save(text_overlap_check=\"error\")` is called Then   a `ValueError` naming the overlapping pair is raised",
-        "CASE-2 — — label_fit_check fires when a label crowds a short arrow Given  a bound arrow whose label leaves less than ~24px of visible line on one side When   `save(label_fit_check=\"error\")` is called Then   a `ValueError` is raised",
-        "CASE-3 — — the two hard gates raise by default and respect their opt-out flags Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to render When   `save()` is called with defaults, then again with `allow_overlap=True` / `allow_short_arrows=True` Then   the default calls raise `ValueError`, and the opt-out calls write the files without raising",
+        "CASE-1 — — the text_overlap gate fires when two labels geometrically overlap Given  two `label()` elements placed at overlapping coordinates When   `save(gates=Gates(text_overlap=\"error\"))` is called Then   a `ValueError` naming the overlapping pair is raised",
+        "CASE-2 — — the label_fit gate fires when a label crowds a short arrow Given  a bound arrow whose label leaves less than ~24px of visible line on one side When   `save(gates=Gates(label_fit=\"error\"))` is called Then   a `ValueError` is raised",
+        "CASE-3 — — the two hard gates raise by default and can be switched off Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to render When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` / `Gates(short_arrows=\"off\")` Then   the default calls raise `ValueError`, and the switched calls write the files without raising",
         "CASE-4 — — an inspection method returns offending items without saving Given  a scene with one crossing-arrow violation and no other defects When   `check_arrow_crossings()` is called before `.save()` Then   it returns a list containing that one item, while an unaffected check like `check_text_overflow()` returns an empty list"
       ],
-      "accept": "CASE-1 — text_overlap_check fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(text_overlap_check=\"error\")` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — label_fit_check fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(label_fit_check=\"error\")` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and respect their opt-out flags\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `allow_overlap=True` /\n         `allow_short_arrows=True`\n  Then   the default calls raise `ValueError`, and the opt-out calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list",
+      "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list",
       "input": "",
       "output": "",
       "desc": "",
@@ -360,32 +437,32 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1326"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1478"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1502"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1539"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1615"
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:102"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:780"
         },
         {
-          "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:656"
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:32"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:120"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:138"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:156"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
         }
       ],
       "test_exempt": null,
@@ -401,11 +478,12 @@
       "level": "architecture",
       "status": "confirmed",
       "area": "ARCH",
-      "title": "Excalidraw builder CLI verbs",
+      "title": "Excalidraw builder entry points: CLI verbs and MCP tools",
       "intent": "A diagram gets rebuilt from four different starting points: a description of a graph that has no coordinates yet, a generator script, a hand-edited `.excalidraw` file, or a repo that needs a scaffold. Each is a different question, so each gets its own verb rather than one verb guessing which was meant. The no-arg form is CI's own health check and is never shadowed.",
       "contract": [
         "The CLI exposes four verbs, each a single unambiguous entry point: no-arg runs the CI smoke test, `render` rebuilds a viewer HTML from an existing `.excalidraw` file, and `discover` scaffolds a generator stub from a repo. Any other verb exits 2 with usage. [[REQ-EXCALIDRAW-848]]",
-        "`scene --from-json <graph.json>` lays out a coordinate-free graph description and writes both output files, so a caller gets a diagram without writing Python. [[REQ-EXCALIDRAW-850]]"
+        "`scene --from-json <graph.json>` lays out a coordinate-free graph description and writes both output files, so a caller gets a diagram without writing Python. [[REQ-EXCALIDRAW-850]]",
+        "An MCP server offers the same entry points as tools to an assistant, so no client has to shell out to the CLI. [[REQ-EXCALIDRAW-852]]"
       ],
       "verify": [],
       "notes": [
@@ -414,7 +492,8 @@
         "`scene` is deliberately not a second authoring language. Every key it accepts maps to one `Scene` call, so the JSON cannot drift away from the Python API. A caller who wants control over the layout writes a generator instead."
       ],
       "current_impl": [
-        "`_main(argv)` and the `render_html`, `discover_stub`, `scene_from_json` functions in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html` (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).",
+        "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.",
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class, and `CasesExcalidrawSceneVerb` for the `scene` verb).",
         "-------------------"
       ],
@@ -423,9 +502,10 @@
         "CASE-2 — Given  a valid `.excalidraw` file at `<path>` When   `render <path>` is run Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged",
         "CASE-3 — Given  a directory containing at least one `.py` source file When   `discover <dir>` is run Then   a runnable Python stub is emitted that imports `excalidraw_builder` and calls `.save()`",
         "CASE-4 — Given  an unknown verb such as `frobnicate` When   `python excalidraw_builder.py frobnicate` Then   the process exits with code 2 and prints usage",
-        "CASE-5 — Given  a `graph.json` describing nodes and edges with no coordinates When   `scene --from-json graph.json -o <dir>` is run Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`"
+        "CASE-5 — Given  a `graph.json` describing nodes and edges with no coordinates When   `scene --from-json graph.json -o <dir>` is run Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`",
+        "CASE-6 — Given  an MCP client connected to `mcp_server.py` When   it calls `build_scene` with a graph description Then   both files are written, as they would be by `scene --from-json`"
       ],
-      "accept": "CASE-1\n  Given  no arguments\n  When   `python excalidraw_builder.py` is run\n  Then   it exits 0 and stdout contains a success/summary line (not an error)\n\nCASE-2\n  Given  a valid `.excalidraw` file at `<path>`\n  When   `render <path>` is run\n  Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged\n\nCASE-3\n  Given  a directory containing at least one `.py` source file\n  When   `discover <dir>` is run\n  Then   a runnable Python stub is emitted that imports `excalidraw_builder`\n         and calls `.save()`\n\nCASE-4\n  Given  an unknown verb such as `frobnicate`\n  When   `python excalidraw_builder.py frobnicate`\n  Then   the process exits with code 2 and prints usage\n\nCASE-5\n  Given  a `graph.json` describing nodes and edges with no coordinates\n  When   `scene --from-json graph.json -o <dir>` is run\n  Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`",
+      "accept": "CASE-1\n  Given  no arguments\n  When   `python excalidraw_builder.py` is run\n  Then   it exits 0 and stdout contains a success/summary line (not an error)\n\nCASE-2\n  Given  a valid `.excalidraw` file at `<path>`\n  When   `render <path>` is run\n  Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged\n\nCASE-3\n  Given  a directory containing at least one `.py` source file\n  When   `discover <dir>` is run\n  Then   a runnable Python stub is emitted that imports `excalidraw_builder`\n         and calls `.save()`\n\nCASE-4\n  Given  an unknown verb such as `frobnicate`\n  When   `python excalidraw_builder.py frobnicate`\n  Then   the process exits with code 2 and prints usage\n\nCASE-5\n  Given  a `graph.json` describing nodes and edges with no coordinates\n  When   `scene --from-json graph.json -o <dir>` is run\n  Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`\n\nCASE-6\n  Given  an MCP client connected to `mcp_server.py`\n  When   it calls `build_scene` with a graph description\n  Then   both files are written, as they would be by `scene --from-json`",
       "input": "",
       "output": "",
       "desc": "",
@@ -441,7 +521,8 @@
       ],
       "satisfied_by": [
         "REQ-EXCALIDRAW-848",
-        "REQ-EXCALIDRAW-850"
+        "REQ-EXCALIDRAW-850",
+        "REQ-EXCALIDRAW-852"
       ],
       "members": [
         {
@@ -451,12 +532,18 @@
         {
           "role": "tested-by",
           "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:4"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
         }
       ],
       "test_exempt": null,
       "milestone": "v1.1.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "REQ-EXCALIDRAW-848",
@@ -494,20 +581,20 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1866"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2132"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2245"
-        },
-        {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:410"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:412"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:76"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:182"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:109"
         }
       ],
       "test_exempt": null,
@@ -528,7 +615,7 @@
       "contract": [
         "`scene_from_json(spec_path, out_dir)` reads a JSON object describing `nodes`, `edges`, `groups` and a `direction`, lays it out with `pack()`, and writes both `<name>.excalidraw` and `<name>.html`. The name comes from the description's `name`, else from the file's own stem.",
         "Every key the description accepts maps to one `Scene` call: `title` and `subtitle` to `title()` and `label()`, `roles` and `legend` to `legend()`, `glossary` to `glossary()`, `seed` to `Scene(seed=...)`.",
-        "`scene_from_json` saves with all five named gates set to `\"error\"`, so a description that cannot be drawn readably fails instead of shipping.",
+        "`scene_from_json` saves with every gate set to `\"error\"` (`Gates.strict()`), so a description that cannot be drawn readably fails instead of shipping. `scene_from_spec(spec, out_dir, name)` does the same for a description already in memory.",
         "A description the builder cannot use raises `ValueError`, and the CLI turns that into one line on stderr and exit code 1. Invoking `scene` with no description prints usage and exits 2."
       ],
       "verify": [],
@@ -537,8 +624,9 @@
         "`json.JSONDecodeError` is a subclass of `ValueError`, which is what lets a malformed file take the same exit path as a malformed description."
       ],
       "current_impl": [
-        "`scene_from_json()` and the `scene` branch of `_main()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
-        "`CasesExcalidrawSceneVerb` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`scene_from_spec()` and `scene_from_json()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the `scene` verb in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.",
+        "`CasesExcalidrawSceneVerb` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "-------------------"
       ],
       "acc": [
         "CASE-1 — — a coordinate-free description writes both files Given  a `graph.json` naming four nodes, four edges and one group, with no coordinate anywhere in it When   `scene --from-json graph.json -o <dir>` runs Then   both files exist in `<dir>` and the scene parses as JSON with `type: \"excalidraw\"` and a non-empty `elements` list",
@@ -560,12 +648,16 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2060"
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:979"
         },
         {
-          "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:857"
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:54"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:79"
         }
       ],
       "test_exempt": null,
@@ -574,6 +666,67 @@
       "risks": [],
       "clauses": 5,
       "covered": 5
+    },
+    {
+      "id": "REQ-EXCALIDRAW-852",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "The MCP server: the same entry points as tools",
+      "intent": "An assistant that speaks the Model Context Protocol (MCP, the standard way an AI client calls external tools) should not have to shell out and parse text to draw a diagram. `mcp_server.py` offers the builder's entry points as MCP tools over stdio (JSON-RPC 2.0 messages, one per line, on stdin and stdout), with nothing to install.",
+      "contract": [
+        "`mcp_server.py` answers `initialize`, `ping`, `tools/list` and `tools/call`, and sends no reply to a notification. It negotiates a protocol version the client offers when it supports one, else answers with its latest.",
+        "`tools/list` names exactly four tools: `build_scene` for a graph description, `render_html` for a scene path, `discover_repo` for a repository, and `graph_schema` for the description format.",
+        "A tool whose input is valid but whose work fails returns `isError: true` with a one-line message. An unknown tool or an invalid argument is a JSON-RPC error instead.",
+        "`graph_schema` reads the format from `references/builder_api.md` at call time. The documented schema is the single source, so the tool cannot drift from it.",
+        "`mcp_server.py` writes only protocol messages to stdout. Text the builder prints during a call is captured and returned inside that call's result.",
+        "`plugin/.mcp.json` registers the server, so installing the plugin makes the tools available with no further setup."
+      ],
+      "verify": [],
+      "notes": [
+        "The server is stdlib only, like the builder. The official MCP SDK would need Python 3.10 and a dependency, and the protocol subset used here is small.",
+        "Relative paths in tool arguments resolve against the server process's working directory."
+      ],
+      "current_impl": [
+        "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.",
+        "`plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
+      ],
+      "acc": [
+        "CASE-1 — — the handshake and the tool list Given  a client that sends `initialize`, the `initialized` notification and `tools/list` When   the server handles them Then   it answers the request with its capabilities, sends nothing for the notification, and lists exactly the four tools",
+        "CASE-2 — — build_scene writes both files Given  a three-node graph description and an output directory When   `tools/call` runs `build_scene` Then   both files exist and the result is not an error",
+        "CASE-3 — — a failing build is a tool error, not a crash Given  a description with an edge to a node that does not exist When   `build_scene` runs Then   the result carries `isError: true` and one line, and the server keeps serving",
+        "CASE-4 — — render_html and discover_repo reach the builder Given  a scene the server just built, and a directory holding one `.py` file When   `render_html` and `discover_repo` run on them Then   the viewer page and the generator stub are written",
+        "CASE-5 — — graph_schema comes from the documentation Given  the plugin as shipped When   `graph_schema` runs Then   the text names `nodes` and `edges`; with the reference file missing, the result is an error saying so",
+        "CASE-6 — — stdout carries only protocol Given  the server started as a subprocess When   it receives an initialize, a notification, a tools/list and a malformed line, and then stdin closes Then   every stdout line parses as JSON-RPC and the process exits 0"
+      ],
+      "accept": "CASE-1 — the handshake and the tool list\n  Given  a client that sends `initialize`, the `initialized` notification and\n         `tools/list`\n  When   the server handles them\n  Then   it answers the request with its capabilities, sends nothing for the\n         notification, and lists exactly the four tools\n\nCASE-2 — build_scene writes both files\n  Given  a three-node graph description and an output directory\n  When   `tools/call` runs `build_scene`\n  Then   both files exist and the result is not an error\n\nCASE-3 — a failing build is a tool error, not a crash\n  Given  a description with an edge to a node that does not exist\n  When   `build_scene` runs\n  Then   the result carries `isError: true` and one line, and the server keeps\n         serving\n\nCASE-4 — render_html and discover_repo reach the builder\n  Given  a scene the server just built, and a directory holding one `.py` file\n  When   `render_html` and `discover_repo` run on them\n  Then   the viewer page and the generator stub are written\n\nCASE-5 — graph_schema comes from the documentation\n  Given  the plugin as shipped\n  When   `graph_schema` runs\n  Then   the text names `nodes` and `edges`; with the reference file missing, the\n         result is an error saying so\n\nCASE-6 — stdout carries only protocol\n  Given  the server started as a subprocess\n  When   it receives an initialize, a notification, a tools/list and a malformed\n         line, and then stdin closes\n  Then   every stdout line parses as JSON-RPC and the process exits 0",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-032"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/mcp_server.py:2"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "ARCH-EXCALIDRAW-033",
@@ -591,19 +744,19 @@
       "verify": [],
       "notes": [
         "The obligation on plain words and a stated reading direction is checked by reading the diagram, not by a gate: no check can tell \"Auth service\" from \"Service A\". Its prose form is the `SKILL.md` quality rule named **Real identifiers as node names, jargon in a glossary** — kept on one line here so `grep` can confirm the rule still exists. Cite it by name, never by number: renumbering the list would break this link silently, and neither the gate, the tests nor a line count would notice.",
-        "`legend_check` ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend is rendered, a fill it does not decode fails the build."
+        "The `legend` gate ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend is rendered, a fill it does not decode fails the build."
       ],
       "current_impl": [
-        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
         "`plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
         "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`."
       ],
       "acc": [
-        "CASE-1 — — a reader with no context can decode every colour and term Given  a scene that uses role colours and at least one project-specific term When   it is saved with `legend_check=\"error\"` Then   a `legend()` decodes every fill colour used and a `glossary()` lists the term with its meaning, both on the same canvas",
+        "CASE-1 — — a reader with no context can decode every colour and term Given  a scene that uses role colours and at least one project-specific term When   it is saved with `Gates(legend=\"error\")` Then   a `legend()` decodes every fill colour used and a `glossary()` lists the term with its meaning, both on the same canvas",
         "CASE-2 — — the explainer example stays a clean teaching diagram Given  `examples/make_explainer.py` When   `test_excalidraw.py` runs it Then   the built scene contains a legend and a glossary, opens with a title, and produces zero violations on every gate",
         "CASE-3 — — the asker who does not know the system gets a picture that teaches it   Given  a request phrased as \"explain how X works\" or \"I don't understand X\", with no mention of a diagram When   the skill runs Then   the delivered diagram opens with a title plus a one-line subtitle naming the reading direction. Its boxes use everyday words rather than file names alone. A legend decodes every colour; a glossary decodes every term. Checked by inspection; the reference shape is `make_explainer.py`"
       ],
-      "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `legend_check=\"error\"`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
+      "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `Gates(legend=\"error\")`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
       "input": "",
       "output": "",
       "desc": "",
@@ -631,7 +784,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:671"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:792"
         }
       ],
       "test_exempt": null,
@@ -650,7 +803,7 @@
       "title": "Graph auto-layout — a diagram from ids and edges alone",
       "intent": "Writing a generator gives a caller full control of the layout, and costs an afternoon of choosing coordinates. Someone who wants a picture of a fifteen-node flow in twenty seconds pays that price for control they did not ask for, and the quality gates make it worse: they are excellent at refusing a bad layout and no help at all in proposing a good one. So the builder computes the coordinates itself from a description of what connects to what, and the gates judge the result exactly as they judge a hand-placed one.",
       "contract": [
-        "`Scene.pack(nodes, edges)` places a directed graph whose description carries no coordinates, and returns the scene id of every node it placed. [[REQ-EXCALIDRAW-851]] details the behaviour.",
+        "`Scene.pack(nodes, edges, groups, at, options)` places a directed graph whose description carries no coordinates, and returns the scene id of every node it placed. [[REQ-EXCALIDRAW-851]] details the behaviour.",
         "A layout `pack()` produces passes the same gates a hand-written generator's does. Passing is the definition of a finished layout: a run that places every node and leaves a shape sitting on another one has failed.",
         "The CLI reaches `pack()` through `scene --from-json`, so a caller never has to write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb."
       ],
@@ -660,16 +813,16 @@
         "A routed connector leaves through the gap between rows rather than the side of its box. A bound arrow carries its label at exactly the height of a box's side, and no gate would catch a line drawn through that text: `check_text_overlaps()` excludes bound labels by design."
       ],
       "current_impl": [
-        "`Scene.pack()`, `Scene._route_around()` and the three static helpers `_back_edges`, `_layer_of`, `_by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`, `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "acc": [
-        "CASE-1 — — a described graph with groups and a feedback edge lays out cleanly Given  a 13-node graph with two groups, one feedback edge and one edge that skips a layer, none of them carrying coordinates When   `pack()` runs over it, once with `direction=\"LR\"` and once with `\"TB\"` Then   in both orientations all seven inspection checks return empty",
+        "CASE-1 — — a described graph with groups and a feedback edge lays out cleanly Given  a 13-node graph with two groups, one feedback edge and one edge that skips a layer, none of them carrying coordinates When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once with `\"TB\"` Then   in both orientations all seven inspection checks return empty",
         "CASE-2 — — a second graph of a different shape lays out cleanly too Given  a differently shaped graph: two feedback edges at different spans, one forward edge that skips a layer, and no groups When   `pack()` runs over it in both orientations Then   all seven inspection checks return empty, because a layout that only works on the graph it was written against is not a layout",
         "CASE-3 — — the degenerate shapes are laid out, not crashed on Given  a 200-node chain, two disconnected components, an isolated node, and a 12-way fan-out that rejoins When   `pack()` runs over each Then   each is placed with all seven checks empty and none of them exhausts the recursion limit",
         "CASE-4 — — a graph that cannot be laid out is refused, and says why Given  a description the builder cannot place: no nodes, a repeated id, an empty id, an edge naming a node that does not exist, a self-edge, or a direction it does not know When   `pack()` runs Then   it raises `ValueError` naming what is wrong"
       ],
-      "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `direction=\"LR\"` and once with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong",
+      "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once\n         with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong",
       "input": "",
       "output": "",
       "desc": "",
@@ -728,7 +881,7 @@
         "`_straight_hits()` is the id-level form of `check_arrow_crossings()`. The gate reports by label, which is not unique; `pack()` needs ids, and both read the same geometry so the layout cannot disagree with the check that judges it."
       ],
       "current_impl": [
-        "`Scene.pack()`, `Scene._route_around()`, `Scene._straight_hits()` and the static helpers `_back_edges`, `_layer_of`, `_by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.",
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "acc": [
@@ -751,16 +904,12 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1141"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:1290"
-        },
-        {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:731"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:852"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:305"
         }
       ],
       "test_exempt": null,
@@ -841,10 +990,10 @@
       "title": "Colour and term keys: legend() and glossary()",
       "intent": "A colour on a diagram means something only to the person who chose it, and a project term means something only to someone already inside the project. The two keys put that meaning on the canvas: `legend()` maps each fill colour to a role, `glossary()` maps each term to a one-line meaning. Both are drawn as real content, so nothing can be placed on top of them unnoticed.",
       "contract": [
-        "`legend(entries=None, x, y, title=\"Legend\")` draws a colour key with one row per entry, each row a swatch of the colour beside its label. An entry is a `(label, colour)` pair; `colour` is a palette name, a hex string or a role name declared with `Scene(roles=...)` / `role()`.",
+        "`legend(entries=None, at, title=\"Legend\")` draws a colour key with one row per entry, each row a swatch of the colour beside its label. An entry is a `(label, colour)` pair; `colour` is a palette name, a hex string or a role name declared with `Scene(roles=...)` / `role()`.",
         "`legend()` with no `entries` uses the Scene's declared roles as the key. With no entries and no roles it raises `ValueError`, because an empty key explains nothing.",
         "`legend()` records the resolved colour of every entry it draws, so `check_legend_coverage()` can report a fill the key leaves undecoded.",
-        "`glossary(entries, x, y, title=\"Glossary\")` draws a term key with one left-aligned line per `(term, meaning)` pair, rendered as `TERM — meaning`. An empty `entries` list raises `ValueError`.",
+        "`glossary(entries, at, title=\"Glossary\")` draws a term key with one left-aligned line per `(term, meaning)` pair, rendered as `TERM — meaning`. An empty `entries` list raises `ValueError`.",
         "The glossary box counts as content for `check_overlaps()`: a shape placed over it is reported as an overlap."
       ],
       "verify": [],
@@ -853,17 +1002,17 @@
         "The legend frame is container-exempt; the glossary box is registered in the overlap set explicitly because `frame()` alone would not be."
       ],
       "current_impl": [
-        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`.",
+        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
         "`TestBuilderUnits` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "acc": [
         "CASE-1 — — a legend built from declared roles Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries When   `legend()` is called Then   the scene gains a key with one row labelled \"agent\", and the resolved colour of \"violet\" is recorded for legend coverage",
         "CASE-2 — — an empty legend is refused Given  a `Scene` with no declared roles When   `legend()` is called with no entries Then   `ValueError` is raised",
-        "CASE-3 — — a glossary decodes a term on the canvas Given  a `Scene` When   `glossary([(\"SSOT\", \"single source of truth\")], 0, 0)` is called Then   the scene contains a text element reading `SSOT — single source of truth`",
-        "CASE-4 — — an empty glossary is refused Given  a `Scene` When   `glossary([], 0, 0)` is called Then   `ValueError` is raised",
+        "CASE-3 — — a glossary decodes a term on the canvas Given  a `Scene` When   `glossary([(\"SSOT\", \"single source of truth\")], (0, 0))` is called Then   the scene contains a text element reading `SSOT — single source of truth`",
+        "CASE-4 — — an empty glossary is refused Given  a `Scene` When   `glossary([], (0, 0))` is called Then   `ValueError` is raised",
         "CASE-5 — — the glossary box is overlap-checked Given  a `Scene` with a glossary drawn at (0, 0) When   a box is placed on top of it and `check_overlaps()` is called Then   the overlap is reported"
       ],
-      "accept": "CASE-1 — a legend built from declared roles\n  Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries\n  When   `legend()` is called\n  Then   the scene gains a key with one row labelled \"agent\", and the resolved\n         colour of \"violet\" is recorded for legend coverage\n\nCASE-2 — an empty legend is refused\n  Given  a `Scene` with no declared roles\n  When   `legend()` is called with no entries\n  Then   `ValueError` is raised\n\nCASE-3 — a glossary decodes a term on the canvas\n  Given  a `Scene`\n  When   `glossary([(\"SSOT\", \"single source of truth\")], 0, 0)` is called\n  Then   the scene contains a text element reading `SSOT — single source of truth`\n\nCASE-4 — an empty glossary is refused\n  Given  a `Scene`\n  When   `glossary([], 0, 0)` is called\n  Then   `ValueError` is raised\n\nCASE-5 — the glossary box is overlap-checked\n  Given  a `Scene` with a glossary drawn at (0, 0)\n  When   a box is placed on top of it and `check_overlaps()` is called\n  Then   the overlap is reported",
+      "accept": "CASE-1 — a legend built from declared roles\n  Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries\n  When   `legend()` is called\n  Then   the scene gains a key with one row labelled \"agent\", and the resolved\n         colour of \"violet\" is recorded for legend coverage\n\nCASE-2 — an empty legend is refused\n  Given  a `Scene` with no declared roles\n  When   `legend()` is called with no entries\n  Then   `ValueError` is raised\n\nCASE-3 — a glossary decodes a term on the canvas\n  Given  a `Scene`\n  When   `glossary([(\"SSOT\", \"single source of truth\")], (0, 0))` is called\n  Then   the scene contains a text element reading `SSOT — single source of truth`\n\nCASE-4 — an empty glossary is refused\n  Given  a `Scene`\n  When   `glossary([], (0, 0))` is called\n  Then   `ValueError` is raised\n\nCASE-5 — the glossary box is overlap-checked\n  Given  a `Scene` with a glossary drawn at (0, 0)\n  When   a box is placed on top of it and `check_overlaps()` is called\n  Then   the overlap is reported",
       "input": "",
       "output": "",
       "desc": "",
@@ -876,16 +1025,16 @@
       "satisfied_by": [],
       "members": [
         {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:682"
-        },
-        {
-          "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:719"
-        },
-        {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:102"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:81"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:107"
         }
       ],
       "test_exempt": null,
@@ -975,6 +1124,10 @@
       "ARCH-EXCALIDRAW-030"
     ],
     [
+      "REQ-EXCALIDRAW-853",
+      "ARCH-EXCALIDRAW-030"
+    ],
+    [
       "ARCH-EXCALIDRAW-031",
       "SYS-DIAGRAM-001"
     ],
@@ -996,6 +1149,10 @@
     ],
     [
       "REQ-EXCALIDRAW-850",
+      "ARCH-EXCALIDRAW-032"
+    ],
+    [
+      "REQ-EXCALIDRAW-852",
       "ARCH-EXCALIDRAW-032"
     ],
     [
@@ -1024,16 +1181,17 @@
   "history": [
     {
       "month": "2026-09",
-      "count": 3,
+      "count": 4,
       "first": "2026-09-06",
-      "last": "2026-09-07",
+      "last": "2026-09-16",
       "versions": [
         "v1.0.0",
         "v1.0.1",
-        "v1.1.0"
+        "v1.1.0",
+        "v2.0.0"
       ],
-      "landmark": "v1.0.0",
-      "headline": "First release as its own plugin. The skill was developed inside"
+      "landmark": "v2.0.0",
+      "headline": "Breaking: the `Scene` API takes values, not argument lists"
     }
   ],
   "commands": [
@@ -1215,421 +1373,27 @@
     }
   ],
   "design": {
-    "files": 2,
-    "clean_files": 0,
-    "score": 0,
+    "files": 20,
+    "clean_files": 20,
+    "score": 100,
     "candidates": {
-      "encapsulation": 41,
-      "abstraction": 3,
+      "encapsulation": 0,
+      "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
-      "metrics": 1,
-      "standards": 3
+      "metrics": 0,
+      "standards": 0
     },
-    "findings": [
-      {
-        "pillar": "standards",
-        "kind": "file-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1,
-        "name": "excalidraw_builder.py",
-        "detail": "2298 lines (over 500)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 119,
-        "name": "__init__",
-        "detail": "h, w, x, y travel together through 15 functions: __init__, box, column, connector, data, decision"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 119,
-        "name": "__init__",
-        "detail": "h, x, y travel together through 16 functions: __init__, _vline, box, column, connector, data"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 161,
-        "name": "__init__",
-        "detail": "fill, group, stroke travel together through 3 functions: __init__, box, frame"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 161,
-        "name": "__init__",
-        "detail": "`__init__` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 180,
-        "name": "__init__",
-        "detail": "align, color, size travel together through 3 functions: __init__, label, title"
-      },
-      {
-        "pillar": "metrics",
-        "kind": "high-response",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 185,
-        "name": "Scene",
-        "detail": "`Scene` reaches 172 methods (over 50): 68 of its own plus 104 it calls"
-      },
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 188,
-        "name": "excalidraw_builder.py",
-        "detail": "12 line(s) wider than 100 columns, first at line 188"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "h, text, w, x, y travel together through 10 functions: box, connector, data, decision, diamond, ellipse"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "group, h, x, y travel together through 3 functions: _vline, box, frame"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "font_size, x, y travel together through 8 functions: box, column, glossary, grid, legend, pack"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "fill, font_size, shape travel together through 5 functions: _place, box, column, grid, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "fill, font_size, h, shape, w, x, y travel together through 4 functions: box, column, grid, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "group, text, x, y travel together through 3 functions: box, label, title"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "text, x, y travel together through 12 functions: box, connector, data, decision, diamond, ellipse"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "group, x, y travel together through 5 functions: _vline, box, frame, label, title"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "fill, h, w, x, y travel together through 5 functions: box, column, frame, grid, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 324,
-        "name": "box",
-        "detail": "`box` takes 12 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 481,
-        "name": "section",
-        "detail": "gap, title, x travel together through 3 functions: glossary, legend, section"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 481,
-        "name": "section",
-        "detail": "color, size, x travel together through 3 functions: label, section, title"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 498,
-        "name": "pipeline",
-        "detail": "connect, font_size, gap, x, y travel together through 3 functions: column, pipeline, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 498,
-        "name": "pipeline",
-        "detail": "font_size, gap, x, y travel together through 5 functions: column, glossary, legend, pipeline, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 498,
-        "name": "pipeline",
-        "detail": "`pipeline` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 559,
-        "name": "frame",
-        "detail": "`frame` takes 8 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 606,
-        "name": "row",
-        "detail": "fill, font_size, h, items, shape, w, x, y travel together through 3 functions: column, grid, row"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 606,
-        "name": "row",
-        "detail": "`row` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 626,
-        "name": "column",
-        "detail": "`column` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 638,
-        "name": "grid",
-        "detail": "`grid` takes 11 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 653,
-        "name": "enclose",
-        "detail": "`enclose` takes 8 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 682,
-        "name": "legend",
-        "detail": "`legend` takes 8 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 719,
-        "name": "glossary",
-        "detail": "`glossary` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 752,
-        "name": "lane",
-        "detail": "`lane` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 859,
-        "name": "title",
-        "detail": "`title` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 875,
-        "name": "label",
-        "detail": "`label` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 904,
-        "name": "arrow",
-        "detail": "color, dashed, end, group, label, start travel together through 3 functions: arrow, free_arrow, path"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 904,
-        "name": "arrow",
-        "detail": "dst, label, src travel together through 3 functions: _route_around, arrow, route_under"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 904,
-        "name": "arrow",
-        "detail": "color, dashed, group, label travel together through 4 functions: arrow, free_arrow, path, route_under"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 904,
-        "name": "arrow",
-        "detail": "`arrow` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 980,
-        "name": "free_arrow",
-        "detail": "`free_arrow` takes 8 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1005,
-        "name": "path",
-        "detail": "`path` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1057,
-        "name": "route_under",
-        "detail": "`route_under` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "abstraction",
-        "kind": "deep-nesting",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1074,
-        "name": "_back_edges",
-        "detail": "`_back_edges` nests 5 levels deep (over 4)"
-      },
-      {
-        "pillar": "abstraction",
-        "kind": "long-function",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1141,
-        "name": "pack",
-        "detail": "`pack` is 148 lines (over 80)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1141,
-        "name": "pack",
-        "detail": "`pack` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1290,
-        "name": "_route_around",
-        "detail": "`_route_around` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 1615,
-        "name": "save",
-        "detail": "`save` takes 9 parameters (over 6)"
-      },
-      {
-        "pillar": "abstraction",
-        "kind": "deep-nesting",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py",
-        "line": 2245,
-        "name": "_main",
-        "detail": "`_main` nests 5 levels deep (over 4)"
-      },
-      {
-        "pillar": "standards",
-        "kind": "missing-docstring",
-        "file": "scripts/check_versions.py",
-        "line": 35,
-        "name": "main",
-        "detail": "1 public definition(s) without a docstring: main"
-      }
-    ],
-    "advice": {
-      "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
-      "deep-nesting": "nesting this deep hides the main path: return early, or extract the inner block",
-      "file-too-long": "a file this long is several modules sharing a name: split it along the prefix families it already shows",
-      "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them",
-      "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them",
-      "long-function": "a function this long hides several steps: extract each step under a name that says what it does",
-      "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together",
-      "missing-docstring": "a public name without a docstring makes every caller read the body: one sentence saying what it returns is enough"
-    }
+    "findings": [],
+    "advice": {}
   },
   "health": {
     "score": 100,
-    "total": 15,
-    "healthy": 15,
-    "confirmed": 15,
-    "implemented": 14,
-    "tested": 14,
+    "total": 17,
+    "healthy": 17,
+    "confirmed": 17,
+    "implemented": 16,
+    "tested": 16,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,
