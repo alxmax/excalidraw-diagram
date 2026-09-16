@@ -58,6 +58,10 @@
         {
           "role": "tested-by",
           "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py:1"
         }
       ],
       "test_exempt": null,
@@ -591,6 +595,10 @@
         {
           "role": "implements",
           "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:182"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py:1"
         },
         {
           "role": "implements",

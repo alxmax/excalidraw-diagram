@@ -1,3 +1,4 @@
+# implements: REQ-EXCALIDRAW-848
 """The builder's own smoke run: `python excalidraw_builder.py` with no command.
 
 It renders every family of shape, runs the layout helpers, and asserts nothing

@@ -39,3 +39,7 @@ docs/make_*.py
 # which is the merge smell the engine warns about, seeded on purpose.
 plugin/skills/excalidraw-diagram/SKILL.universal.md
 plugin/skills/excalidraw-diagram/references/**
+
+# CI configuration. It runs the checks; it is not a capability the plugin offers, and
+# it does not ship. `init` otherwise drafts an empty requirement for it on every run.
+.github/**

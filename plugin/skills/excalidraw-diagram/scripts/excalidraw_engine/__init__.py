@@ -1,3 +1,4 @@
+# implements: ARCH-EXCALIDRAW-030
 """The excalidraw-diagram builder, one module per responsibility.
 
 Import it through `excalidraw_builder` — that facade is the stable name the skill,

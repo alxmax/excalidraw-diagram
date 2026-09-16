@@ -102,8 +102,8 @@ contract demotes it to `draft` — set `status: confirmed` back and
 per untagged file, so it invents nodes from directory names (`ARCH-DOCS-001`) and
 drafts the reference prose that `ARCH-EXCALIDRAW-030/031/034` already own. It says so
 itself in the files it writes. `.reqmapignore` now covers the recurring cases —
-`docs/make_*.py`, `SKILL.universal.md`, `references/**` — so a re-run stays quiet; a
-new draft it does propose is worth reading before deleting.
+`docs/make_*.py`, `SKILL.universal.md`, `references/**`, `.github/**` — so a re-run
+stays quiet; a new draft it does propose is worth reading before deleting.
 
 **Tagging conventions the gate reads.** ARCH ids are `# implements:` lines at the top of
 the builder and `# tested-by:` lines at the top of the test file. REQ ids sit on the
