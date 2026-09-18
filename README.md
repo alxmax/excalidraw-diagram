@@ -163,6 +163,22 @@ connector.
 
 ![Skill flow](docs/skill_flow.png)
 
+## Timing diagrams, with no timing code in the builder
+
+The builder has no waveform primitive and needs none: a trace is an unbound
+`path(points, heads="none")` polyline, a bus value is a `box()` placed at an exact
+`(x, y, w, h)`. The gates never inspect an unbound trace, so each generator asserts its
+own geometry: clock edges land on the bit grid, every trace stays in its row.
+
+`docs/make_timing_diagrams.py`: how a byte travels on SPI, I2C and UART.
+
+![SPI, I2C and UART timing diagrams](docs/timing_diagrams.png)
+
+`docs/make_autosar_timing.py`: a button debounce, an AUTOSAR Dem counter-based
+debounce with its fault detection counter, and an ECU turn-on / turn-off.
+
+![Debounce and ECU power-state timing diagrams](docs/autosar_timing.png)
+
 ## Requirements
 
 Python **3.9+**, standard library only. That floor is the oldest version CI runs, not the
