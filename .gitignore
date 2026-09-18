@@ -11,3 +11,6 @@ out/
 # The rendered viewer is regenerable from the committed _map.json and the vendored
 # template, so it is built rather than committed (the upstream ADR-0034 posture).
 requirements/_map.html
+
+# Private notes and ideas: kept local, never published (the repo is public).
+TODO.local.md
