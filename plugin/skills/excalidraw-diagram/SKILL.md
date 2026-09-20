@@ -192,5 +192,5 @@ other two, so this is their only gate). Ship with `Gates.strict()`.
 Then deliver **both** files and say three things: **what it shows** (one
 sentence), **how to read it** (the direction, how regions stack), and the
 **colour legend** if colour is used. `<name>.excalidraw` drags onto
-excalidraw.com to edit; `<name>.html` opens by double-click, loading Excalidraw
-from a CDN on first open — the `.excalidraw` works fully offline.
+excalidraw.com to edit; `<name>.html` opens by double-click. **Both work offline and
+upload nothing** — the viewer inlines the runtime (~1.6 MB); `--cdn` links unpkg instead.

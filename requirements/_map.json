@@ -13,7 +13,8 @@
       "contract": [
         "`Scene` exposes shape primitives, ISO 5807 flowchart aliases, layout helpers, and annotation helpers for building a diagram declaratively. [[REQ-EXCALIDRAW-844]] details the behaviour.",
         "Every drawing call takes its position, colour and text setting as one `at`, one `paint` and one `font` value. [[REQ-EXCALIDRAW-853]] details the behaviour.",
-        "`Scene` exposes connector helpers and a `.save(basename, out_dir)` that writes both a `.excalidraw` scene and a self-contained `.html` viewer once, deterministically when seeded. [[REQ-EXCALIDRAW-845]] details the behaviour."
+        "`Scene` exposes connector helpers and a `.save(basename, out_dir)` that writes both a `.excalidraw` scene and a self-contained `.html` viewer once, deterministically when seeded. [[REQ-EXCALIDRAW-845]] details the behaviour.",
+        "The `.html` viewer carries the Excalidraw runtime inside it, so it opens with no network; [[REQ-EXCALIDRAW-854]] states the two modes."
       ],
       "verify": [],
       "notes": [
@@ -48,7 +49,8 @@
       "satisfied_by": [
         "REQ-EXCALIDRAW-844",
         "REQ-EXCALIDRAW-845",
-        "REQ-EXCALIDRAW-853"
+        "REQ-EXCALIDRAW-853",
+        "REQ-EXCALIDRAW-854"
       ],
       "members": [
         {
@@ -112,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:573"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:579"
         },
         {
           "role": "implements",
@@ -187,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:573"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:579"
         },
         {
           "role": "implements",
@@ -199,7 +201,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:91"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
         }
       ],
       "test_exempt": null,
@@ -228,7 +230,8 @@
       ],
       "current_impl": [
         "`Paint` and `Font` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in `excalidraw_engine/arrange.py`.",
-        "`CasesExcalidrawValues` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`CasesExcalidrawValues` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "-------------------"
       ],
       "acc": [
         "CASE-1 — — the three forms of `at` place a shape identically Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point `(10, 20)` given to `process()`, whose default size is 170 x 64 When   each places one shape in its own scene Then   the three shape elements carry the same x, y, width and height",
@@ -249,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:662"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:668"
         },
         {
           "role": "implements",
@@ -274,6 +277,66 @@
       "risks": [],
       "clauses": 3,
       "covered": 3
+    },
+    {
+      "id": "REQ-EXCALIDRAW-854",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "The viewer carries its renderer",
+      "intent": "A viewer that fetches its renderer when opened is not self-contained: it fails on a plane, in an air-gapped review, or the day the CDN moves the file. It also tells a third party who is reading the diagram. So the page ships the renderer inside it, and the small CDN page becomes the explicit exception rather than the default.",
+      "contract": [
+        "The viewer page inlines the vendored Excalidraw runtime, its React pair and its fonts, so opening it issues no network request.",
+        "`offline=False`, the CLI's `--cdn`, writes the page that loads that runtime from the pinned CDN path instead.",
+        "A vendored runtime that is incomplete makes the builder warn and emit the CDN page.",
+        "The runtime is vendored, never downloaded: the builder still imports no HTTP client."
+      ],
+      "verify": [],
+      "notes": [
+        "The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves that case."
+      ],
+      "current_impl": [
+        "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
+        "`CasesOfflineViewer` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "acc": [
+        "CASE-1 — — the default page loads nothing remote Given  a scene saved with no viewer options When   the written `.html` is inspected Then   no `script` or `link` tag in its markup carries an `http` source, and the fonts are present as `data:` URIs",
+        "CASE-2 — — the CDN page stays available on request Given  the same scene When   it is saved with `offline=False` or rendered with `--cdn` Then   the page links the pinned unpkg build and is an order of magnitude smaller",
+        "CASE-3 — — a missing runtime degrades loudly Given  a vendored runtime whose files are absent When   a viewer page is built with the default options Then   the CDN page is written and a `WARNING [viewer]` line names the fallback",
+        "CASE-4 — — the asset path never falls back to the CDN Given  an offline page When   `window.EXCALIDRAW_ASSET_PATH` is read Then   it is a truthy local path, because the bundle reads it as `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch"
+      ],
+      "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1102"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py:29"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:132"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
     },
     {
       "id": "ARCH-EXCALIDRAW-031",
@@ -378,7 +441,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:110"
         },
         {
           "role": "implements",
@@ -394,7 +457,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:91"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
         }
       ],
       "test_exempt": null,
@@ -442,11 +505,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:110"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:780"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:786"
         },
         {
           "role": "implements",
@@ -466,7 +529,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:93"
         }
       ],
       "test_exempt": null,
@@ -586,11 +649,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:412"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:418"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:76"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:92"
         },
         {
           "role": "implements",
@@ -602,7 +665,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:109"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:152"
         }
       ],
       "test_exempt": null,
@@ -657,15 +720,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:979"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:985"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:54"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:55"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:79"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:80"
         }
       ],
       "test_exempt": null,
@@ -792,7 +855,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:792"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:798"
         }
       ],
       "test_exempt": null,
@@ -913,7 +976,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:852"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:858"
         },
         {
           "role": "implements",
@@ -1034,7 +1097,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:104"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:110"
         },
         {
           "role": "implements",
@@ -1136,6 +1199,10 @@
       "ARCH-EXCALIDRAW-030"
     ],
     [
+      "REQ-EXCALIDRAW-854",
+      "ARCH-EXCALIDRAW-030"
+    ],
+    [
       "ARCH-EXCALIDRAW-031",
       "SYS-DIAGRAM-001"
     ],
@@ -1189,14 +1256,15 @@
   "history": [
     {
       "month": "2026-09",
-      "count": 4,
+      "count": 5,
       "first": "2026-09-06",
-      "last": "2026-09-16",
+      "last": "2026-09-20",
       "versions": [
         "v1.0.0",
         "v1.0.1",
         "v1.1.0",
-        "v2.0.0"
+        "v2.0.0",
+        "v2.1.0"
       ],
       "landmark": "v2.0.0",
       "headline": "Breaking: the `Scene` API takes values, not argument lists"
@@ -1381,8 +1449,8 @@
     }
   ],
   "design": {
-    "files": 20,
-    "clean_files": 20,
+    "files": 21,
+    "clean_files": 21,
     "score": 100,
     "candidates": {
       "encapsulation": 0,
@@ -1397,11 +1465,11 @@
   },
   "health": {
     "score": 100,
-    "total": 17,
-    "healthy": 17,
-    "confirmed": 17,
-    "implemented": 16,
-    "tested": 16,
+    "total": 18,
+    "healthy": 18,
+    "confirmed": 18,
+    "implemented": 17,
+    "tested": 17,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

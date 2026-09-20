@@ -15,20 +15,26 @@ Run:  python -X utf8 -m unittest test_excalidraw -v   (from this scripts/ dir)
 It executes each examples/*.py with a stubbed Scene.save (nothing is written to
 disk) and asserts on the in-memory scene.
 """
+import contextlib
 import glob
+import io
 import json
 import os
+import re
 import runpy
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLES_DIR = os.path.join(HERE, "..", "examples")
 sys.path.insert(0, HERE)
 
 import excalidraw_builder as eb  # noqa: E402
+from excalidraw_engine import assets  # noqa: E402
+from excalidraw_engine.viewer import html_page  # noqa: E402
 from excalidraw_engine.discover import render_stub  # noqa: E402
 from excalidraw_engine.geometry import polyline_midpoint  # noqa: E402
 
@@ -567,7 +573,7 @@ except AttributeError:
     _STDLIB = {"json", "math", "os", "random", "sys", "time", "re", "io", "typing",
                "itertools", "functools", "collections", "dataclasses", "pathlib",
                "argparse", "subprocess", "tempfile", "unittest", "glob", "runpy",
-               "datetime", "hashlib", "textwrap", "string", "copy", "enum"}
+               "datetime", "hashlib", "textwrap", "string", "copy", "enum", "base64"}
 
 
 class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
@@ -1091,6 +1097,86 @@ class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-
             capture_output=True, text=True)
         self.assertEqual(unknown.returncode, 2, unknown.stderr)
         self.assertIn("scene", unknown.stderr)   # the new verb is offered
+
+
+class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
+    """The viewer carries its renderer. What is asserted is not "no http appears in
+    the file" — the Excalidraw bundle holds URLs as string constants — but that no
+    tag in the page LOADS anything remote, which is what makes it open with no
+    network."""
+
+    SCENE = {"type": "excalidraw", "elements": [], "appState": {"viewBackgroundColor": "#fff"}}
+
+    @staticmethod
+    def _loading_tags(page):
+        """Every <script>/<link> tag in the page's own markup that fetches a remote
+        resource. Script and style bodies are emptied first: the inlined bundle holds
+        markup in string constants (an embedded tweet's widget tag, say), and those
+        are text the page never acts on unless a scene carries an embed."""
+        markup = re.sub(r"(<script\b[^>]*>).*?(</script>)", r"\1\2", page, flags=re.S)
+        markup = re.sub(r"(<style\b[^>]*>).*?(</style>)", r"\1\2", markup, flags=re.S)
+        tags = re.findall(r"<(?:script|link)\b[^>]*>", markup)
+        return [t for t in tags if re.search(r'(?:src|href)="https?://', t)]
+
+    def test_default_page_loads_nothing_remote(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1
+        page = html_page("demo", self.SCENE)
+        self.assertEqual(self._loading_tags(page), [])
+        self.assertIn('window.EXCALIDRAW_ASSET_PATH = "./"', page)
+        self.assertIn("data:font/woff2;base64,", page)   # the fonts travel with it
+
+    def test_asset_path_is_not_falsy(self):  # verifies: REQ-EXCALIDRAW-854#CASE-4
+        # the bundle reads `window.EXCALIDRAW_ASSET_PATH || <unpkg>`, so an empty
+        # string sends the page to the CDN for its fonts and its lazy chunk
+        self.assertNotIn('window.EXCALIDRAW_ASSET_PATH = ""', html_page("d", self.SCENE))
+
+    def test_cdn_mode_links_the_pinned_runtime(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
+        page = html_page("demo", self.SCENE, offline=False)
+        self.assertNotEqual(self._loading_tags(page), [])
+        self.assertIn(assets.CDN + "excalidraw.production.min.js", page)
+        self.assertLess(len(page), len(html_page("demo", self.SCENE)) / 10)
+
+    def test_missing_runtime_falls_back_and_says_so(self):  # verifies: REQ-EXCALIDRAW-854#CASE-3
+        err = io.StringIO()
+        with mock.patch.object(assets, "available", return_value=False), \
+                contextlib.redirect_stderr(err):
+            page = html_page("demo", self.SCENE)
+        self.assertIn(assets.CDN, page)
+        self.assertIn("WARNING [viewer]", err.getvalue())
+
+    def test_environment_can_opt_out(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
+        with mock.patch.dict(os.environ, {"EXCALIDRAW_DIAGRAM_OFFLINE": "0"}):
+            self.assertIn(assets.CDN, html_page("demo", self.SCENE))
+
+    def test_save_writes_an_offline_viewer(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=7)
+            s.box("A", (0, 0))
+            _, path = s.save("demo", out_dir=d)
+            with open(path, encoding="utf-8") as f:
+                page = f.read()
+            self.assertEqual(self._loading_tags(page), [])
+
+    def test_cdn_flag_reaches_both_verbs(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
+        with tempfile.TemporaryDirectory() as d:
+            s = eb.Scene(seed=7)
+            s.box("A", (0, 0))
+            scene_path, _ = s.save("demo", out_dir=d, offline=False)
+            with open(os.path.join(d, "demo.html"), encoding="utf-8") as f:
+                self.assertIn(assets.CDN, f.read())
+            out = os.path.join(d, "rebuilt")
+            eb.render_html(scene_path, out, offline=False)
+            with open(os.path.join(out, "demo.html"), encoding="utf-8") as f:
+                self.assertIn(assets.CDN, f.read())
+
+    def test_inlined_scripts_cannot_close_their_tag(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1
+        self.assertFalse([s for s in assets.scripts() if "</script>" in s])
+
+    def test_a_scene_cannot_forge_the_runtime(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1
+        # one substitution pass, so a placeholder spelled inside the scene stays text
+        scene = dict(self.SCENE, elements=[{"type": "text", "text": "__RUNTIME__"}])
+        page = html_page("demo", scene, offline=False)
+        self.assertIn("__RUNTIME__", page)
+        self.assertEqual(page.count("excalidraw.production.min.js"), 1)
 
 
 if __name__ == "__main__":

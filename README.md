@@ -5,7 +5,9 @@ A Claude Code plugin that turns a description of a system, flow or architecture 
 no API key: the builder is stdlib-only Python.
 
 You describe the thing; the skill writes `<name>.excalidraw` (imports into excalidraw.com,
-every element still hand-editable) and `<name>.html` (opens by double-click).
+every element still hand-editable) and `<name>.html` (opens by double-click). Both files
+work with the network unplugged, and nothing you draw is ever sent anywhere — see
+[Everything happens on your machine](#everything-happens-on-your-machine).
 
 ![How this repository works](docs/repo_map.png)
 
@@ -178,6 +180,34 @@ own geometry: clock edges land on the bit grid, every trace stays in its row.
 debounce with its fault detection counter, and an ECU turn-on / turn-off.
 
 ![Debounce and ECU power-state timing diagrams](docs/autosar_timing.png)
+
+## Everything happens on your machine
+
+Nothing you draw leaves the computer you draw it on. There is no account, no upload, no
+telemetry and no call home — not while building, and not while viewing.
+
+**Building.** The builder is stdlib-only Python that reads your description and writes two
+files. It imports no HTTP client at all: `grep -r "urllib\|socket\|requests" ` over
+`excalidraw_engine/` comes back empty. The MCP server is the same code over stdio, a pipe
+between two local processes. Nothing is installed at build time either, from npm or PyPI.
+
+**Viewing.** The `.html` carries its own renderer: the pinned Excalidraw build, React and
+the fonts are vendored in
+[`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/`](plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/)
+and inlined into the page, so opening it issues **zero network requests** — verified by
+rendering a generated page in Chrome with a net log, with DNS pointed at nothing. It costs
+about 1.6 MB per page. `--cdn` writes the ~100 KB page that loads the same runtime from
+unpkg instead; that one tells unpkg your IP and user agent when it opens, and nothing else
+— the diagram is embedded in the file either way and is never uploaded.
+
+**The `.excalidraw` file** is local JSON. Dragging it onto excalidraw.com loads it in your
+browser; it reaches Excalidraw's servers only if *you* use Share link, live collaboration
+or Excalidraw+, which are explicit clicks, not something the file does.
+
+**The two ways a viewer can still reach the network**, both of them your own action: the
+toolbar's Library browser fetches from `libraries.excalidraw.com`, and a scene containing
+an *embed* element (a tweet, a video) loads that embed from its host. Neither happens to a
+scene this builder produced unless you add one.
 
 ## Requirements
 

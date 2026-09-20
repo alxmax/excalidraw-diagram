@@ -84,10 +84,11 @@ class Gates(object):
 class GatesMixin(object):
     """The save() contract."""
 
-    def save(self, basename, out_dir=".", gates=None):
+    def save(self, basename, out_dir=".", gates=None, offline=None):
         """Run the gates, then write <basename>.excalidraw + <basename>.html into
         `out_dir` and return both paths. Refuses a second call: one scene, one
-        save() — stack more views as regions of the same scene instead."""
+        save() — stack more views as regions of the same scene instead. The viewer
+        carries its own renderer unless `offline=False` asks for the CDN one."""
         # implements: REQ-EXCALIDRAW-845  # implements: REQ-EXCALIDRAW-846
         # implements: REQ-EXCALIDRAW-847
         if self._saved:
@@ -106,9 +107,9 @@ class GatesMixin(object):
                                  f"{gate.remedy}")
             print(f"WARNING [{gate.name}]: {gate.problem}{gate.detail(hits)}",
                   file=sys.stderr)
-        return self._write(basename, out_dir)
+        return self._write(basename, out_dir, offline)
 
-    def _write(self, basename, out_dir):
+    def _write(self, basename, out_dir, offline=None):
         """Write <basename>.excalidraw + .html and return both paths."""
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
@@ -119,6 +120,6 @@ class GatesMixin(object):
             json.dump(scene, f, ensure_ascii=False, indent=2)
         p_html = os.path.join(out_dir, basename + ".html")
         with open(p_html, "w", encoding="utf-8", newline="\n") as f:
-            f.write(html_page(basename, scene))
+            f.write(html_page(basename, scene, offline))
         self._saved = True
         return p_json, p_html

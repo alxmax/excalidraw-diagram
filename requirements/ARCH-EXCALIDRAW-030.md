@@ -20,6 +20,7 @@ Every bullet below is binding.
 - `Scene` exposes shape primitives, ISO 5807 flowchart aliases, layout helpers, and annotation helpers for building a diagram declaratively. [[REQ-EXCALIDRAW-844]] details the behaviour.
 - Every drawing call takes its position, colour and text setting as one `at`, one `paint` and one `font` value. [[REQ-EXCALIDRAW-853]] details the behaviour.
 - `Scene` exposes connector helpers and a `.save(basename, out_dir)` that writes both a `.excalidraw` scene and a self-contained `.html` viewer once, deterministically when seeded. [[REQ-EXCALIDRAW-845]] details the behaviour.
+- The `.html` viewer carries the Excalidraw runtime inside it, so it opens with no network; [[REQ-EXCALIDRAW-854]] states the two modes.
 
 ## Cases
 CASE-1
@@ -238,4 +239,69 @@ CASE-3 — a mistyped option is refused, not ignored
   `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in
   `excalidraw_engine/arrange.py`.
 - `CasesExcalidrawValues` in
+  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-854
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-030]
+---
+
+# The viewer carries its renderer
+
+## Description
+> A viewer that fetches its renderer when opened is not self-contained: it fails on a
+> plane, in an air-gapped review, or the day the CDN moves the file. It also tells a
+> third party who is reading the diagram. So the page ships the renderer inside it, and
+> the small CDN page becomes the explicit exception rather than the default.
+
+Every bullet below is binding.
+- The viewer page inlines the vendored Excalidraw runtime, its React pair and its
+  fonts, so opening it issues no network request.
+- `offline=False`, the CLI's `--cdn`, writes the page that loads that runtime from the
+  pinned CDN path instead.
+- A vendored runtime that is incomplete makes the builder warn and emit the CDN page.
+- The runtime is vendored, never downloaded: the builder still imports no HTTP client.
+
+## Cases
+CASE-1 — the default page loads nothing remote
+  Given  a scene saved with no viewer options
+  When   the written `.html` is inspected
+  Then   no `script` or `link` tag in its markup carries an `http` source, and the
+         fonts are present as `data:` URIs
+
+CASE-2 — the CDN page stays available on request
+  Given  the same scene
+  When   it is saved with `offline=False` or rendered with `--cdn`
+  Then   the page links the pinned unpkg build and is an order of magnitude smaller
+
+CASE-3 — a missing runtime degrades loudly
+  Given  a vendored runtime whose files are absent
+  When   a viewer page is built with the default options
+  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback
+
+CASE-4 — the asset path never falls back to the CDN
+  Given  an offline page
+  When   `window.EXCALIDRAW_ASSET_PATH` is read
+  Then   it is a truthy local path, because the bundle reads it as
+         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch
+
+## Context
+**Notes**
+- The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A
+  scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves
+  that case.
+
+**Current implementation**
+- `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the
+  vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and
+  `html_page()` in `excalidraw_engine/viewer.py`.
+- `CasesOfflineViewer` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
