@@ -25,7 +25,7 @@ them belongs in this plugin**. Senate `2026-09-20_225217-senate-excalidraw-timin
 landed 9-0 on keeping the prototype local and building nothing; it overturned the
 proposal's own recommendation. Two measurements decided it: demand is n=0 (no filed
 request has ever existed for any of the three), and the narration those items sell is
-already shipped — `docs/make_timing_diagrams.py` narrates its diagram with `s.label(...)`
+already shipped — `examples/make_timing_diagrams.py` narrates its diagram with `s.label(...)`
 captions under `ARCH-EXCALIDRAW-033`. The earlier
 `2026-09-18_222241-excalidraw-wavedrom-waveform-scope` reached the same place and is
 discharged by `9882c9c`, which drew timing diagrams with the existing `Scene` API.

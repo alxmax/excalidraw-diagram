@@ -1,5 +1,24 @@
 # Changelog
 
+## plugin `v2.2.0` — 2026-09-20
+
+**Mermaid in, without a parser.** `references/mermaid_to_graph.md` says how a Mermaid
+flowchart maps onto `graph.json`, node shape by node shape and edge kind by edge kind,
+with a worked line-by-line translation and an explicit list of what Mermaid expresses and
+this builder does not. The model reads it and writes the graph; nothing parses anything,
+so there is no second authoring language to keep working. The output is a real editable
+scene, which is what the official JS bridge gives up on for every diagram type but
+flowcharts.
+
+**The timing generators are examples now.** `make_timing_diagrams.py` and
+`make_autosar_timing.py` moved from `docs/` into
+`plugin/skills/excalidraw-diagram/examples/`, so `TestExampleDiagrams` runs them and
+holds them to the same seven checks as every other example — they were outside the suite
+while being cited as proof that timing diagrams need no builder primitive. Worked example
+7 in `references/worked_examples.md` is the recipe: one unbound `path(heads="none")` per
+signal, one `box()` per bus cell, and your own asserts, because three of the seven gates
+never see an unbound trace.
+
 ## plugin `v2.1.0` — 2026-09-20
 
 **The viewer no longer fetches anything.** `<name>.html` used to load Excalidraw, React
