@@ -1256,7 +1256,7 @@
   "history": [
     {
       "month": "2026-09",
-      "count": 5,
+      "count": 6,
       "first": "2026-09-06",
       "last": "2026-09-20",
       "versions": [
@@ -1264,7 +1264,8 @@
         "v1.0.1",
         "v1.1.0",
         "v2.0.0",
-        "v2.1.0"
+        "v2.1.0",
+        "v2.2.0"
       ],
       "landmark": "v2.0.0",
       "headline": "Breaking: the `Scene` API takes values, not argument lists"

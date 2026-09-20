@@ -234,3 +234,43 @@ s.arrow(know, draw, paint=Paint(stroke="red", dashed=True), heads="both",
 # ... 2 - HOW YOU USE IT, 3 - WHAT'S INSIDE, 4 - WHERE IT RUNS ...
 s.legend([...]); s.glossary([("gate", "a check that refuses an unreadable diagram"), ...])
 ```
+
+### 7 · Timing / waveform diagram (there is no waveform primitive)
+
+❌ Reaching for a feature the builder does not have, or drawing each level change
+as a bound `arrow()` between tiny boxes. The first does not exist; the second
+produces hundreds of nodes and a layout the gates spend their time re-checking.
+
+```python
+s.waveform(["clk", "mosi"], ...)          # ❌ no such call, and none is planned
+s.arrow(bit0, bit1)                       # ❌ a trace is one polyline, not N arrows
+```
+
+✅ One unbound polyline per signal and one `box()` per bus cell, both on a grid
+you compute yourself. `path(points, heads="none")` draws the trace; the value
+cells sit at exact `(x, y, w, h)` so they abut. Keep the explainer shape — title,
+reading direction, `legend()` for what the colours mean, `glossary()` for
+`t_deb`, `MOSI`, `Dem`. This is `make_timing_diagrams.py` and
+`make_autosar_timing.py`.
+
+```python
+X0, W, ROW_H = 220, 64, 36                      # time origin, bit slot, band height
+
+def trace(levels, top):                         # one 0/1 level per slot
+    y = lambda v: top if v else top + ROW_H
+    pts = [(X0, y(levels[0]))]
+    for i in range(1, len(levels)):
+        if levels[i] != levels[i - 1]:          # a vertical edge, then the new level
+            pts += [(X0 + i * W, y(levels[i - 1])), (X0 + i * W, y(levels[i]))]
+    pts.append((X0 + len(levels) * W, y(levels[-1])))
+    s.path(pts, heads="none")
+    assert all(top <= py <= top + ROW_H for _, py in pts), "trace left its band"
+    return pts
+```
+
+**Assert your own geometry.** An unbound `path()` registers no node, so three of
+the seven gates never see it: no overlap, no crossing and no legend check applies
+to a trace. The generator carries the checks the gates cannot — every clock edge
+lands on the bit grid, every trace stays inside its row — and a failed `assert`
+stops the run exactly as a gate would. A timing diagram whose traces drift is
+wrong in a way the file format cannot report.

@@ -10,15 +10,14 @@ exactly t_deb after the last raw edge, testFailed flips only at +127 / -128,
 reset is never released without supply).
 
 Regenerate from the repo root (the .excalidraw + .html land where you say):
-    python -X utf8 docs/make_autosar_timing.py out/
+    python -X utf8 plugin/skills/excalidraw-diagram/examples/make_autosar_timing.py out/
 Then open out/autosar_timing.html and use Excalidraw's menu > Export image to
 refresh docs/autosar_timing.png.
 """
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugin",
-                                "skills", "excalidraw-diagram", "scripts"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from excalidraw_builder import Font, Gates, Paint, Scene
 
 X0 = 240                   # where time starts

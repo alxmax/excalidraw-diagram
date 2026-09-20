@@ -68,7 +68,7 @@ and flow, never a generic template. Pretty-but-shallow fails. Three things pass:
 
 | Path | Use it when | How |
 |---|---|---|
-| **`scene --from-json`** | the subject is a graph you can describe — parts and connections — and you do not care where each box lands | write `graph.json` (schema in `references/builder_api.md`), then `python scripts/excalidraw_builder.py scene --from-json graph.json -o out/` |
+| **`scene --from-json`** | the subject is a graph you can describe — parts and connections — and you do not care where each box lands; a Mermaid flowchart already is one, so translate it with `references/mermaid_to_graph.md` rather than pasting an image | write `graph.json` (schema in `references/builder_api.md`), then `python scripts/excalidraw_builder.py scene --from-json graph.json -o out/` |
 | **A generator script** | the layout itself carries meaning: stacked layers, a lane per tool, a poster | write Python against the `Scene` API — position as `at=(x, y)`, colour as `paint=`, type as `font=` — and run it |
 
 Two more verbs: `render <scene.excalidraw> [out_dir]` rebuilds the `.html` for a
