@@ -15,6 +15,7 @@ the examples and every generated stub use; this package is how it is organised.
     checks      the seven inspection checks
     gates       Gates and save()
     scene       Scene, assembled from the above
+    assets      the vendored Excalidraw runtime the offline viewer inlines
     viewer      the HTML viewer and render_html()
     discover    discover_stub()
     spec        scene_from_spec() / scene_from_json()

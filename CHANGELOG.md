@@ -1,5 +1,43 @@
 # Changelog
 
+## plugin `v2.1.0` — 2026-09-20
+
+**The viewer no longer fetches anything.** `<name>.html` used to load Excalidraw, React
+and its fonts from unpkg on first open; now it carries them. The pinned runtime is
+vendored in `excalidraw_engine/runtime/` (1.6 MB) and inlined into the page, so opening a
+diagram issues **zero network requests** — verified against a Chrome net log with DNS
+pointed at nothing. Nothing about the build changed: the builder still imports no HTTP
+client and downloads nothing, at any point.
+
+```python
+s.save("flow", out_dir)                    # 1.6 MB page, opens offline (the default)
+s.save("flow", out_dir, offline=False)     # ~100 KB page, loads the runtime from unpkg
+```
+
+```bash
+python excalidraw_builder.py scene --from-json graph.json -o out/ --cdn
+python excalidraw_builder.py render flow.excalidraw out/ --cdn
+EXCALIDRAW_DIAGRAM_OFFLINE=0 python docs/make_repo_map.py out/   # the default, flipped
+```
+
+- **Fixed: the CDN page linked a stylesheet that does not exist.**
+  `excalidraw.production.min.css` is not published in `dist/` for 0.17.6, so every viewer
+  page has been 404-ing on it; the styles come from the bundle. The `<link>` is gone.
+- **Fixed: an empty asset path sent the page to unpkg.** The bundle reads
+  `window.EXCALIDRAW_ASSET_PATH || <unpkg>`, so `""` was falsy and the fonts and the lazy
+  chunk were fetched anyway. The offline page sets `"./"`.
+- The vendored bundle carries one edit: Excalidraw's `VITE_APP_FIREBASE_CONFIG` — the
+  config for *their* collaboration backend, which this viewer never starts — is replaced
+  by `'{}'`. Its `apiKey` is a Google API key by format, and a public repository is the
+  wrong place to store another project's, however public it already is upstream.
+- The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately **not** vendored: a
+  scene renders identically without it. The Mermaid-to-Excalidraw dialog is the one
+  feature that needs it, and `--cdn` still serves it.
+- A scene that spells `__RUNTIME__` in a label can no longer forge part of the page: the
+  template is filled in a single pass.
+- New `REQ-EXCALIDRAW-854` with `CasesOfflineViewer`; `README.md` gains
+  "Everything happens on your machine".
+
 ## plugin `v2.0.0` — 2026-09-16
 
 **Breaking: the `Scene` API takes values, not argument lists.** A 1.x generator

@@ -43,3 +43,13 @@ plugin/skills/excalidraw-diagram/references/**
 # CI configuration. It runs the checks; it is not a capability the plugin offers, and
 # it does not ship. `init` otherwise drafts an empty requirement for it on every run.
 .github/**
+
+# The vendored Excalidraw runtime the offline viewer inlines: third-party build output
+# copied verbatim (its README records the sources and versions). It implements nothing
+# of this repo's, and a minified bundle reads to the scanner as an untagged code file.
+plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
+
+# Senate deliberation posters. They record one run each and are gitignored, so they are
+# not part of what the repo promises; the bundles in the Senate corpus are their source.
+docs/senate_*.html
+docs/make_senate_*.py

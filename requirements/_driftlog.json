@@ -2,8 +2,8 @@
   "_schema": 1,
   "accepted": {
     "ARCH-EXCALIDRAW-030": {
-      "hash": "a747ec74d268",
-      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+      "hash": "d6cc8ab05de6",
+      "reason": "wikilink REQ-EXCALIDRAW-854 from its parent's Description"
     },
     "ARCH-EXCALIDRAW-031": {
       "hash": "f6bf8d91c8d6",

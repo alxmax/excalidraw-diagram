@@ -166,7 +166,7 @@ when you want the auto-layout inside a generator that also draws things by hand.
 | **Inspection and save** | |
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
 | `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean |
-| `s.save(basename, out_dir=".", gates=None) → (excalidraw, html)` | runs the gates and writes both files, once |
+| `s.save(basename, out_dir=".", gates=None, offline=None) → (excalidraw, html)` | runs the gates and writes both files, once |
 | `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow |
 
 **Gates.** `Gates(advisory="warn", hard="error", **per_gate)` sets each gate to
@@ -174,6 +174,14 @@ when you want the auto-layout inside a generator that also draws things by hand.
 `overlap` and `short_arrows`; the advisory ones `crossing`, `legend`, `overflow`,
 `text_overlap`, `label_fit`. `Gates.strict()` puts all seven at `"error"` — ship with
 it. `Gates(overlap="off")` is how a deliberately overlapping demo gets written.
+
+**The viewer's renderer.** `save()` and `render_html()` inline the vendored Excalidraw
+build into the `.html`, so the page opens with no network at all: about 1.6 MB, zero
+requests, fonts included. `offline=False` (the CLI's `--cdn`) writes the ~100 KB page
+that loads the same pinned build from unpkg — smaller, but it needs a connection and it
+tells unpkg who is opening it. `EXCALIDRAW_DIAGRAM_OFFLINE=0` flips the default for a
+whole run. The lazily imported `vendor-*.js` chunk is deliberately not vendored, so the
+Mermaid-to-Excalidraw dialog is the one thing an offline page cannot open.
 
 **Items.** An `arrange()` item is `"text"`, a `(text, paint)` pair, or a dict with
 `box()`'s option names: `text`, `size` (a `(w, h)` pair), `paint`, `font`, `shape`,
