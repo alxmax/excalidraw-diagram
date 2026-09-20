@@ -14,3 +14,12 @@ requirements/_map.html
 
 # Private notes and ideas: kept local, never published (the repo is public).
 TODO.local.md
+
+# Senate deliberation posters and the generators that make them. They record two
+# specific runs (the bundles in the Senate corpus are the source of truth), so they are
+# local: nothing about one deliberation belongs in what the plugin ships, and CI must
+# not carry a generator for a picture with one reader. The generator sits beside its
+# output so the picture stays regenerable instead of becoming an orphan file.
+docs/make_senate_*.py
+docs/senate_*.html
+docs/senate_*.png

@@ -17,6 +17,42 @@ one module per responsibility (its `__init__` has the map). `mcp_server.py` besi
 offers the same entry points as MCP tools. Nothing here installs from PyPI or npm; if a
 change would need a dependency, that is a design question, not an implementation detail.
 
+## Out of scope: animated timing, log timelines, log parsers
+
+An animated timing view (time cursor, per-signal value, event narration), a log timeline
+and log parsers (CSV, VCD, CANoe `.asc` + DBC, AUTOSAR DLT) are **deferred, and none of
+them belongs in this plugin**. Senate `2026-09-20_225217-senate-excalidraw-timing-scope`
+landed 9-0 on keeping the prototype local and building nothing; it overturned the
+proposal's own recommendation. Two measurements decided it: demand is n=0 (no filed
+request has ever existed for any of the three), and the narration those items sell is
+already shipped — `docs/make_timing_diagrams.py` narrates its diagram with `s.label(...)`
+captions under `ARCH-EXCALIDRAW-033`. The earlier
+`2026-09-18_222241-excalidraw-wavedrom-waveform-scope` reached the same place and is
+discharged by `9882c9c`, which drew timing diagrams with the existing `Scene` API.
+
+**The reopening gate.** Reopen only when all three hold: at least two filed requests from
+non-author accounts naming the animated timing view or the log timeline, the vendored
+offline viewer runtime landed, and the open v2.2 research item closed.
+
+**If it ever reopens, the home is a standalone repo** — not a second `plugins[]` entry,
+not a second directory under `plugin/skills/`. The viewer here emits one `.excalidraw`
+plus one `.html` from a single `save()`; an animated player is a second renderer that
+emits no scene, and that is the contract it would break.
+
+**What is worth keeping from the prototype**, which lives untracked at
+`out/previews/animated_timing.html` and has no generator: the *narration* idea, and its
+data shape — a `DIAGRAMS` array of rows (`kind` `"d"`/`"a"`, per-signal `min`/`max`/`fmt`)
+plus `events[{t, text}]` captions keyed to a time index. That is the reconstructable part;
+the 116 lines of hand-written HTML are output, not implementation.
+
+**Preconditions on any future parser**, recorded now so they are not rediscovered later:
+truncated, unmapped or DBC-mismatched input must raise an error naming the file, the byte
+offset and the signal, and write no HTML — the seven gates judge layout, not semantics, so
+a mis-decoded trace renders as a confident, well-formed, wrong diagram. An unbound trace
+(`path(heads="none")`) is invisible to three of the seven gates, which is why the timing
+generators assert their own geometry. Signal names derived from a DBC must never be
+embedded in a page meant to be forwarded.
+
 ## Commands
 
 ```bash
@@ -92,9 +128,9 @@ self-tags of the repository it was written in, and those requirements do not liv
 the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Sixteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
-capabilities with their nine `REQ-*` children, and `ARCH-RELEASE-035` (the version
-match). All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
+**Eighteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+capabilities with their eleven `REQ-*` children, and `ARCH-RELEASE-035` (the version
+match). The count is what `reqmap.py gate` prints, not a number to carry by hand. All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
 contract demotes it to `draft` — set `status: confirmed` back and
 `sync --accept-drift "<why>"`.
 
