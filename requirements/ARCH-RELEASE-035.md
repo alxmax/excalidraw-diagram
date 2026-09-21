@@ -19,18 +19,65 @@ satisfies: [SYS-DIAGRAM-001]
 > its own rather than a line in a checklist.
 
 Every bullet below is binding.
+- `plugin/.claude-plugin/plugin.json` is the source of truth, and every other copy of
+  the version equals it. [[REQ-RELEASE-855]] details the check.
+- CI runs the version check on every push and every pull request, so a mismatch
+  cannot be merged.
+- CI fails a pull request that bumps the version without a matching CHANGELOG heading.
+
+## Cases
+CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->
+  Given  `.github/workflows/ci.yml`
+  When   a commit is pushed or a pull request opened
+  Then   the `versions` job runs `scripts/check_versions.py` and its own tests
+
+CASE-2 — a bump without a CHANGELOG heading fails the pull request <!-- verifiable by: inspection -->
+  Given  a pull request that changes the version in `plugin.json`
+  When   the `changelog` job runs
+  Then   it fails unless `CHANGELOG.md` holds a `` `vX.Y.Z` `` heading for that version
+
+CASE-3 — the release check never ships <!-- verifiable by: inspection -->
+  Given  the directory `/plugin install` hands a consumer
+  When   its contents are listed
+  Then   `scripts/check_versions.py` is absent, because only `plugin/` ships
+
+## Context
+**Notes**
+- This is a repo capability, not a shipped one: `scripts/` sits outside `plugin/`
+  and never reaches an installed copy. It satisfies the diagram need indirectly —
+  a fix nobody receives is a fix that did not happen.
+
+**Current implementation**
+- `scripts/check_versions.py` and `scripts/test_check_versions.py`.
+- The `versions` and `changelog` jobs in `.github/workflows/ci.yml`.
+
+
+--------------------
+
+
+---
+id: REQ-RELEASE-855
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-RELEASE-035]
+---
+
+# check_versions.py: the three copies of the version agree
+
+## Description
+> The copies exist only to be identical, so the check compares them, names every
+> one that disagrees, and can rewrite them from the source of truth instead of
+> asking someone to retype a number by hand.
+
+Every bullet below is binding.
 - `scripts/check_versions.py` compares the version in
-  `plugin/.claude-plugin/plugin.json`, which is the source of truth, against both
-  copies in `.claude-plugin/marketplace.json`: the top-level one and the one inside
-  `plugins[]`.
-- The script exits 0 when all three agree, and 1 when any disagrees. A failure names
-  every copy that disagreed and what it says, so the reader fixes the right file
-  instead of hunting.
-- `--fix` rewrites `marketplace.json` from `plugin.json` instead of failing, because
-  the copies exist only to be identical and retyping them by hand is where the
-  mismatch came from.
-- CI runs this check on every push and every pull request, so a mismatch cannot be
-  merged.
+  `plugin/.claude-plugin/plugin.json` against both copies in
+  `.claude-plugin/marketplace.json`: the top-level one and the one inside `plugins[]`.
+- The script exits 0 when all three agree, and 1 when any disagrees.
+- A failure names every copy that disagreed and the value it holds.
+- `--fix` rewrites `marketplace.json` from `plugin.json` instead of failing.
 
 ## Cases
 CASE-1 — three matching versions pass
@@ -58,11 +105,7 @@ CASE-4 — `--fix` makes them agree instead of failing
 - The count in the success line is three: `plugin.json` plus the two marketplace
   copies. It is printed so a future manifest that adds a fourth copy shows up as a
   changed number rather than passing unnoticed.
-- This is a repo capability, not a shipped one: `scripts/` sits outside `plugin/`
-  and never reaches an installed copy. It satisfies the diagram need indirectly —
-  a fix nobody receives is a fix that did not happen.
 
 **Current implementation**
-- `scripts/check_versions.py`.
-- `scripts/test_check_versions.py`.
-- The `versions` job in `.github/workflows/ci.yml`.
+- `main()` in `scripts/check_versions.py`.
+- `TestCheckVersions` in `scripts/test_check_versions.py`.

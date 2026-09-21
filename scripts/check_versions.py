@@ -32,7 +32,7 @@ def _dump(path, data):
         f.write("\n")
 
 
-def main(argv=None):
+def main(argv=None):  # implements: REQ-RELEASE-855
     """Compare (or with --fix, sync) the three version copies; returns the exit code."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fix", action="store_true",

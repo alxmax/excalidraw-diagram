@@ -30,7 +30,7 @@ def _write(path, data):
         json.dump(data, f, indent=2)
 
 
-class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035
+class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # tested-by: REQ-RELEASE-855
     """Every case of ARCH-RELEASE-035, against a throwaway pair of manifests."""
 
     def setUp(self):
@@ -58,14 +58,14 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035
             code = cv.main(list(argv))
         return code, buf.getvalue()
 
-    def test_three_matching_versions_pass(self):  # verifies: ARCH-RELEASE-035#CASE-1
+    def test_three_matching_versions_pass(self):  # verifies: REQ-RELEASE-855#CASE-1
         self._manifests("1.1.0", "1.1.0", "1.1.0")
         code, out = self._run()
         self.assertEqual(code, 0, out)
         self.assertIn("1.1.0", out)
         self.assertIn("3 location(s)", out)
 
-    def test_a_stale_top_level_copy_fails_and_is_named(self):  # verifies: ARCH-RELEASE-035#CASE-2
+    def test_a_stale_top_level_copy_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-2
         self._manifests("1.2.0", "1.1.0", "1.2.0")
         code, out = self._run()
         self.assertEqual(code, 1)
@@ -73,14 +73,14 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035
         self.assertIn("1.1.0", out)          # says what the stale copy holds
         self.assertIn("1.2.0", out)          # and what it should hold
 
-    def test_a_stale_entry_inside_plugins_fails_and_is_named(self):  # verifies: ARCH-RELEASE-035#CASE-3
+    def test_a_stale_entry_inside_plugins_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-3
         self._manifests("1.2.0", "1.2.0", "1.1.0")
         code, out = self._run()
         self.assertEqual(code, 1)
         self.assertIn("plugins[0]", out)
         self.assertIn("1.1.0", out)
 
-    def test_fix_makes_them_agree(self):  # verifies: ARCH-RELEASE-035#CASE-4
+    def test_fix_makes_them_agree(self):  # verifies: REQ-RELEASE-855#CASE-4
         self._manifests("2.0.0", "1.1.0", "1.0.9")
         code, _ = self._run("--fix")
         self.assertEqual(code, 0)
@@ -92,7 +92,7 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035
         self.assertEqual(market["version"], "2.0.0")
         self.assertEqual(market["plugins"][0]["version"], "2.0.0")
 
-    def test_the_real_manifests_agree(self):  # verifies: ARCH-RELEASE-035#CASE-1
+    def test_the_real_manifests_agree(self):  # verifies: REQ-RELEASE-855#CASE-1
         # not a fixture: the repo's own manifests, so a bump that misses a copy
         # fails here as well as in the CI job that runs the script directly
         cv.PLUGIN, cv.MARKET = self._saved
