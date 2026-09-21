@@ -274,3 +274,30 @@ to a trace. The generator carries the checks the gates cannot — every clock ed
 lands on the bit grid, every trace stays inside its row — and a failed `assert`
 stops the run exactly as a gate would. A timing diagram whose traces drift is
 wrong in a way the file format cannot report.
+
+### 8 · Sequence, state and entity-relationship diagrams (no new primitives)
+
+❌ Treating each one as a flowchart: `pack()` a sequence diagram and time order
+disappears; draw an entity as one box and its columns become a caption.
+
+✅ Pick the primitive that carries the meaning.
+
+- **Sequence** — `make_sequence_diagram.py`. A participant is a `box()`, its
+  lifeline an unbound `path(heads="none")`, a message a horizontal `path()` between
+  two lifelines (dashed for a reply), an `alt` fragment a `frame()` with `[guard]`
+  labels. Assert that every message ends on a lifeline and that messages run strictly
+  downwards: no gate sees an unbound path.
+- **State machine** — `make_state_machine.py`. States and events are a graph, so
+  `pack()` lays them out; a transition back to an earlier state is routed on its own.
+  Assert that every state is reachable and every non-final state has a way out.
+- **Entity-relationship** — `make_er_diagram.py`. An entity is a coloured header
+  `box()` over a body `box()` listing its columns; a relationship is an `arrow(...,
+  heads="none")` labelled `1 x : N y`. Join a table lower down at its header, or the
+  line cuts through it. Assert that every foreign key has a relationship and back.
+
+```python
+x_of = {"browser": 145, "api": 395}             # one lifeline per participant
+s.path([(x_of["browser"], y), (x_of["api"], y)])                 # a request
+s.path([(x_of["api"], y + 58), (x_of["browser"], y + 58)],
+       paint=Paint(dashed=True))                                  # its reply
+```
