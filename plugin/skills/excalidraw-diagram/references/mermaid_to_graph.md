@@ -34,9 +34,11 @@ worse than one that was never drawn: it passes every gate and it is wrong.
 
 **What has no equivalent, and what to do about it.** `click` handlers, `style` on a
 single node, edge thickness, `linkStyle`, icons and images, and every non-flowchart
-diagram type (sequence, class, state, gantt, ER, journey, mindmap, pie). For a sequence
-or state diagram, draw it as the flow it describes and say that is what you did. For the
-rest, name what you dropped in your reply — never in silence.
+diagram type (sequence, class, state, gantt, ER, journey, mindmap, pie). A state diagram
+is a graph and translates like a flowchart. Sequence and ER diagrams have their own
+recipes in worked example 8 of [`worked_examples.md`](worked_examples.md): write a
+generator, not a `graph.json`. For the rest, name what you dropped in your reply —
+never in silence.
 
 ## A worked line-by-line
 

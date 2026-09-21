@@ -303,6 +303,12 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.arrow(above, inside)                          # added after: it cannot dodge
         self.assertEqual(s.check_arrow_crossings(), [("above", "inside", "a caption")])
 
+    def test_a_frame_fill_can_name_a_role(self):
+        s = eb.Scene(seed=99, roles={"fragment": "yellow"})
+        fid = s.frame((0, 0, 200, 100), paint=eb.Paint(fill="fragment"))
+        el = next(e for e in s.elements if e["id"] == fid)
+        self.assertEqual(el["backgroundColor"], eb.FILL["yellow"])
+
     def test_save_overflow_check_warn_default_does_not_raise(self):
         s = eb.Scene(seed=99)
         s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
@@ -1077,6 +1083,19 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                                       "members": ["a", "b", "c"]}],
                options=eb.PackOptions(direction="TB"))
         self.assertEqual(s.check_arrow_crossings(), [])
+
+
+    def test_a_back_edge_between_neighbouring_layers_loops_instead_of_retracing(self):
+        # both legs of the route used to share one channel, so the connector went
+        # down and came back up the same vertical line: a stub, not a loop
+        s = eb.Scene(seed=19)
+        s.pack([{"id": "a"}, {"id": "b"}],
+               [{"src": "a", "dst": "b"}, {"src": "b", "dst": "a", "label": "back"}])
+        routed = [e for e in s.elements if e.get("type") == "arrow"
+                  and len(e.get("points") or []) > 2]
+        self.assertEqual(len(routed), 1)
+        xs = {round(e["x"] + px) for e in routed for px, _ in e["points"]}
+        self.assertGreaterEqual(len(xs), 4, "the route retraces a single channel")
 
 
 class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-850

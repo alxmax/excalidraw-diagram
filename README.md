@@ -150,7 +150,7 @@ plugin/skills/excalidraw-diagram/
   references/builder_api.md       every call, the graph.json schema
   references/worked_examples.md   the repo-poster recipe and ❌ → ✅ variants
   references/excalidraw_format.md the file-format notes the builder encodes
-  examples/make_*.py        six worked generators, each runnable on its own
+  examples/make_*.py        nine worked generators, each runnable on its own
 plugin/.mcp.json            registers the MCP server on install
 requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py, *_graph.json + *.png  what the pictures in this README are built from
@@ -197,6 +197,33 @@ connector.
 ### `make_excalidraw_skill_flow.py` — how the skill itself runs
 
 ![Skill flow](docs/skill_flow.png)
+
+## Sequence, state and entity-relationship diagrams
+
+Three more diagram types, again with nothing new in the builder. Each generator asserts
+the geometry or the logic no gate can see.
+
+`plugin/skills/excalidraw-diagram/examples/make_sequence_diagram.py`: signing in, as
+messages between a browser, a gateway, an auth service and a database. Participants are
+boxes, lifelines and messages are unbound `path()` lines, the `alt` fragment is a
+`frame()`. The script asserts that every message ends on a lifeline and that time only
+runs downwards.
+
+![A sequence diagram of signing in](docs/sequence_diagram.png)
+
+`plugin/skills/excalidraw-diagram/examples/make_state_machine.py`: the life of an online
+order. States and events are a graph, so `pack()` places them and routes the one event
+that goes back. The script asserts that every state is reachable and that only final
+states are dead ends.
+
+![A state machine of an order's life](docs/state_machine.png)
+
+`plugin/skills/excalidraw-diagram/examples/make_er_diagram.py`: the tables behind a small
+shop. A coloured header box over a body box listing the columns is one table, and a
+headless arrow labelled `1 x : N y` is one relationship. The script asserts that the
+foreign keys and the drawn relationships agree, both ways.
+
+![An entity-relationship diagram of a small shop](docs/er_diagram.png)
 
 ## Timing diagrams, with no timing code in the builder
 

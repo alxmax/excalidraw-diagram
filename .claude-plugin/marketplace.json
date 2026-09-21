@@ -1,6 +1,6 @@
 {
   "name": "excalidraw-diagram",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Excalidraw diagram skill: turn a description of a system, flow or architecture into an editable .excalidraw scene plus a self-contained HTML viewer.",
   "owner": {
     "name": "Schipor Alexandru"
@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "excalidraw-diagram",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "source": "./plugin"
     }
   ]

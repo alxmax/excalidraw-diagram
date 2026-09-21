@@ -167,7 +167,7 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         rect = as_rect(at)
         paint = Paint.coerce(paint)
         style = Style(resolve(paint.stroke, STROKE, STROKE["black"]),
-                      resolve(paint.fill, FILL, "transparent"),
+                      resolve(self.roles.get(paint.fill, paint.fill), FILL, "transparent"),
                       stroke_style="dashed" if paint.dashed else "solid",
                       roundness={"type": 3}, group=paint.group)
         fid = self._new_id("frame")

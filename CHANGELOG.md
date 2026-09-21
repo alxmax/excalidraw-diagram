@@ -1,5 +1,32 @@
 # Changelog
 
+## plugin `v2.4.0` — 2026-09-21
+
+**Three more diagram types, as worked examples.** No new builder primitive; each
+generator asserts what the gates cannot see.
+
+- `make_sequence_diagram.py`: participants, lifelines, requests and dashed replies, a
+  self-call and an `alt` fragment. It asserts every message ends on a lifeline and
+  messages run strictly downwards.
+- `make_state_machine.py`: an order's life cycle through `pack()`, with a group and a
+  back transition. It asserts every state is reachable and only final states are dead
+  ends.
+- `make_er_diagram.py`: tables as a header box over a column box, relationships as
+  headless arrows labelled `1 x : N y`. It asserts foreign keys and relationships agree.
+
+Worked example 8 in `references/worked_examples.md` is the recipe for all three, and
+`mermaid_to_graph.md` now points sequence and ER diagrams at it instead of saying to
+flatten them into a flow.
+
+**Two builder bugs the examples found.**
+
+- `frame(paint=Paint(fill="<role>"))` ignored `Scene(roles=…)`: `box()` resolved a
+  role name, `frame()` did not, so a legended fragment colour never showed.
+- A routed edge between neighbouring layers sent both legs through the same channel.
+  The connector went down and came straight back up one vertical line, a stub instead
+  of a loop. It now leaves through the far side of its source and enters through the
+  near side of its target.
+
 ## plugin `v2.3.0` — 2026-09-21
 
 **Group frames are no longer invisible to the gates.** `enclose()` now records which
