@@ -1,0 +1,57 @@
+{
+ "name": "caption_under_fan_out_tb",
+ "direction": "TB",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "in"
+  },
+  {
+   "id": "a"
+  },
+  {
+   "id": "b"
+  },
+  {
+   "id": "c"
+  },
+  {
+   "id": "store"
+  }
+ ],
+ "edges": [
+  {
+   "src": "in",
+   "dst": "a",
+   "label": "no"
+  },
+  {
+   "src": "in",
+   "dst": "b",
+   "label": "down"
+  },
+  {
+   "src": "in",
+   "dst": "c",
+   "label": "up"
+  },
+  {
+   "src": "b",
+   "dst": "store",
+   "dashed": true
+  },
+  {
+   "src": "store",
+   "dst": "in"
+  }
+ ],
+ "groups": [
+  {
+   "label": "a caption long enough to meet the arrows",
+   "members": [
+    "b",
+    "c"
+   ]
+  }
+ ]
+}

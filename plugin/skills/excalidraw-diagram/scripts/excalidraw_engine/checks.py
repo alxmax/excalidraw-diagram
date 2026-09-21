@@ -37,6 +37,37 @@ class ChecksMixin(object):
                 ox, oy = overlap_2d(a[1:5], b[1:5])
                 if ox > min_px and oy > min_px:
                     hits.append((a[5], b[5]))
+        return hits + self._frame_intruders(min_px)
+
+    def _members(self, fid):
+        """Every id an enclose() frame holds, through the frames it holds."""
+        seen, todo = set(), list(self._frames[fid][0])
+        while todo:
+            nid = todo.pop()
+            if nid not in seen:
+                seen.add(nid)
+                todo += list(self._frames.get(nid, ((), None))[0])
+        return seen
+
+    def _caption_text(self, fid):
+        el = self._element(self._frames[fid][1]) if self._frames[fid][1] else None
+        return (el.get("text") or "")[:40] if el else "frame"
+
+    def _frame_intruders(self, min_px):
+        """[(node label, frame caption), ...] for a node that was not enclosed
+        but sits in an enclose() frame or on its caption: the frame then claims a
+        box it does not group, and no other check sees it."""
+        hits = []
+        for fid, (_ids, cap) in self._frames.items():
+            areas = [self._geom[fid][:4]]
+            el = self._element(cap) if cap else None
+            if el:
+                areas.append((el["x"], el["y"], el["width"], el["height"]))
+            inside = self._members(fid)
+            for nid, x, y, w, h, lab in self._nodes:
+                if nid not in inside and any(
+                        min(overlap_2d((x, y, w, h), r)) > min_px for r in areas):
+                    hits.append((lab, self._caption_text(fid)))
         return hits
 
     def _straight_hits(self, src, dst, threshold=12.0, inset=4.0):
@@ -72,6 +103,26 @@ class ChecksMixin(object):
             for nid in self._straight_hits(ends[0], ends[1], threshold, inset):
                 hits.append((labels.get(ends[0], "?"), labels.get(ends[1], "?"),
                              labels.get(nid, "?")))
+        return hits + self._caption_crossings(labels)
+
+    def _caption_crossings(self, labels):
+        """[(src, dst, caption), ...] for any drawn arrow or line — bound or
+        routed — whose path runs through an enclose() caption. The caption is
+        free text, so the text checks only compare it with other text."""
+        hits = []
+        for fid, (_ids, cap) in self._frames.items():
+            box = self._element(cap) if cap else None
+            if not box:
+                continue
+            rect = (box["x"], box["y"], box["width"], box["height"])
+            for el in self.elements:
+                if el.get("type") not in ("arrow", "line"):
+                    continue
+                pts = [(el["x"] + px, el["y"] + py) for px, py in el.get("points") or []]
+                if any(seg_rect_overlap(a, b, rect) > 0 for a, b in zip(pts, pts[1:])):
+                    ends = _bound_ends(el) or ("?", "?")
+                    hits.append((labels.get(ends[0], "?"), labels.get(ends[1], "?"),
+                                 self._caption_text(fid)))
         return hits
 
     def check_legend_coverage(self):

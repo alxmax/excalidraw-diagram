@@ -106,6 +106,8 @@ Every bullet below is binding.
   mode raises `ValueError`.
 - `crossing`: a bound arrow whose straight centre-to-centre path passes
   through an unrelated box triggers the gate.
+- `crossing` also fires when any drawn arrow or line runs through the caption of
+  an `enclose()` frame.
 - `legend`: a fill colour used on any shape but absent from the
   `legend()` key triggers the gate (fires only after `legend()` is
   rendered; a scene with no legend is exempt).
@@ -134,6 +136,11 @@ CASE-4 — the overflow gate fires when bound text exceeds the shape bounds
   Given  a box whose bound text is wider than the box
   When   `save(gates=Gates(overflow="error"))` is called
   Then   a `ValueError` is raised
+
+CASE-5 — the crossing gate sees an arrow through a frame caption
+  Given  an arrow drawn straight through the caption of an `enclose()` frame
+  When   `check_arrow_crossings()` is called
+  Then   it names the arrow's two ends and the caption
 
 
 --------------------
@@ -167,6 +174,8 @@ Every bullet below is binding.
   `overlap` (overlapping non-container shapes) and `short_arrows` (a bound arrow
   clamped too short to render a visible line, so only its label would show).
   `Gates(overlap="off")` or `Gates(short_arrows="off")` ships a deliberate exception.
+- `overlap` also fires on a node inside an `enclose()` frame, or on its caption, that
+  is not one of the ids the frame was drawn around.
 - The inspection methods `check_overlaps()`, `check_arrow_crossings()`,
   `check_legend_coverage()`, `check_text_overflow()`, `check_text_overlaps()`,
   `check_short_arrows()`, `check_arrow_label_fit()` each return a list of
@@ -199,3 +208,8 @@ CASE-4 — an inspection method returns offending items without saving
   When   `check_arrow_crossings()` is called before `.save()`
   Then   it returns a list containing that one item, while an unaffected check like
          `check_text_overflow()` returns an empty list
+
+CASE-5 — the overlap gate sees a box that strayed into a frame
+  Given  a frame drawn around two boxes, and a third box placed inside it
+  When   `check_overlaps()` is called
+  Then   it names the third box and the frame's caption, and not the two members

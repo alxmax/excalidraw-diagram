@@ -1,5 +1,32 @@
 # Changelog
 
+## plugin `v2.3.0` — 2026-09-21
+
+**Group frames are no longer invisible to the gates.** `enclose()` now records which
+ids a frame was drawn around, and two existing checks read it:
+
+- `check_overlaps()`, the hard `overlap` gate, also names a box that sits inside a frame
+  (or on its caption) without having been enclosed. A frame that claims a box it does
+  not group now fails `save()` by default, like any other overlap.
+- `check_arrow_crossings()`, the `crossing` gate, also names any arrow or routed line
+  that runs through a frame caption.
+
+Still seven gates; no gate changed its name or default.
+
+**`pack()` stops producing both.** A non-member in a layer a group's frame spans is
+pushed along its layer out past the frame. The arrows are drawn before the frames, so
+`enclose()` can put the caption where nothing crosses it. It tries the top centre, then
+the widest clear stretch above or below the frame, wrapped onto two or three lines if
+that is what fits. Routed lanes keep a frame's width clear of groups.
+
+`layout_corpus/` gains `group_with_outsider_tb` and `caption_under_fan_out_tb`. With
+the new checks and the old `pack()`, the corpus reads nine hits (three captions crossed,
+six boxes in frames that do not hold them); with the new `pack()`, none.
+
+**Minor bump because the `overlap` gate is stricter.** A hand-written generator that
+placed a box inside an `enclose()` frame without enclosing it now raises. Enclose it,
+move it, or pass `Gates(overlap="warn")`. Every example in this repo stays clean.
+
 ## plugin `v2.2.1` — 2026-09-21
 
 **A group on the first row no longer fails `scene --from-json`.** The title and subtitle

@@ -1,0 +1,80 @@
+{
+ "name": "group_with_outsider_tb",
+ "direction": "TB",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "c",
+   "label": "customer"
+  },
+  {
+   "id": "cart",
+   "label": "cart"
+  },
+  {
+   "id": "q",
+   "label": "in stock?"
+  },
+  {
+   "id": "pay",
+   "label": "payment provider"
+  },
+  {
+   "id": "back",
+   "label": "back-order email"
+  },
+  {
+   "id": "paid",
+   "label": "paid?"
+  },
+  {
+   "id": "ship",
+   "label": "ships"
+  }
+ ],
+ "edges": [
+  {
+   "src": "c",
+   "dst": "cart"
+  },
+  {
+   "src": "cart",
+   "dst": "q"
+  },
+  {
+   "src": "q",
+   "dst": "pay",
+   "label": "yes"
+  },
+  {
+   "src": "q",
+   "dst": "back",
+   "label": "no"
+  },
+  {
+   "src": "pay",
+   "dst": "paid"
+  },
+  {
+   "src": "paid",
+   "dst": "ship",
+   "label": "yes"
+  },
+  {
+   "src": "paid",
+   "dst": "cart",
+   "label": "declined"
+  }
+ ],
+ "groups": [
+  {
+   "label": "checkout",
+   "members": [
+    "cart",
+    "q",
+    "pay",
+    "paid"
+   ]
+  }
+ ]
+}

@@ -295,6 +295,14 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d, gates=eb.Gates(overflow="error"))
 
+    def test_crossing_check_sees_an_arrow_through_a_frame_caption(self):  # verifies: REQ-EXCALIDRAW-846#CASE-5
+        s = eb.Scene(seed=99)
+        inside = s.box("inside", (100, 200, 120, 50))
+        s.enclose([inside], label="a caption")          # caption above the frame
+        above = s.box("above", (100, 20, 120, 50))
+        s.arrow(above, inside)                          # added after: it cannot dodge
+        self.assertEqual(s.check_arrow_crossings(), [("above", "inside", "a caption")])
+
     def test_save_overflow_check_warn_default_does_not_raise(self):
         s = eb.Scene(seed=99)
         s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
@@ -854,6 +862,15 @@ class CasesExcalidraw031(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-847
         self.assertEqual(s.check_text_overflow(), [])   # an unaffected check stays clean
 
 
+    def test_overlap_check_sees_a_box_that_strayed_into_a_frame(self):  # verifies: REQ-EXCALIDRAW-847#CASE-5
+        s = eb.Scene(seed=99)
+        a = s.box("a", (0, 0, 80, 40))
+        b = s.box("b", (400, 0, 80, 40))
+        s.enclose([a, b], label="the pair")
+        s.box("stray", (200, 0, 80, 40))                # inside the frame, not in it
+        self.assertEqual(s.check_overlaps(), [("stray", "the pair")])
+
+
 class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
     def test_legend_and_glossary_decode_colours_and_terms_on_the_canvas(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-1
         s = eb.Scene(seed=99, roles={"engine": "violet", "plan": "indigo"})
@@ -1039,6 +1056,27 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
         ):
             with self.assertRaises(ValueError, msg=why):
                 build()
+
+
+    def test_a_node_outside_a_group_stays_outside_its_frame(self):  # verifies: REQ-EXCALIDRAW-851#CASE-6
+        nodes = [{"id": i} for i in ("c", "cart", "q", "pay", "back", "paid", "ship")]
+        edges = [{"src": "c", "dst": "cart"}, {"src": "cart", "dst": "q"},
+                 {"src": "q", "dst": "pay"}, {"src": "q", "dst": "back"},
+                 {"src": "pay", "dst": "paid"}, {"src": "paid", "dst": "ship"}]
+        s = eb.Scene(seed=19)
+        s.pack(nodes, edges, groups=[{"label": "checkout",
+                                      "members": ["cart", "q", "pay", "paid"]}],
+               options=eb.PackOptions(direction="TB"))
+        self.assertEqual(s.check_overlaps(), [])
+
+    def test_a_frame_caption_dodges_the_arrows_entering_the_group(self):  # verifies: REQ-EXCALIDRAW-851#CASE-7
+        nodes = [{"id": i} for i in ("in", "a", "b", "c")]
+        edges = [{"src": "in", "dst": n, "label": n} for n in ("a", "b", "c")]
+        s = eb.Scene(seed=19)
+        s.pack(nodes, edges, groups=[{"label": "a caption long enough to meet the arrows",
+                                      "members": ["a", "b", "c"]}],
+               options=eb.PackOptions(direction="TB"))
+        self.assertEqual(s.check_arrow_crossings(), [])
 
 
 class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-850

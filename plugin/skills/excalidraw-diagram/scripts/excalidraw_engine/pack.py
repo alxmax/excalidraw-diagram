@@ -206,22 +206,68 @@ class _PackRun(object):
     def _minor(self, nid):
         return self.size[nid][1] if self.lr else self.size[nid][0]
 
-    def place(self, layers):
-        """Draw every node, each layer centred on the widest one."""
+    def place(self, layers, groups=()):
+        """Draw every node, each layer centred on the widest one, then pushed
+        along its layer out of any group frame it does not belong to."""
         gap = self.opts.gap_minor
         runs = [sum(self._minor(n) for n in lay) + gap * (len(lay) - 1) for lay in layers]
         widest = max(runs)
         origin = float(self.origin[1] if self.lr else self.origin[0])
+        start = {}
         for k, lay in enumerate(layers):
             cur = origin + (widest - runs[k]) / 2.0
             for nid in lay:
+                start[nid] = cur
+                cur += self._minor(nid) + gap
+        self._clear_frames(layers, groups, start)
+        for k, lay in enumerate(layers):
+            for nid in lay:
                 w, h, text = self.size[nid]
-                x, y = (self.at[k], cur) if self.lr else (cur, self.at[k])
+                x, y = (self.at[k], start[nid]) if self.lr else (start[nid], self.at[k])
                 spec = self.specs[nid]
                 self.placed[nid] = self.scene.box(
                     text, (x, y, w, h), paint=spec.get("fill"),
                     shape=spec.get("kind", "rectangle"), font=self.opts.font_size)
-                cur += self._minor(nid) + gap
+
+    def _clear_frames(self, layers, groups, start):
+        """Move non-members out of each group's frame, in `start` (node -> its
+        minor-axis coordinate). A frame spans every layer its members reach and
+        the minor range they cover, so a node centred in a narrower layer can
+        fall inside it. The node — and every node beyond it on that side of its
+        layer — moves out past the frame. A few passes settle groups that push
+        one another; whatever still intrudes, check_overlaps() reports."""
+        pad, clear = 24.0, self.opts.gap_minor / 2.0
+        caption = 30.0 if self.lr else 0.0     # LR: the caption sits on the minor axis
+        for _ in range(8):
+            moved = False
+            for group in groups:
+                members = {str(m) for m in group.get("members", ()) if str(m) in start}
+                if not members:
+                    continue
+                lo = min(start[m] for m in members) - pad - caption - clear
+                hi = max(start[m] + self._minor(m) for m in members) + pad + clear
+                reach = {self.layer[m] for m in members}
+                for k in range(min(reach), max(reach) + 1):
+                    moved |= self._push_out(layers[k], members, start, (lo, hi))
+            if not moved:
+                return
+
+    def _push_out(self, lay, members, start, span):
+        """Push the non-members of one layer out of `span`; True if one moved."""
+        lo, hi = span
+        for i, nid in enumerate(lay):
+            a, b = start[nid], start[nid] + self._minor(nid)
+            if nid in members or b <= lo or a >= hi:
+                continue
+            if a + b < lo + hi:                 # nearer the low edge: go lower
+                shift, side = lo - b, lay[:i + 1]
+            else:
+                shift, side = hi - a, lay[i:]
+            for n in side:
+                if n not in members:
+                    start[n] += shift
+            return True
+        return False
 
     def enclose(self, groups):
         """A frame around each group's placed members."""
@@ -231,8 +277,9 @@ class _PackRun(object):
             if members:
                 self.scene.enclose(members, label=group.get("label"))
 
-    def connect(self):
-        """Every edge: a straight arrow where its line is clear, routed otherwise."""
+    def connect(self, margin=0.0):
+        """Every edge: a straight arrow where its line is clear, routed otherwise.
+        `margin` keeps the lanes clear of frames not drawn yet."""
         # channel[k] is the empty strip just before layer k, where a routed
         # connector crosses the diagram. 34px clears three things at once: no box
         # sits in a layer gap, enclose() draws its frame 24px out so the line never
@@ -241,7 +288,7 @@ class _PackRun(object):
         channel = [self.at[0] - 60.0] + [a - 34.0 for a in self.at[1:]]
         channel.append(self.at[-1] + self.extent[-1] + 60.0)
         _, _, far_x, far_y = self.scene.bounds()
-        far = far_y if self.lr else far_x
+        far = (far_y if self.lr else far_x) + margin
         lane = 0
         for k, link in enumerate(self.links):
             src, dst = str(link["src"]), str(link["dst"])
@@ -306,7 +353,7 @@ class PackMixin(object):
         run = _PackRun(self, validate(nodes, edges), at, options or PackOptions())
         layers = run.layers(groups)
         run.measure(layers)
-        run.place(layers)
-        run.enclose(groups)
-        run.connect()
+        run.place(layers, groups)
+        run.connect(margin=24.0 if groups else 0.0)
+        run.enclose(groups)     # after the arrows, so a caption can dodge them
         return run.placed
