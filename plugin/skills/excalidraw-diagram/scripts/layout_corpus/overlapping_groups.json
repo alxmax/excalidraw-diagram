@@ -1,0 +1,80 @@
+{
+ "name": "overlapping_groups",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "p",
+   "label": "p"
+  },
+  {
+   "id": "q",
+   "label": "q"
+  },
+  {
+   "id": "r",
+   "label": "r"
+  },
+  {
+   "id": "s",
+   "label": "s"
+  },
+  {
+   "id": "t",
+   "label": "t"
+  },
+  {
+   "id": "u",
+   "label": "u"
+  }
+ ],
+ "edges": [
+  {
+   "src": "p",
+   "dst": "q"
+  },
+  {
+   "src": "q",
+   "dst": "r"
+  },
+  {
+   "src": "r",
+   "dst": "s"
+  },
+  {
+   "src": "s",
+   "dst": "t"
+  },
+  {
+   "src": "p",
+   "dst": "u"
+  },
+  {
+   "src": "u",
+   "dst": "t"
+  }
+ ],
+ "groups": [
+  {
+   "label": "front",
+   "members": [
+    "p",
+    "q",
+    "r"
+   ]
+  },
+  {
+   "label": "middle",
+   "members": [
+    "r",
+    "s"
+   ]
+  },
+  {
+   "label": "far apart",
+   "members": [
+    "p",
+    "t"
+   ]
+  }
+ ]
+}

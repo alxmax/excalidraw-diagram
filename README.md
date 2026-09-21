@@ -49,6 +49,39 @@ Feedback edges are always routed, so a cycle never cuts back across the flow.
 *The description that produced it is [`docs/repo_graph.json`](docs/repo_graph.json),
 51 lines with no x or y in them. CI builds it on every push.*
 
+Three more, each a `docs/*_graph.json` built the same way:
+
+**How a change reaches the people who installed the plugin** —
+[`docs/ci_graph.json`](docs/ci_graph.json): a branch, a pull request, five CI jobs in
+parallel, and the dashed way back when one fails.
+
+![Branch, pull request, five CI jobs, merge](docs/ci_flow.png)
+
+**How the layout ratchet decides** —
+[`docs/ratchet_graph.json`](docs/ratchet_graph.json), top to bottom: the test that lets
+a layout count go down but never up.
+
+![The layout ratchet](docs/layout_ratchet.png)
+
+**A Mermaid flowchart, drawn as an editable scene** —
+[`docs/mermaid_graph.json`](docs/mermaid_graph.json) is this Mermaid source, translated
+line by line as
+[`references/mermaid_to_graph.md`](plugin/skills/excalidraw-diagram/references/mermaid_to_graph.md)
+describes:
+
+```mermaid
+flowchart TB
+  C([Customer]) -->|checks out| Cart[Cart service]
+  Cart --> Stock{in stock?}
+  Stock -->|yes| Pay[[Payment provider]]
+  Stock -->|no| Back[Back-order email]
+  Pay --> Paid{paid?}
+  Paid -->|yes| Ship[Warehouse ships]
+  Paid -.declined.-> Cart
+```
+
+![The Mermaid flowchart as an Excalidraw scene](docs/mermaid_checkout.png)
+
 Or write a short Python generator against the `Scene` API, for a diagram whose
 layout itself carries meaning — stacked layers, a lane per tool, a poster. Both
 paths end at the same seven gates.
@@ -120,7 +153,7 @@ plugin/skills/excalidraw-diagram/
   examples/make_*.py        four worked generators, each runnable on its own
 plugin/.mcp.json            registers the MCP server on install
 requirements/               the skill's requirement corpus, checked in CI
-docs/make_*.py + *.png      the generators behind the pictures in this README
+docs/make_*.py, *_graph.json + *.png  what the pictures in this README are built from
 scripts/check_versions.py   plugin.json and marketplace.json must agree
 ```
 

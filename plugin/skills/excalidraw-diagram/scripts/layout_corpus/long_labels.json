@@ -1,0 +1,35 @@
+{
+ "name": "long_labels",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "a",
+   "label": "an ingestion service that reads every event from three upstream queues"
+  },
+  {
+   "id": "b",
+   "label": "normaliser"
+  },
+  {
+   "id": "c",
+   "label": "a store that keeps each normalised event for ninety days"
+  }
+ ],
+ "edges": [
+  {
+   "src": "a",
+   "dst": "b",
+   "label": "raw events, batched per partition"
+  },
+  {
+   "src": "b",
+   "dst": "c",
+   "label": "normalised records with schema version"
+  },
+  {
+   "src": "c",
+   "dst": "a",
+   "label": "replay on request"
+  }
+ ]
+}

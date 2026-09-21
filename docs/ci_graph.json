@@ -1,0 +1,42 @@
+{
+  "name": "ci_flow",
+  "title": "How a change reaches the people who installed the plugin",
+  "subtitle": "Left to right. main takes no direct push: every change is a branch, a pull request and five CI jobs. Dashed lines are the way back when a job fails.",
+  "direction": "LR",
+  "seed": 23,
+  "roles": {"you": "grey", "job": "blue", "gate": "orange", "release": "green"},
+  "nodes": [
+    {"id": "edit", "label": "edit on a branch", "fill": "you", "kind": "terminator"},
+    {"id": "pr", "label": "open a pull request", "fill": "you"},
+    {"id": "tests", "label": "tests: py3.9 + latest, Linux + Windows", "fill": "job"},
+    {"id": "examples", "label": "examples: every generator runs", "fill": "job"},
+    {"id": "gate", "label": "requirement gate", "fill": "job"},
+    {"id": "versions", "label": "versions agree x3", "fill": "job"},
+    {"id": "changelog", "label": "bump has a CHANGELOG entry", "fill": "job"},
+    {"id": "green", "label": "all five green?", "fill": "gate", "kind": "decision"},
+    {"id": "merge", "label": "merge to main", "fill": "release"},
+    {"id": "update", "label": "/plugin update", "fill": "release", "kind": "terminator"}
+  ],
+  "edges": [
+    {"src": "edit", "dst": "pr", "label": "push"},
+    {"src": "pr", "dst": "tests"},
+    {"src": "pr", "dst": "examples"},
+    {"src": "pr", "dst": "gate"},
+    {"src": "pr", "dst": "versions"},
+    {"src": "pr", "dst": "changelog"},
+    {"src": "tests", "dst": "green"},
+    {"src": "examples", "dst": "green"},
+    {"src": "gate", "dst": "green"},
+    {"src": "versions", "dst": "green"},
+    {"src": "changelog", "dst": "green"},
+    {"src": "green", "dst": "merge", "label": "yes"},
+    {"src": "green", "dst": "edit", "label": "no: fix and push again", "dashed": true},
+    {"src": "merge", "dst": "update", "label": "new version"}
+  ],
+  "groups": [{"label": "the five CI jobs", "members": ["tests", "examples", "gate", "versions", "changelog"]}],
+  "legend": true,
+  "glossary": [
+    ["requirement gate", "reqmap checks every requirement is implemented and tested"],
+    ["versions x3", "plugin.json and both marketplace.json copies hold one number"]
+  ]
+}

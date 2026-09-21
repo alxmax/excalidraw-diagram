@@ -1,0 +1,109 @@
+{
+ "name": "fan_in_12_tb",
+ "seed": 7,
+ "direction": "TB",
+ "nodes": [
+  {
+   "id": "s0",
+   "label": "source 0"
+  },
+  {
+   "id": "s1",
+   "label": "source 1"
+  },
+  {
+   "id": "s2",
+   "label": "source 2"
+  },
+  {
+   "id": "s3",
+   "label": "source 3"
+  },
+  {
+   "id": "s4",
+   "label": "source 4"
+  },
+  {
+   "id": "s5",
+   "label": "source 5"
+  },
+  {
+   "id": "s6",
+   "label": "source 6"
+  },
+  {
+   "id": "s7",
+   "label": "source 7"
+  },
+  {
+   "id": "s8",
+   "label": "source 8"
+  },
+  {
+   "id": "s9",
+   "label": "source 9"
+  },
+  {
+   "id": "s10",
+   "label": "source 10"
+  },
+  {
+   "id": "s11",
+   "label": "source 11"
+  },
+  {
+   "id": "sink",
+   "label": "collector"
+  }
+ ],
+ "edges": [
+  {
+   "src": "s0",
+   "dst": "sink"
+  },
+  {
+   "src": "s1",
+   "dst": "sink"
+  },
+  {
+   "src": "s2",
+   "dst": "sink"
+  },
+  {
+   "src": "s3",
+   "dst": "sink"
+  },
+  {
+   "src": "s4",
+   "dst": "sink"
+  },
+  {
+   "src": "s5",
+   "dst": "sink"
+  },
+  {
+   "src": "s6",
+   "dst": "sink"
+  },
+  {
+   "src": "s7",
+   "dst": "sink"
+  },
+  {
+   "src": "s8",
+   "dst": "sink"
+  },
+  {
+   "src": "s9",
+   "dst": "sink"
+  },
+  {
+   "src": "s10",
+   "dst": "sink"
+  },
+  {
+   "src": "s11",
+   "dst": "sink"
+  }
+ ]
+}

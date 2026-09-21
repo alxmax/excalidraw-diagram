@@ -128,9 +128,12 @@ self-tags of the repository it was written in, and those requirements do not liv
 the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Eighteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+**Nineteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
 capabilities with their eleven `REQ-*` children, and `ARCH-RELEASE-035` (the version
-match). The count is what `reqmap.py gate` prints, not a number to carry by hand. All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
+match) with its one child `REQ-RELEASE-855` (the script that checks it).
+`requirements/_config.json` raises `LINT_FILE_SPREAD_MAX` to 6: the engine is one module
+per responsibility on purpose, so a REQ spanning up to five modules is cohesive, not
+diffuse. The count is what `reqmap.py gate` prints, not a number to carry by hand. All are `confirmed`, so the gate enforces them as truth. Editing a confirmed
 contract demotes it to `draft` — set `status: confirmed` back and
 `sync --accept-drift "<why>"`.
 

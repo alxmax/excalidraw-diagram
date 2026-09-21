@@ -1,0 +1,91 @@
+{
+  "name": "mermaid_checkout",
+  "title": "A Mermaid flowchart, drawn as an editable scene",
+  "subtitle": "Top to bottom. Translated line by line from the Mermaid source in README.md, as references/mermaid_to_graph.md describes. No parser: the model reads the page and writes this graph.",
+  "direction": "TB",
+  "seed": 31,
+  "roles": {
+    "customer": "grey",
+    "service": "blue",
+    "check": "orange",
+    "outcome": "green"
+  },
+  "nodes": [
+    {
+      "id": "C",
+      "label": "Customer",
+      "fill": "customer",
+      "kind": "terminator"
+    },
+    {
+      "id": "Cart",
+      "label": "Cart service",
+      "fill": "service"
+    },
+    {
+      "id": "Stock",
+      "label": "in stock?",
+      "fill": "check",
+      "kind": "decision"
+    },
+    {
+      "id": "Pay",
+      "label": "Payment provider",
+      "fill": "service",
+      "kind": "predefined_process"
+    },
+    {
+      "id": "Paid",
+      "label": "paid?",
+      "fill": "check",
+      "kind": "decision"
+    },
+    {
+      "id": "Ship",
+      "label": "Warehouse ships",
+      "fill": "outcome"
+    },
+    {
+      "id": "Back",
+      "label": "Back-order email",
+      "fill": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "src": "C",
+      "dst": "Cart",
+      "label": "checks out"
+    },
+    {
+      "src": "Cart",
+      "dst": "Stock"
+    },
+    {
+      "src": "Stock",
+      "dst": "Pay",
+      "label": "yes"
+    },
+    {
+      "src": "Stock",
+      "dst": "Back",
+      "label": "no"
+    },
+    {
+      "src": "Pay",
+      "dst": "Paid"
+    },
+    {
+      "src": "Paid",
+      "dst": "Ship",
+      "label": "yes"
+    },
+    {
+      "src": "Paid",
+      "dst": "Cart",
+      "label": "declined",
+      "dashed": true
+    }
+  ],
+  "legend": true
+}

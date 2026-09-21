@@ -1,0 +1,68 @@
+{
+ "name": "complete_k5",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "a",
+   "label": "a"
+  },
+  {
+   "id": "b",
+   "label": "b"
+  },
+  {
+   "id": "c",
+   "label": "c"
+  },
+  {
+   "id": "d",
+   "label": "d"
+  },
+  {
+   "id": "e",
+   "label": "e"
+  }
+ ],
+ "edges": [
+  {
+   "src": "a",
+   "dst": "b"
+  },
+  {
+   "src": "a",
+   "dst": "c"
+  },
+  {
+   "src": "a",
+   "dst": "d"
+  },
+  {
+   "src": "a",
+   "dst": "e"
+  },
+  {
+   "src": "b",
+   "dst": "c"
+  },
+  {
+   "src": "b",
+   "dst": "d"
+  },
+  {
+   "src": "b",
+   "dst": "e"
+  },
+  {
+   "src": "c",
+   "dst": "d"
+  },
+  {
+   "src": "c",
+   "dst": "e"
+  },
+  {
+   "src": "d",
+   "dst": "e"
+  }
+ ]
+}

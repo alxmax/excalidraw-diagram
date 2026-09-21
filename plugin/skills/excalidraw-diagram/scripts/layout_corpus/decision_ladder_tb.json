@@ -1,0 +1,127 @@
+{
+ "name": "decision_ladder_tb",
+ "seed": 7,
+ "direction": "TB",
+ "roles": {
+  "gate": "orange",
+  "step": "blue"
+ },
+ "nodes": [
+  {
+   "id": "start",
+   "label": "start",
+   "fill": "step"
+  },
+  {
+   "id": "q0",
+   "label": "check 0?",
+   "kind": "decision",
+   "fill": "gate"
+  },
+  {
+   "id": "q1",
+   "label": "check 1?",
+   "kind": "decision",
+   "fill": "gate"
+  },
+  {
+   "id": "q2",
+   "label": "check 2?",
+   "kind": "decision",
+   "fill": "gate"
+  },
+  {
+   "id": "q3",
+   "label": "check 3?",
+   "kind": "decision",
+   "fill": "gate"
+  },
+  {
+   "id": "fix0",
+   "label": "fix 0",
+   "fill": "step"
+  },
+  {
+   "id": "fix1",
+   "label": "fix 1",
+   "fill": "step"
+  },
+  {
+   "id": "fix2",
+   "label": "fix 2",
+   "fill": "step"
+  },
+  {
+   "id": "fix3",
+   "label": "fix 3",
+   "fill": "step"
+  },
+  {
+   "id": "done",
+   "label": "done",
+   "fill": "step"
+  }
+ ],
+ "edges": [
+  {
+   "src": "start",
+   "dst": "q0"
+  },
+  {
+   "src": "q0",
+   "dst": "q1",
+   "label": "yes"
+  },
+  {
+   "src": "q1",
+   "dst": "q2",
+   "label": "yes"
+  },
+  {
+   "src": "q2",
+   "dst": "q3",
+   "label": "yes"
+  },
+  {
+   "src": "q3",
+   "dst": "done",
+   "label": "yes"
+  },
+  {
+   "src": "q0",
+   "dst": "fix0",
+   "label": "no"
+  },
+  {
+   "src": "q1",
+   "dst": "fix1",
+   "label": "no"
+  },
+  {
+   "src": "q2",
+   "dst": "fix2",
+   "label": "no"
+  },
+  {
+   "src": "q3",
+   "dst": "fix3",
+   "label": "no"
+  },
+  {
+   "src": "fix0",
+   "dst": "start"
+  },
+  {
+   "src": "fix1",
+   "dst": "start"
+  },
+  {
+   "src": "fix2",
+   "dst": "start"
+  },
+  {
+   "src": "fix3",
+   "dst": "start"
+  }
+ ]
+}

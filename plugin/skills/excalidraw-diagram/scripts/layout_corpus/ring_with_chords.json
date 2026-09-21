@@ -1,0 +1,71 @@
+{
+ "name": "ring_with_chords",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "0",
+   "label": "stage 0"
+  },
+  {
+   "id": "1",
+   "label": "stage 1"
+  },
+  {
+   "id": "2",
+   "label": "stage 2"
+  },
+  {
+   "id": "3",
+   "label": "stage 3"
+  },
+  {
+   "id": "4",
+   "label": "stage 4"
+  },
+  {
+   "id": "5",
+   "label": "stage 5"
+  }
+ ],
+ "edges": [
+  {
+   "src": "0",
+   "dst": "1"
+  },
+  {
+   "src": "1",
+   "dst": "2"
+  },
+  {
+   "src": "2",
+   "dst": "3"
+  },
+  {
+   "src": "3",
+   "dst": "4"
+  },
+  {
+   "src": "4",
+   "dst": "5"
+  },
+  {
+   "src": "5",
+   "dst": "0"
+  },
+  {
+   "src": "0",
+   "dst": "3",
+   "label": "retry"
+  },
+  {
+   "src": "2",
+   "dst": "5",
+   "label": "retry"
+  },
+  {
+   "src": "4",
+   "dst": "1",
+   "label": "retry"
+  }
+ ]
+}

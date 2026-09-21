@@ -21,6 +21,10 @@
       "hash": "55262e21aa48",
       "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
+    "ARCH-RELEASE-035": {
+      "hash": "12f81b0ac97b",
+      "reason": "ARCH-RELEASE-035 split: the script-level contract moves into its code-level child REQ-RELEASE-855 (RM032)"
+    },
     "REQ-EXCALIDRAW-844": {
       "hash": "b4c3cc05737b",
       "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"

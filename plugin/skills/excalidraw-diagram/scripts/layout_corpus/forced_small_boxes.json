@@ -1,0 +1,36 @@
+{
+ "name": "forced_small_boxes",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "a",
+   "label": "a label far wider than its box",
+   "w": 60,
+   "h": 30
+  },
+  {
+   "id": "b",
+   "label": "tiny",
+   "w": 30,
+   "h": 20
+  },
+  {
+   "id": "c",
+   "label": "another label that will not fit",
+   "w": 50,
+   "h": 24
+  }
+ ],
+ "edges": [
+  {
+   "src": "a",
+   "dst": "b",
+   "label": "an edge label much longer than the gap between the two boxes"
+  },
+  {
+   "src": "b",
+   "dst": "c",
+   "label": "and another very long connector caption"
+  }
+ ]
+}
