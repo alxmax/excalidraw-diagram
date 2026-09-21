@@ -3,7 +3,7 @@ grids, the pipeline band, the frames that group them, and moving placed nodes.""
 
 import sys
 
-from .geometry import as_point
+from .geometry import as_point, fit_text, free_spans, seg_rect_overlap, text_extent
 from .shapes import SIZES
 from .style import DASHED, Font, Paint
 
@@ -163,10 +163,35 @@ class ArrangeMixin(object):  # implements: REQ-EXCALIDRAW-844
         fx, fy = x0 - pad, y0 - pad
         fw, fh = (x1 - x0) + 2 * pad, (y1 - y0) + 2 * pad
         fid = self.frame((fx, fy, fw, fh), paint=DASHED if paint is None else paint)
+        cap = None
         if label:
-            self.label(label, (fx + fw / 2, fy - 22),
-                       font=Font.coerce(caption, CAPTION_FONT))
+            font = Font.coerce(caption, CAPTION_FONT)
+            text, at = self._caption_at(str(label), font, (fx, fy, fw, fh))
+            cap = self.label(text, at, font=font)
+        self._frames[fid] = (set(ids), cap)
         return fid
+
+    def _caption_at(self, label, font, frame):
+        """(text, anchor) for a frame caption. Centred above the frame when no
+        arrow drawn so far runs through it there; otherwise centred in the widest
+        stretch above, then below, the frame that no arrow crosses — wrapped onto
+        two or three lines if that is what fits. If nothing fits, the top centre
+        stays and check_arrow_crossings() names the arrow."""
+        fx, fy, fw, fh = frame
+        legs = self._segments()
+        tw, th = text_extent(label, font.size)
+        top = (fx + fw / 2, fy - 6 - th)
+        if not any(seg_rect_overlap(a, b, (top[0] - tw / 2, top[1], tw, th)) > 0
+                   for a, b in legs):
+            return label, top
+        for chars in (len(label), len(label) // 2 + 3, len(label) // 3 + 3):
+            text = fit_text(label, size=font.size, max_chars=chars)[0]
+            tw, th = text_extent(text, font.size)
+            for y in (fy - 6 - th, fy + fh + 6):
+                for lo, hi in free_spans(legs, (fx, y, fw, th)):
+                    if hi - lo >= tw:
+                        return text, ((lo + hi) / 2, y)
+        return label, top
 
     def lane(self, ids, label, *, pad=24, paint=None, caption=None):
         """A swimlane: a solid frame around `ids` with a prominent top-left

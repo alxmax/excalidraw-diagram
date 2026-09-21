@@ -8,7 +8,7 @@
       "scripts/check_versions.py": "f46be8c938b76dec7e739cce22726230dbc0f38b81926a93ac5a3374fedb1a8d"
     },
     "REQ-EXCALIDRAW-844": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "b887773eee6f5a81fb7ea2e6115e95d1fe46ce46f39b5a222e040f623d6b4340",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#Rect": "b4a039bf9d544d542dbd714332e7ef2ebfd28934554bb5d448fabbda26177305",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py#Scene": "34535fa1895a0ed545950ff334b51c22f1d7ae635036e078ba3d2ca522af1dff",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py#ShapesMixin": "0f17d08d9f92bbe83164824aa56cf96944c7665f6ee97dbe2230cfa7a25a7fea",
@@ -16,7 +16,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#TextStyle": "dabc0589b12e289630acda4b94c4a23c02c0e01ed72981566afddebe23aaec17"
     },
     "REQ-EXCALIDRAW-845": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py#Canvas": "13242dbfdb32e889ddf728ccedaac99316e37176f01ce17abeae4ec7f3d1d234",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py#Canvas": "8e222eb1f8863c82efd8b43c28922580cc939b971d95a45776b8425740ed862b",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py#ConnectorsMixin": "900b1713f18d6e04cf077525ffdd1bdbd1a69f40bcf254a0f99f72caa95582ff"
     },
     "REQ-EXCALIDRAW-848": {
@@ -33,7 +33,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_spec": "350cf1a7cd564098f0bccc2a9a0e9ce7f5eecf3278b6d63b658d4b050739d7fe"
     },
     "REQ-EXCALIDRAW-851": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#PackMixin": "757e40d74b81cd94f94595ba5ccfe9c9f4c6f7c6b2a7248fc4b62d150e2987cf"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#PackMixin": "3c0573475918410b286623f584be542fcee82b29a65e00ec6115ba3af8c6bc2e"
     },
     "REQ-EXCALIDRAW-852": {
       "plugin/skills/excalidraw-diagram/scripts/mcp_server.py": "36e4750bda9a5a0aabf51d147462a12339675f1ac88d584eec003a54ce18df7d"

@@ -87,5 +87,16 @@
       "dashed": true
     }
   ],
+  "groups": [
+    {
+      "label": "checkout",
+      "members": [
+        "Cart",
+        "Stock",
+        "Pay",
+        "Paid"
+      ]
+    }
+  ],
   "legend": true
 }

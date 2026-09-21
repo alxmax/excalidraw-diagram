@@ -114,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:638"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:646"
         },
         {
           "role": "implements",
@@ -189,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:638"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:646"
         },
         {
           "role": "implements",
@@ -252,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:727"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:735"
         },
         {
           "role": "implements",
@@ -320,7 +320,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1161"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1199"
         },
         {
           "role": "implements",
@@ -415,6 +415,7 @@
       "contract": [
         "`Gates(...)` sets each of five advisory gates to `\"warn\"` (default, prints to stderr), `\"error\"` (raises `ValueError`) or `\"off\"`: `crossing`, `legend`, `overflow`, `text_overlap`, `label_fit`. An unknown gate name or mode raises `ValueError`.",
         "`crossing`: a bound arrow whose straight centre-to-centre path passes through an unrelated box triggers the gate.",
+        "`crossing` also fires when any drawn arrow or line runs through the caption of an `enclose()` frame.",
         "`legend`: a fill colour used on any shape but absent from the `legend()` key triggers the gate (fires only after `legend()` is rendered; a scene with no legend is exempt).",
         "`overflow`: a shape whose bound text is larger than the shape bounds (text spills outside) triggers the gate."
       ],
@@ -425,9 +426,10 @@
         "CASE-1 — — each named gate accepts warn or error mode Given  a scene with a crossing violation When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")` Then   the warn call prints a warning and returns normally, the error call raises `ValueError`",
         "CASE-2 — — the crossing gate fires when an arrow's path crosses an unrelated box Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated box When   `save(gates=Gates(crossing=\"error\"))` is called Then   a `ValueError` naming the crossing is raised",
         "CASE-3 — — the legend gate fires for an unlegended colour, exempt with no legend Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key When   `save(gates=Gates(legend=\"error\"))` is called Then   a `ValueError` naming the unlegended colour is raised; the same scene with no `legend()` call raises nothing",
-        "CASE-4 — — the overflow gate fires when bound text exceeds the shape bounds Given  a box whose bound text is wider than the box When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised --------------------"
+        "CASE-4 — — the overflow gate fires when bound text exceeds the shape bounds Given  a box whose bound text is wider than the box When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised",
+        "CASE-5 — — the crossing gate sees an arrow through a frame caption Given  an arrow drawn straight through the caption of an `enclose()` frame When   `check_arrow_crossings()` is called Then   it names the arrow's two ends and the caption --------------------"
       ],
-      "accept": "CASE-1 — each named gate accepts warn or error mode\n  Given  a scene with a crossing violation\n  When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")`\n  Then   the warn call prints a warning and returns normally, the error call raises `ValueError`\n\nCASE-2 — the crossing gate fires when an arrow's path crosses an unrelated box\n  Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated\n         box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` naming the crossing is raised\n\nCASE-3 — the legend gate fires for an unlegended colour, exempt with no legend\n  Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` naming the unlegended colour is raised; the same scene with no\n         `legend()` call raises nothing\n\nCASE-4 — the overflow gate fires when bound text exceeds the shape bounds\n  Given  a box whose bound text is wider than the box\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised\n\n\n--------------------",
+      "accept": "CASE-1 — each named gate accepts warn or error mode\n  Given  a scene with a crossing violation\n  When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")`\n  Then   the warn call prints a warning and returns normally, the error call raises `ValueError`\n\nCASE-2 — the crossing gate fires when an arrow's path crosses an unrelated box\n  Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated\n         box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` naming the crossing is raised\n\nCASE-3 — the legend gate fires for an unlegended colour, exempt with no legend\n  Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` naming the unlegended colour is raised; the same scene with no\n         `legend()` call raises nothing\n\nCASE-4 — the overflow gate fires when bound text exceeds the shape bounds\n  Given  a box whose bound text is wider than the box\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-5 — the crossing gate sees an arrow through a frame caption\n  Given  an arrow drawn straight through the caption of an `enclose()` frame\n  When   `check_arrow_crossings()` is called\n  Then   it names the arrow's two ends and the caption\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
@@ -445,15 +447,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:65"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:96"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:82"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:133"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:102"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:153"
         },
         {
           "role": "implements",
@@ -464,8 +466,8 @@
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "REQ-EXCALIDRAW-847",
@@ -479,6 +481,7 @@
         "`text_overlap`: two free captions or label elements that geometrically overlap each other trigger the gate.",
         "`label_fit`: a bound arrow whose text label is wider than the connector it sits on — leaving less than ~24px of visible line on each side, measuring the label box projected onto the arrow direction — triggers the gate (the label crowds the arrowheads or spills onto the joined boxes).",
         "`.save()` additionally enforces two hard gates that default to `\"error\"`: `overlap` (overlapping non-container shapes) and `short_arrows` (a bound arrow clamped too short to render a visible line, so only its label would show). `Gates(overlap=\"off\")` or `Gates(short_arrows=\"off\")` ships a deliberate exception.",
+        "`overlap` also fires on a node inside an `enclose()` frame, or on its caption, that is not one of the ids the frame was drawn around.",
         "The inspection methods `check_overlaps()`, `check_arrow_crossings()`, `check_legend_coverage()`, `check_text_overflow()`, `check_text_overlaps()`, `check_short_arrows()`, `check_arrow_label_fit()` each return a list of offending items (empty list = clean) and are callable before `.save()`.",
         "`test_excalidraw.py` exercises the five advisory gates in both `\"warn\"` and `\"error\"` modes, and the two hard gates, for each maintained example generator."
       ],
@@ -489,9 +492,10 @@
         "CASE-1 — — the text_overlap gate fires when two labels geometrically overlap Given  two `label()` elements placed at overlapping coordinates When   `save(gates=Gates(text_overlap=\"error\"))` is called Then   a `ValueError` naming the overlapping pair is raised",
         "CASE-2 — — the label_fit gate fires when a label crowds a short arrow Given  a bound arrow whose label leaves less than ~24px of visible line on one side When   `save(gates=Gates(label_fit=\"error\"))` is called Then   a `ValueError` is raised",
         "CASE-3 — — the two hard gates raise by default and can be switched off Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to render When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` / `Gates(short_arrows=\"off\")` Then   the default calls raise `ValueError`, and the switched calls write the files without raising",
-        "CASE-4 — — an inspection method returns offending items without saving Given  a scene with one crossing-arrow violation and no other defects When   `check_arrow_crossings()` is called before `.save()` Then   it returns a list containing that one item, while an unaffected check like `check_text_overflow()` returns an empty list"
+        "CASE-4 — — an inspection method returns offending items without saving Given  a scene with one crossing-arrow violation and no other defects When   `check_arrow_crossings()` is called before `.save()` Then   it returns a list containing that one item, while an unaffected check like `check_text_overflow()` returns an empty list",
+        "CASE-5 — — the overlap gate sees a box that strayed into a frame Given  a frame drawn around two boxes, and a third box placed inside it When   `check_overlaps()` is called Then   it names the third box and the frame's caption, and not the two members"
       ],
-      "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list",
+      "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list\n\nCASE-5 — the overlap gate sees a box that strayed into a frame\n  Given  a frame drawn around two boxes, and a third box placed inside it\n  When   `check_overlaps()` is called\n  Then   it names the third box and the frame's caption, and not the two members",
       "input": "",
       "output": "",
       "desc": "",
@@ -509,7 +513,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:845"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:853"
         },
         {
           "role": "implements",
@@ -517,15 +521,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:120"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:171"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:138"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:189"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:156"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:207"
         },
         {
           "role": "implements",
@@ -536,8 +540,8 @@
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "ARCH-EXCALIDRAW-032",
@@ -649,7 +653,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:477"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:485"
         },
         {
           "role": "implements",
@@ -720,7 +724,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1044"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1082"
         },
         {
           "role": "implements",
@@ -855,7 +859,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:857"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:874"
         }
       ],
       "test_exempt": null,
@@ -940,7 +944,9 @@
       "contract": [
         "`pack()` assigns each node a layer by longest path from the sources, over the graph with its cycle-closing edges removed. The computation is iterative, so a chain of any length is layered without touching the recursion limit.",
         "`pack()` orders the nodes within each layer by the mean position of their neighbours in the layer before and after, sweeping four times. A node with no neighbour there keeps the place it had.",
-        "`pack()` keeps the members of a declared group adjacent in their layer, so the frame drawn around them holds them and nothing else.",
+        "`pack()` keeps the members of a declared group adjacent in their layer.",
+        "`pack()` moves any other node of a layer a group's frame spans out past that frame.",
+        "`pack()` draws the arrows before the frames, so a frame's caption can go where no arrow crosses it.",
         "`pack()` sizes every box to its own label, and widens the gap between two layers to fit the widest label on an edge crossing it.",
         "`pack()` draws an edge as a bound arrow only when both its ends sit in neighbouring layers and its straight centre-to-centre line clears every other box. Every other edge is routed.",
         "A routed edge leaves its box through the gap between rows, crosses the diagram in the empty strip between two layers, runs past the diagram in a lane of its own, and returns the same way. Each routed edge gets its own lane.",
@@ -960,9 +966,11 @@
         "CASE-2 — — layering a 200-node chain does not recurse Given  200 nodes chained one to the next When   `pack()` lays them out Then   every node is placed, no check reports an offender, and no `RecursionError` is raised",
         "CASE-3 — — a long edge label widens its gap instead of crowding its arrow Given  two nodes joined by an edge labelled with a phrase wider than the default gap When   `pack()` lays them out Then   `check_arrow_label_fit()` returns empty",
         "CASE-4 — — a node's declared role and shape reach the element Given  a node declaring `kind: \"decision\"` and a fill naming a declared role When   `pack()` places it Then   the scene contains a diamond element carrying that role's colour",
-        "CASE-5 — — an unlayoutable description raises ValueError Given  six broken descriptions. One has no nodes. One repeats an id. One has an empty id. One names an unknown node in an edge. One carries a self-edge. One asks for a direction that is neither `\"LR\"` nor `\"TB\"` When   `pack()` runs on each Then   `ValueError` is raised every time"
+        "CASE-5 — — an unlayoutable description raises ValueError Given  six broken descriptions. One has no nodes. One repeats an id. One has an empty id. One names an unknown node in an edge. One carries a self-edge. One asks for a direction that is neither `\"LR\"` nor `\"TB\"` When   `pack()` runs on each Then   `ValueError` is raised every time",
+        "CASE-6 — — a node outside a group stays outside its frame Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one When   `pack()` lays it out Then   `check_overlaps()` returns empty",
+        "CASE-7 — — a frame caption dodges the arrows entering the group Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot When   `pack()` lays it out Then   `check_arrow_crossings()` returns empty"
       ],
-      "accept": "CASE-1 — a back edge becomes a routed connector, never a straight arrow\n  Given  a three-node cycle\n  When   `pack()` lays it out\n  Then   the two forward edges are bound arrows and the cycle-closing edge is an\n         unbound routed connector with more than two points\n\nCASE-2 — layering a 200-node chain does not recurse\n  Given  200 nodes chained one to the next\n  When   `pack()` lays them out\n  Then   every node is placed, no check reports an offender, and no\n         `RecursionError` is raised\n\nCASE-3 — a long edge label widens its gap instead of crowding its arrow\n  Given  two nodes joined by an edge labelled with a phrase wider than the\n         default gap\n  When   `pack()` lays them out\n  Then   `check_arrow_label_fit()` returns empty\n\nCASE-4 — a node's declared role and shape reach the element\n  Given  a node declaring `kind: \"decision\"` and a fill naming a declared role\n  When   `pack()` places it\n  Then   the scene contains a diamond element carrying that role's colour\n\nCASE-5 — an unlayoutable description raises ValueError\n  Given  six broken descriptions. One has no nodes. One repeats an id. One has an\n         empty id. One names an unknown node in an edge. One carries a self-edge.\n         One asks for a direction that is neither `\"LR\"` nor `\"TB\"`\n  When   `pack()` runs on each\n  Then   `ValueError` is raised every time",
+      "accept": "CASE-1 — a back edge becomes a routed connector, never a straight arrow\n  Given  a three-node cycle\n  When   `pack()` lays it out\n  Then   the two forward edges are bound arrows and the cycle-closing edge is an\n         unbound routed connector with more than two points\n\nCASE-2 — layering a 200-node chain does not recurse\n  Given  200 nodes chained one to the next\n  When   `pack()` lays them out\n  Then   every node is placed, no check reports an offender, and no\n         `RecursionError` is raised\n\nCASE-3 — a long edge label widens its gap instead of crowding its arrow\n  Given  two nodes joined by an edge labelled with a phrase wider than the\n         default gap\n  When   `pack()` lays them out\n  Then   `check_arrow_label_fit()` returns empty\n\nCASE-4 — a node's declared role and shape reach the element\n  Given  a node declaring `kind: \"decision\"` and a fill naming a declared role\n  When   `pack()` places it\n  Then   the scene contains a diamond element carrying that role's colour\n\nCASE-5 — an unlayoutable description raises ValueError\n  Given  six broken descriptions. One has no nodes. One repeats an id. One has an\n         empty id. One names an unknown node in an edge. One carries a self-edge.\n         One asks for a direction that is neither `\"LR\"` nor `\"TB\"`\n  When   `pack()` runs on each\n  Then   `ValueError` is raised every time\n\nCASE-6 — a node outside a group stays outside its frame\n  Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one\n  When   `pack()` lays it out\n  Then   `check_overlaps()` returns empty\n\nCASE-7 — a frame caption dodges the arrows entering the group\n  Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot\n  When   `pack()` lays it out\n  Then   `check_arrow_crossings()` returns empty",
       "input": "",
       "output": "",
       "desc": "",
@@ -976,19 +984,19 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:917"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:934"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:305"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:352"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 5,
-      "covered": 5
+      "clauses": 7,
+      "covered": 7
     },
     {
       "id": "ARCH-RELEASE-035",
@@ -1313,7 +1321,7 @@
   "history": [
     {
       "month": "2026-09",
-      "count": 7,
+      "count": 8,
       "first": "2026-09-06",
       "last": "2026-09-21",
       "versions": [
@@ -1323,7 +1331,8 @@
         "v2.0.0",
         "v2.1.0",
         "v2.2.0",
-        "v2.2.1"
+        "v2.2.1",
+        "v2.3.0"
       ],
       "landmark": "v2.0.0",
       "headline": "Breaking: the `Scene` API takes values, not argument lists"
@@ -1509,18 +1518,29 @@
   ],
   "design": {
     "files": 21,
-    "clean_files": 21,
-    "score": 100,
+    "clean_files": 20,
+    "score": 95,
     "candidates": {
       "encapsulation": 0,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
-      "metrics": 0,
+      "metrics": 1,
       "standards": 0
     },
-    "findings": [],
-    "advice": {}
+    "findings": [
+      {
+        "pillar": "metrics",
+        "kind": "high-response",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py",
+        "line": 58,
+        "name": "ArrangeMixin",
+        "detail": "`ArrangeMixin` reaches 53 methods (over 50): 12 of its own plus 41 it calls"
+      }
+    ],
+    "advice": {
+      "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them"
+    }
   },
   "health": {
     "score": 100,

@@ -114,8 +114,10 @@ Every bullet below is binding.
 - `pack()` orders the nodes within each layer by the mean position of their
   neighbours in the layer before and after, sweeping four times. A node with no
   neighbour there keeps the place it had.
-- `pack()` keeps the members of a declared group adjacent in their layer, so the
-  frame drawn around them holds them and nothing else.
+- `pack()` keeps the members of a declared group adjacent in their layer.
+- `pack()` moves any other node of a layer a group's frame spans out past that frame.
+- `pack()` draws the arrows before the frames, so a frame's caption can go where no
+  arrow crosses it.
 - `pack()` sizes every box to its own label, and widens the gap between two layers
   to fit the widest label on an edge crossing it.
 
@@ -160,6 +162,16 @@ CASE-5 — an unlayoutable description raises ValueError
          One asks for a direction that is neither `"LR"` nor `"TB"`
   When   `pack()` runs on each
   Then   `ValueError` is raised every time
+
+CASE-6 — a node outside a group stays outside its frame
+  Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one
+  When   `pack()` lays it out
+  Then   `check_overlaps()` returns empty
+
+CASE-7 — a frame caption dodges the arrows entering the group
+  Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot
+  When   `pack()` lays it out
+  Then   `check_arrow_crossings()` returns empty
 
 ## Context
 **Notes**

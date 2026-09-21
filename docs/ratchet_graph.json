@@ -1,7 +1,7 @@
 {
   "name": "layout_ratchet",
   "title": "How the layout ratchet decides",
-  "subtitle": "Top to bottom. Fourteen graphs written to break the layout are packed on every test run; each of the seven checks is counted and compared with the recorded baseline.",
+  "subtitle": "Top to bottom. Every graph in layout_corpus/, written to break the layout, is packed on every test run; each of the seven checks is counted and compared with the recorded baseline.",
   "direction": "TB",
   "seed": 29,
   "roles": {
@@ -94,6 +94,15 @@
       "dst": "base",
       "label": "locks the gain in",
       "dashed": true
+    }
+  ],
+  "groups": [
+    {
+      "label": "what the test fails on",
+      "members": [
+        "rose",
+        "fell"
+      ]
     }
   ],
   "legend": true,

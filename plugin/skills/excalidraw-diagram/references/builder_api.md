@@ -146,7 +146,7 @@ when you want the auto-layout inside a generator that also draws things by hand.
 | `s.arrange(items, at, across="x", cell=None, gap=None, connect=False)` | `across`: `"x"` a row, `"y"` a column, an int a grid of that many columns. Default gap 80 / 60 / `(40, 30)` |
 | `s.row(items, at, …)` / `s.column(items, at, …)` / `s.grid(items, at, cols, …)` | `arrange()` with `across` filled in |
 | `s.pipeline(steps, at, gap=80, band=None, font=…, connect=True)` | a horizontal flowchart band on one midline, chained with arrows |
-| `s.enclose(ids, label=None, pad=24, paint=None, caption=None)` | a frame sized around placed nodes — dashed unless `paint` is given → frame id |
+| `s.enclose(ids, label=None, pad=24, paint=None, caption=None)` | a frame sized around placed nodes — dashed unless `paint` is given; the caption goes where no arrow already drawn crosses it, so draw the arrows first → frame id |
 | `s.lane(ids, label, pad=24, paint=None, caption=None)` | a solid frame with a top-left header, one per actor or tool → frame id |
 | `s.align(ids, axis)` / `s.distribute(ids, axis, gap=40)` | move placed nodes (and their labels); `axis`: left/right/center_x/top/bottom/center_y, or `"x"`/`"y"` |
 | **Text and keys** | |
@@ -165,7 +165,7 @@ when you want the auto-layout inside a generator that also draws things by hand.
 | `s.pack(nodes, edges=(), groups=(), at=(40, 0), options=None) → {id: node id}` | the coordinate-free layout; `PackOptions(direction, gap_major, gap_minor, lane_gap, font_size)` |
 | **Inspection and save** | |
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
-| `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean |
+| `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption |
 | `s.save(basename, out_dir=".", gates=None, offline=None) → (excalidraw, html)` | runs the gates and writes both files, once |
 | `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow |
 

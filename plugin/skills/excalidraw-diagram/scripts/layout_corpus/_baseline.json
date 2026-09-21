@@ -8,6 +8,15 @@
   "check_text_overflow": 0,
   "check_text_overlaps": 0
  },
+ "caption_under_fan_out_tb.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
  "complete_k5.json": {
   "check_arrow_crossings": 0,
   "check_arrow_label_fit": 0,
@@ -69,6 +78,15 @@
   "check_overlaps": 0,
   "check_short_arrows": 0,
   "check_text_overflow": 2,
+  "check_text_overlaps": 0
+ },
+ "group_with_outsider_tb.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
   "check_text_overlaps": 0
  },
  "long_labels.json": {

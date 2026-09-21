@@ -108,6 +108,34 @@ def fit_text(text, *, size=14, max_chars=20, min_size=(120, 48)):
     return "\n".join(lines), width, height
 
 
+def free_spans(legs, band, margin=8.0):
+    """The x-intervals of `band` (x, y, w, h) that no segment in `legs` passes
+    through, each leg widened by `margin`, widest first."""
+    bx, by, bw, bh = band
+    blocked = []
+    for (ax, ay), (cx, cy) in legs:
+        if ay == cy:
+            if not by <= ay <= by + bh:
+                continue
+            t0, t1 = 0.0, 1.0
+        else:
+            t0, t1 = sorted(((by - ay) / (cy - ay), (by + bh - ay) / (cy - ay)))
+            t0, t1 = max(t0, 0.0), min(t1, 1.0)
+            if t0 > t1:
+                continue
+        xs = (ax + (cx - ax) * t0, ax + (cx - ax) * t1)
+        blocked.append((min(xs) - margin, max(xs) + margin))
+    spans, cur = [], bx
+    for lo, hi in sorted(blocked):
+        if lo > cur:
+            spans.append((cur, min(lo, bx + bw)))
+        cur = max(cur, hi)
+    if cur < bx + bw:
+        spans.append((cur, bx + bw))
+    return sorted((sp for sp in spans if sp[1] > sp[0]),
+                  key=lambda sp: sp[0] - sp[1])
+
+
 def seg_rect_overlap(p0, p1, rect):
     """Length of the portion of segment p0->p1 that lies inside `rect`
     (x, y, w, h); 0 if it never enters. Liang–Barsky slab clipping."""

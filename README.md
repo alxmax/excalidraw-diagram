@@ -150,7 +150,7 @@ plugin/skills/excalidraw-diagram/
   references/builder_api.md       every call, the graph.json schema
   references/worked_examples.md   the repo-poster recipe and ❌ → ✅ variants
   references/excalidraw_format.md the file-format notes the builder encodes
-  examples/make_*.py        four worked generators, each runnable on its own
+  examples/make_*.py        six worked generators, each runnable on its own
 plugin/.mcp.json            registers the MCP server on install
 requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py, *_graph.json + *.png  what the pictures in this README are built from

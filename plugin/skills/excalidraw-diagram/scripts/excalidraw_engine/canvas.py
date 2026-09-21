@@ -40,6 +40,9 @@ class Canvas(object):
         self._geom = {}           # id -> (x, y, w, h, shape): what arrows attach to
         self._nodes = []          # [(id, x, y, w, h, label)] overlap-checked at save()
         self._containers = set()  # frames + container=True shapes (overlap-exempt)
+        # enclose() frame id -> (the ids it was drawn around, its caption's text id
+        # or None): what lets the checks tell a member from a box that strayed in
+        self._frames = {}
         # abs (min_x, min_y, max_x, max_y) of each routed connector — so bounds()
         # accounts for paths that dip outside the shapes' boxes
         self._path_extents = []
@@ -157,6 +160,18 @@ class Canvas(object):
             else (i, ax, ay, aw, ah, lab)
             for (i, ax, ay, aw, ah, lab) in self._nodes
         ]
+
+    def _segments(self):
+        """[((x0, y0), (x1, y1)), ...]: every leg of every arrow and line drawn
+        so far, in scene coordinates — what a caption must stay clear of."""
+        legs = []
+        for el in self.elements:
+            if el.get("type") not in ("arrow", "line"):
+                continue
+            pts = el.get("points") or []
+            abs_pts = [(el["x"] + px, el["y"] + py) for px, py in pts]
+            legs += list(zip(abs_pts, abs_pts[1:]))
+        return legs
 
     # -- extent and serialisation -----------------------------------------
     def bounds(self):
