@@ -57,7 +57,10 @@ jobs:
             echo "::endgroup::"
           done
           echo "::group::scene --from-json"
-          python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py               scene --from-json docs/repo_graph.json -o "$out"
+          for g in docs/*_graph.json; do
+            python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py \
+              scene --from-json "$g" -o "$out"
+          done
           echo "::endgroup::"
           ls -la "$out"
           test -n "$(ls -A "$out")" || { echo "::error::no diagram was written"; exit 1; }

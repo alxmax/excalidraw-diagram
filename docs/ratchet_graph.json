@@ -1,0 +1,110 @@
+{
+  "name": "layout_ratchet",
+  "title": "How the layout ratchet decides",
+  "subtitle": "Top to bottom. Fourteen graphs written to break the layout are packed on every test run; each of the seven checks is counted and compared with the recorded baseline.",
+  "direction": "TB",
+  "seed": 29,
+  "roles": {
+    "input": "grey",
+    "engine": "blue",
+    "gate": "orange",
+    "pass": "green",
+    "fail": "red"
+  },
+  "nodes": [
+    {
+      "id": "corpus",
+      "label": "layout_corpus/*.json",
+      "fill": "input",
+      "kind": "data"
+    },
+    {
+      "id": "pack",
+      "label": "pack() lays each one out",
+      "fill": "engine"
+    },
+    {
+      "id": "count",
+      "label": "count hits of the seven checks",
+      "fill": "engine"
+    },
+    {
+      "id": "base",
+      "label": "_baseline.json",
+      "fill": "input",
+      "kind": "data"
+    },
+    {
+      "id": "cmp",
+      "label": "any count different?",
+      "fill": "gate",
+      "kind": "decision"
+    },
+    {
+      "id": "ok",
+      "label": "test passes",
+      "fill": "pass",
+      "kind": "terminator"
+    },
+    {
+      "id": "rose",
+      "label": "a count rose: layout regression",
+      "fill": "fail"
+    },
+    {
+      "id": "fell",
+      "label": "a count fell: re-record it",
+      "fill": "pass"
+    }
+  ],
+  "edges": [
+    {
+      "src": "corpus",
+      "dst": "pack"
+    },
+    {
+      "src": "pack",
+      "dst": "count"
+    },
+    {
+      "src": "count",
+      "dst": "cmp"
+    },
+    {
+      "src": "base",
+      "dst": "cmp"
+    },
+    {
+      "src": "cmp",
+      "dst": "ok",
+      "label": "no"
+    },
+    {
+      "src": "cmp",
+      "dst": "rose",
+      "label": "up"
+    },
+    {
+      "src": "cmp",
+      "dst": "fell",
+      "label": "down"
+    },
+    {
+      "src": "fell",
+      "dst": "base",
+      "label": "locks the gain in",
+      "dashed": true
+    }
+  ],
+  "legend": true,
+  "glossary": [
+    [
+      "ratchet",
+      "a count may go down, never up"
+    ],
+    [
+      "the seven checks",
+      "overlap, short arrow, crossing, legend, overflow, text overlap, label fit"
+    ]
+  ]
+}
