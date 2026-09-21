@@ -320,6 +320,8 @@ class _PackRun(object):
         dx, dy, dw, dh, _ = self.scene._geom[ends[1]]
         ls, ld = spans
         out_i, in_i = (ls, ld + 1) if ld <= ls else (ls + 1, ld)
+        if out_i == in_i:       # neighbouring layers: both legs would share one
+            out_i, in_i = (ls + 1, ld) if ld <= ls else (ls, ld + 1)   # channel
         out_c, in_c = channel[out_i] - nudge, channel[in_i] - nudge
         # clear of enclose()'s 24px frame, inside the row gap
         gap = self.opts.gap_minor

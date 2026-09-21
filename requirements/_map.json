@@ -114,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:646"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:652"
         },
         {
           "role": "implements",
@@ -189,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:646"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:652"
         },
         {
           "role": "implements",
@@ -252,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:735"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:741"
         },
         {
           "role": "implements",
@@ -320,7 +320,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1199"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1218"
         },
         {
           "role": "implements",
@@ -513,7 +513,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:853"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:859"
         },
         {
           "role": "implements",
@@ -653,7 +653,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:485"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:491"
         },
         {
           "role": "implements",
@@ -724,7 +724,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1082"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1101"
         },
         {
           "role": "implements",
@@ -859,7 +859,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:874"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:880"
         }
       ],
       "test_exempt": null,
@@ -984,11 +984,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:934"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:940"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:352"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:354"
         }
       ],
       "test_exempt": null,
@@ -1321,7 +1321,7 @@
   "history": [
     {
       "month": "2026-09",
-      "count": 8,
+      "count": 9,
       "first": "2026-09-06",
       "last": "2026-09-21",
       "versions": [
@@ -1332,7 +1332,8 @@
         "v2.1.0",
         "v2.2.0",
         "v2.2.1",
-        "v2.3.0"
+        "v2.3.0",
+        "v2.4.0"
       ],
       "landmark": "v2.0.0",
       "headline": "Breaking: the `Scene` API takes values, not argument lists"
