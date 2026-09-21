@@ -1,5 +1,20 @@
 # Changelog
 
+## plugin `v2.2.1` — 2026-09-21
+
+**A group on the first row no longer fails `scene --from-json`.** The title and subtitle
+sat at a fixed height above `y = 0`, but a group frame that encloses first-row nodes puts
+its label above `y = 0` too, so any description with a subtitle and such a group was
+refused by the `text_overlap` gate. They now sit above the highest thing `pack()` drew.
+
+**A layout ratchet.** `TestLayoutRatchet` packs the fourteen graphs in
+`scripts/layout_corpus/`, which were written to stress the layout (a K5, a 12-way fan-out
+and fan-in, skip edges, shared group members, forced tiny boxes, the case above) and not
+to pass. It counts what each of the seven checks finds and compares that with
+`_baseline.json`: a count that rises fails as a regression, and a count that falls must
+be re-recorded (`EXCALIDRAW_RATCHET_UPDATE=1`) so the gain cannot slip back. The baseline
+is not all zeros, so a change that silences a check shows up too.
+
 ## plugin `v2.2.0` — 2026-09-20
 
 **Mermaid in, without a parser.** `references/mermaid_to_graph.md` says how a Mermaid

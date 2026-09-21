@@ -1,0 +1,108 @@
+{
+ "name": "wide_skip_layers",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "r00",
+   "label": "r00"
+  },
+  {
+   "id": "r01",
+   "label": "r01"
+  },
+  {
+   "id": "r02",
+   "label": "r02"
+  },
+  {
+   "id": "r03",
+   "label": "r03"
+  },
+  {
+   "id": "r10",
+   "label": "r10"
+  },
+  {
+   "id": "r11",
+   "label": "r11"
+  },
+  {
+   "id": "r12",
+   "label": "r12"
+  },
+  {
+   "id": "r13",
+   "label": "r13"
+  },
+  {
+   "id": "r20",
+   "label": "r20"
+  },
+  {
+   "id": "r21",
+   "label": "r21"
+  },
+  {
+   "id": "r22",
+   "label": "r22"
+  },
+  {
+   "id": "r23",
+   "label": "r23"
+  }
+ ],
+ "edges": [
+  {
+   "src": "r00",
+   "dst": "r11"
+  },
+  {
+   "src": "r01",
+   "dst": "r12"
+  },
+  {
+   "src": "r02",
+   "dst": "r13"
+  },
+  {
+   "src": "r03",
+   "dst": "r10"
+  },
+  {
+   "src": "r10",
+   "dst": "r22"
+  },
+  {
+   "src": "r11",
+   "dst": "r23"
+  },
+  {
+   "src": "r12",
+   "dst": "r20"
+  },
+  {
+   "src": "r13",
+   "dst": "r21"
+  },
+  {
+   "src": "r00",
+   "dst": "r23",
+   "label": "skip"
+  },
+  {
+   "src": "r01",
+   "dst": "r22",
+   "label": "skip"
+  },
+  {
+   "src": "r02",
+   "dst": "r21",
+   "label": "skip"
+  },
+  {
+   "src": "r03",
+   "dst": "r20",
+   "label": "skip"
+  }
+ ]
+}

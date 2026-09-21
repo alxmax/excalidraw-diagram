@@ -30,7 +30,7 @@
     },
     "REQ-EXCALIDRAW-850": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_json": "7799e75328cb964aff28e3cbd679e95f9e9358d27e4c85dc9ffbc975d1a1b4f5",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_spec": "eea2b4cb8fc159814143cbe16ba7a9316bf27c0d623174563ee736373db98ec2"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_spec": "350cf1a7cd564098f0bccc2a9a0e9ce7f5eecf3278b6d63b658d4b050739d7fe"
     },
     "REQ-EXCALIDRAW-851": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#PackMixin": "757e40d74b81cd94f94595ba5ccfe9c9f4c6f7c6b2a7248fc4b62d150e2987cf"

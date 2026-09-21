@@ -74,8 +74,8 @@ graph LR
   ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
   ARCH_EXCALIDRAW_033 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_798["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-798"]
-  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_798
+  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_857["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-857"]
+  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_857
   ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
   ARCH_EXCALIDRAW_034 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6

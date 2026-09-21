@@ -1,0 +1,72 @@
+{
+ "name": "disconnected",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "x0",
+   "label": "x0"
+  },
+  {
+   "id": "x1",
+   "label": "x1"
+  },
+  {
+   "id": "x2",
+   "label": "x2"
+  },
+  {
+   "id": "x3",
+   "label": "x3"
+  },
+  {
+   "id": "x4",
+   "label": "x4"
+  },
+  {
+   "id": "x5",
+   "label": "x5"
+  },
+  {
+   "id": "x6",
+   "label": "x6"
+  },
+  {
+   "id": "x7",
+   "label": "x7"
+  },
+  {
+   "id": "x8",
+   "label": "x8"
+  },
+  {
+   "id": "x9",
+   "label": "x9"
+  }
+ ],
+ "edges": [
+  {
+   "src": "x0",
+   "dst": "x1"
+  },
+  {
+   "src": "x1",
+   "dst": "x2"
+  },
+  {
+   "src": "x3",
+   "dst": "x4"
+  },
+  {
+   "src": "x5",
+   "dst": "x6"
+  },
+  {
+   "src": "x6",
+   "dst": "x7"
+  },
+  {
+   "src": "x7",
+   "dst": "x5"
+  }
+ ]
+}

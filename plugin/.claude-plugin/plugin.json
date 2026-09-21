@@ -1,7 +1,7 @@
 {
   "name": "excalidraw-diagram",
   "description": "Generate Excalidraw diagrams (.excalidraw scene files) and a self-contained HTML viewer from a description of a system, flow or architecture. Stdlib-only Python builder with auto-layout and overlap self-checks; no npm, no service, no API key.",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "author": {
     "name": "Schipor Alexandru"
   },

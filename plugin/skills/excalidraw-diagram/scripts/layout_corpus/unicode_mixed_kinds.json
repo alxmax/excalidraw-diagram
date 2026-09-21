@@ -1,0 +1,46 @@
+{
+ "name": "unicode_mixed_kinds",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "u1",
+   "label": "înțelegere și rețea",
+   "kind": "ellipse"
+  },
+  {
+   "id": "u2",
+   "label": "日本語のラベル",
+   "kind": "diamond"
+  },
+  {
+   "id": "u3",
+   "label": "Ωmega → Δelta"
+  },
+  {
+   "id": "u4",
+   "label": "naïve café résumé",
+   "kind": "ellipse"
+  }
+ ],
+ "edges": [
+  {
+   "src": "u1",
+   "dst": "u2",
+   "label": "ține minte"
+  },
+  {
+   "src": "u2",
+   "dst": "u3",
+   "label": "次へ"
+  },
+  {
+   "src": "u3",
+   "dst": "u4"
+  },
+  {
+   "src": "u4",
+   "dst": "u1",
+   "label": "⟲"
+  }
+ ]
+}

@@ -1,0 +1,108 @@
+{
+ "name": "fan_out_12",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "hub",
+   "label": "dispatcher"
+  },
+  {
+   "id": "w0",
+   "label": "worker 0"
+  },
+  {
+   "id": "w1",
+   "label": "worker 1"
+  },
+  {
+   "id": "w2",
+   "label": "worker 2"
+  },
+  {
+   "id": "w3",
+   "label": "worker 3"
+  },
+  {
+   "id": "w4",
+   "label": "worker 4"
+  },
+  {
+   "id": "w5",
+   "label": "worker 5"
+  },
+  {
+   "id": "w6",
+   "label": "worker 6"
+  },
+  {
+   "id": "w7",
+   "label": "worker 7"
+  },
+  {
+   "id": "w8",
+   "label": "worker 8"
+  },
+  {
+   "id": "w9",
+   "label": "worker 9"
+  },
+  {
+   "id": "w10",
+   "label": "worker 10"
+  },
+  {
+   "id": "w11",
+   "label": "worker 11"
+  }
+ ],
+ "edges": [
+  {
+   "src": "hub",
+   "dst": "w0"
+  },
+  {
+   "src": "hub",
+   "dst": "w1"
+  },
+  {
+   "src": "hub",
+   "dst": "w2"
+  },
+  {
+   "src": "hub",
+   "dst": "w3"
+  },
+  {
+   "src": "hub",
+   "dst": "w4"
+  },
+  {
+   "src": "hub",
+   "dst": "w5"
+  },
+  {
+   "src": "hub",
+   "dst": "w6"
+  },
+  {
+   "src": "hub",
+   "dst": "w7"
+  },
+  {
+   "src": "hub",
+   "dst": "w8"
+  },
+  {
+   "src": "hub",
+   "dst": "w9"
+  },
+  {
+   "src": "hub",
+   "dst": "w10"
+  },
+  {
+   "src": "hub",
+   "dst": "w11"
+  }
+ ]
+}

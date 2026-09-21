@@ -107,6 +107,65 @@ def _install_cases():
 _install_cases()
 
 
+class TestLayoutRatchet(unittest.TestCase):
+    """The layout may only get better. Every graph under layout_corpus/ was written
+    to stress pack() — fan-outs, cycles, skip edges, shared group members, forced
+    tiny boxes — not to pass, so some of them have hits. _baseline.json records how
+    many each check finds per graph; a count that rises is a layout regression, and
+    one that falls must be re-recorded so it cannot slip back.
+
+    Re-record: EXCALIDRAW_RATCHET_UPDATE=1 python -X utf8 -m unittest
+    test_excalidraw.TestLayoutRatchet, then review the diff of _baseline.json."""
+
+    CORPUS = os.path.join(HERE, "layout_corpus")
+    BASELINE = os.path.join(CORPUS, "_baseline.json")
+    CHECKS = ("check_overlaps", "check_short_arrows", "check_arrow_crossings",
+              "check_legend_coverage", "check_text_overflow", "check_text_overlaps",
+              "check_arrow_label_fit")
+
+    def _counts(self, path):
+        """{check: hit count} for the scene the description at `path` packs into."""
+        captured = {}
+        with open(path, encoding="utf-8") as fh:
+            spec = json.load(fh)
+        with mock.patch.object(eb.Scene, "save",
+                               lambda scene, *a, **k: captured.setdefault("s", scene)):
+            eb.scene_from_spec(spec, HERE)      # save() is stubbed: nothing is written
+        return {c: len(getattr(captured["s"], c)()) for c in self.CHECKS}
+
+    def _measure(self):
+        paths = sorted(glob.glob(os.path.join(self.CORPUS, "[!_]*.json")))
+        self.assertGreaterEqual(len(paths), 10, "the corpus needs >= 10 graphs")
+        return {os.path.basename(p): self._counts(p) for p in paths}
+
+    def test_no_check_count_rises_over_the_frozen_corpus(self):
+        now = self._measure()
+        if os.environ.get("EXCALIDRAW_RATCHET_UPDATE") == "1":
+            with open(self.BASELINE, "w", encoding="utf-8", newline="\n") as fh:
+                json.dump(now, fh, indent=1, sort_keys=True)
+                fh.write("\n")
+        with open(self.BASELINE, encoding="utf-8") as fh:
+            base = json.load(fh)
+        self.assertEqual(sorted(now), sorted(base),
+                         "corpus and _baseline.json name different graphs; re-record")
+        worse, better = [], []
+        for name in sorted(now):
+            for check in self.CHECKS:
+                was, got = base[name].get(check, 0), now[name][check]
+                row = "%s %s: %d -> %d" % (name, check, was, got)
+                (worse if got > was else better if got < was else []).append(row)
+        self.assertEqual(worse, [], "layout regression (a count rose)")
+        self.assertEqual(better, [], "a count fell: re-record the baseline so the "
+                                     "improvement is locked in")
+
+    def test_the_ratchet_is_not_vacuous(self):
+        # a corpus where every check finds nothing would pass any engine; at least
+        # one graph must keep a check busy, so a change that silences a check shows
+        with open(self.BASELINE, encoding="utf-8") as fh:
+            base = json.load(fh)
+        self.assertGreater(sum(sum(c.values()) for c in base.values()), 0)
+
+
 class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # tested-by: REQ-EXCALIDRAW-847  # tested-by: REQ-EXCALIDRAW-849
     """Unit coverage for the Phase-1 builder helpers (gaps closed after the
     consilium pre-merge review: the example tests prove clean layouts but did

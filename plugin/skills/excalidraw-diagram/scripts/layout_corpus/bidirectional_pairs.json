@@ -1,0 +1,58 @@
+{
+ "name": "bidirectional_pairs",
+ "seed": 7,
+ "nodes": [
+  {
+   "id": "a",
+   "label": "a"
+  },
+  {
+   "id": "b",
+   "label": "b"
+  },
+  {
+   "id": "c",
+   "label": "c"
+  },
+  {
+   "id": "d",
+   "label": "d"
+  }
+ ],
+ "edges": [
+  {
+   "src": "a",
+   "dst": "b",
+   "label": "request"
+  },
+  {
+   "src": "b",
+   "dst": "a",
+   "label": "reply"
+  },
+  {
+   "src": "b",
+   "dst": "c",
+   "label": "query"
+  },
+  {
+   "src": "c",
+   "dst": "b",
+   "label": "rows"
+  },
+  {
+   "src": "a",
+   "dst": "b",
+   "label": "again"
+  },
+  {
+   "src": "c",
+   "dst": "d"
+  },
+  {
+   "src": "d",
+   "dst": "a",
+   "label": "notify"
+  }
+ ]
+}

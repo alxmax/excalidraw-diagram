@@ -55,13 +55,16 @@ def scene_from_spec(spec, out_dir, name=None, offline=None):
     # implements: REQ-EXCALIDRAW-850
     nodes, edges, groups = _checked(spec, "the graph description")
     scene = Scene(seed=spec.get("seed"), roles=spec.get("roles") or {})
-    title, subtitle = spec.get("title"), spec.get("subtitle")
-    if title:
-        scene.title(str(title), (40, -96 if subtitle else -60), font=30)
-    if subtitle:
-        scene.label(str(subtitle), (40, -54), font=Font(14, align="left"))
     scene.pack(nodes, edges, groups=groups, at=(40, 0.0),
                options=PackOptions(direction=str(spec.get("direction", "LR"))))
+    # above whatever pack() drew highest: a group on the first row puts its frame
+    # label above y=0, where a fixed-height subtitle would sit on it
+    top = min(0.0, scene.bounds()[1])
+    title, subtitle = spec.get("title"), spec.get("subtitle")
+    if title:
+        scene.title(str(title), (40, top - (96 if subtitle else 60)), font=30)
+    if subtitle:
+        scene.label(str(subtitle), (40, top - 54), font=Font(14, align="left"))
     # the two decoders sit below the diagram, side by side, clear of every lane
     key_y = scene.bounds()[3] + 70
     if spec.get("legend", bool(spec.get("roles"))) and scene.roles:

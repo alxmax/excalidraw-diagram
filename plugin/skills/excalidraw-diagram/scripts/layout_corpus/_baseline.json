@@ -1,0 +1,128 @@
+{
+ "bidirectional_pairs.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "complete_k5.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "decision_ladder_tb.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "deep_chain_skips_tb.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "disconnected.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "fan_in_12_tb.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "fan_out_12.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "forced_small_boxes.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 2,
+  "check_text_overlaps": 0
+ },
+ "long_labels.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "overlapping_groups.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "ring_with_chords.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "titled_group_on_first_row.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "unicode_mixed_kinds.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ },
+ "wide_skip_layers.json": {
+  "check_arrow_crossings": 0,
+  "check_arrow_label_fit": 0,
+  "check_legend_coverage": 0,
+  "check_overlaps": 0,
+  "check_short_arrows": 0,
+  "check_text_overflow": 0,
+  "check_text_overlaps": 0
+ }
+}

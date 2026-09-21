@@ -1,0 +1,14 @@
+{
+ "name": "titled_group_on_first_row",
+ "title": "A group on the first row, under a title",
+ "subtitle": "Left to right. A subtitle long enough to run across the whole width, directly above the frame of a group that starts on the first row.",
+ "seed": 7,
+ "nodes": [{"id": "in", "label": "fan out"}, {"id": "a", "label": "job a"}, {"id": "b", "label": "job b"},
+           {"id": "c", "label": "job c"}, {"id": "d", "label": "job d"}, {"id": "e", "label": "job e"},
+           {"id": "out", "label": "fan in"}],
+ "edges": [{"src": "in", "dst": "a"}, {"src": "in", "dst": "b"}, {"src": "in", "dst": "c"},
+           {"src": "in", "dst": "d"}, {"src": "in", "dst": "e"}, {"src": "a", "dst": "out"},
+           {"src": "b", "dst": "out"}, {"src": "c", "dst": "out"}, {"src": "d", "dst": "out"},
+           {"src": "e", "dst": "out"}],
+ "groups": [{"label": "the parallel jobs", "members": ["a", "b", "c", "d", "e"]}]
+}
