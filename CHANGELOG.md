@@ -1,5 +1,20 @@
 # Changelog
 
+## plugin `v2.4.1` — 2026-10-03
+
+**A README inside the plugin folder.** The directory listing shows the README that sits
+beside `.claude-plugin/plugin.json`, and until now only the repository root had one. It
+says what the plugin runs, what it writes and that it makes no network call, and it
+records where the vendored renderer comes from and how to reproduce its one edit.
+
+**macOS and Linux without `python`.** The MCP server starts with `python`, which a system
+that ships only `python3` does not have. No single command works on every system, so
+`.mcp.json` is unchanged and both skill contracts now say to run the builder with
+`python3` where there is no `python`. The README explains how to get the MCP tools too.
+
+**A way to send feedback.** `homepage` in the manifest, a Feedback section in the README,
+and two issue forms: something went wrong, and a diagram type you wish it had.
+
 ## plugin `v2.4.0` — 2026-09-21
 
 **Three more diagram types, as worked examples.** No new builder primitive; each

@@ -1337,6 +1337,17 @@
       ],
       "landmark": "v2.0.0",
       "headline": "Breaking: the `Scene` API takes values, not argument lists"
+    },
+    {
+      "month": "2026-10",
+      "count": 1,
+      "first": "2026-10-03",
+      "last": "2026-10-03",
+      "versions": [
+        "v2.4.1"
+      ],
+      "landmark": "v2.4.1",
+      "headline": "A README inside the plugin folder"
     }
   ],
   "commands": [
