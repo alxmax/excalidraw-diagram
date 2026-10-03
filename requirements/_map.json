@@ -114,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:654"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
         },
         {
           "role": "implements",
@@ -189,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:654"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
         },
         {
           "role": "implements",
@@ -252,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:743"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:744"
         },
         {
           "role": "implements",
@@ -320,7 +320,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1220"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1221"
         },
         {
           "role": "implements",
@@ -513,7 +513,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:861"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:862"
         },
         {
           "role": "implements",
@@ -727,7 +727,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1103"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1104"
         },
         {
           "role": "implements",
@@ -858,7 +858,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1300"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1301"
         },
         {
           "role": "implements",
@@ -932,7 +932,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:882"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:883"
         }
       ],
       "test_exempt": null,
@@ -1057,7 +1057,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
         },
         {
           "role": "implements",

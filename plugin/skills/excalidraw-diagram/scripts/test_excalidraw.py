@@ -648,7 +648,8 @@ except AttributeError:
     _STDLIB = {"json", "math", "os", "random", "sys", "time", "re", "io", "typing",
                "itertools", "functools", "collections", "dataclasses", "pathlib",
                "argparse", "subprocess", "tempfile", "unittest", "glob", "runpy",
-               "datetime", "hashlib", "textwrap", "string", "copy", "enum", "base64"}
+               "datetime", "hashlib", "textwrap", "string", "copy", "enum", "base64",
+               "xml"}
 
 
 class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
