@@ -1,0 +1,26 @@
+name: Something went wrong
+description: A diagram came out wrong, a gate refused a scene, or the MCP server did not start
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues on this repository are public. Do not paste a diagram that describes a system you cannot share.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: The request or graph.json that produced it
+      description: A short, invented example is fine.
+      render: json
+  - type: input
+    id: env
+    attributes:
+      label: Operating system, Python version, and where you ran it (Claude Code, Cowork, claude.ai)
+    validations:
+      required: true
