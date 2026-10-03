@@ -37,7 +37,16 @@ Mermaid flowchart translated into an editable scene. Each has a runnable generat
 - **Files it writes.** `build_scene` and `render_html` write `<name>.excalidraw` and
   `<name>.html` into the `out_dir` the caller names. `discover_repo` lists the top-level
   directory and source-file *names* of the repository you point it at, never their
-  contents, and writes a starter generator script only if you give it an output path.
+  contents, and always writes a starter generator script: to the `out_path` you give it,
+  or else to `make_diagram.py` in the server's working directory. It overwrites a file
+  of that name without asking.
+- **Where the server runs.** The MCP server is a local process, so it runs in Claude Code
+  and in Cowork sessions on your computer, not in claude.ai chat.
+- **A starter script looks in the plugin cache.** A script written by `discover_repo`
+  imports the builder from beside itself. If the builder is not there, it lists the
+  directories under `~/.claude/plugins/cache/excalidraw-diagram/` and imports the builder
+  from the newest installed copy of this plugin. It reads no credentials, no file
+  contents and sends nothing.
 - **Network: none.** The builder is Python standard library only. It imports no HTTP
   client, no socket module and no subprocess module, and nothing is installed from PyPI
   or npm. There is no account, no telemetry and no upload.
