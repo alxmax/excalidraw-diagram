@@ -66,6 +66,17 @@ class TestProtocol(unittest.TestCase):
             self.assertEqual(tool["inputSchema"]["type"], "object")
             self.assertFalse(tool["inputSchema"]["additionalProperties"])
 
+    def test_every_tool_declares_all_four_hints(self):  # verifies: REQ-EXCALIDRAW-852#CASE-1
+        tools = {t["name"]: t["annotations"] for t in request("tools/list")["result"]["tools"]}
+        hints = {"readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"}
+        for name, annotations in tools.items():
+            self.assertEqual(set(annotations), hints, name)
+            self.assertTrue(all(isinstance(v, bool) for v in annotations.values()), name)
+            self.assertFalse(annotations["openWorldHint"], name)
+        self.assertTrue(tools["graph_schema"]["readOnlyHint"])
+        for name in ("build_scene", "render_html", "discover_repo"):
+            self.assertFalse(tools[name]["readOnlyHint"], name)
+
     def test_unknown_method(self):  # verifies: REQ-EXCALIDRAW-852#CASE-1
         self.assertEqual(request("resources/list")["error"]["code"], -32601)
 

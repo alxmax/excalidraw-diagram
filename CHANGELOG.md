@@ -1,5 +1,16 @@
 # Changelog
 
+## plugin `v2.4.3` — 2026-10-03
+
+**Tool annotations on the MCP server.** The directory policy asks an MCP server to give
+every tool all of its applicable annotations, and the four tools had none. All four now
+declare `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`.
+`build_scene`, `render_html` and `discover_repo` write files and replace a same-named
+one, so they are destructive and not read-only; `graph_schema` is read-only. All four
+are idempotent, since the same input writes the same bytes, and none is open-world.
+
+**A privacy section in the README**, which the policy asks to be reachable from a link.
+
 ## plugin `v2.4.2` — 2026-10-03
 
 **A listing icon.** The directory asks for a square PNG, and the icon can be set only

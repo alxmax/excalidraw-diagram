@@ -36,7 +36,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#PackMixin": "3c0573475918410b286623f584be542fcee82b29a65e00ec6115ba3af8c6bc2e"
     },
     "REQ-EXCALIDRAW-852": {
-      "plugin/skills/excalidraw-diagram/scripts/mcp_server.py": "36e4750bda9a5a0aabf51d147462a12339675f1ac88d584eec003a54ce18df7d"
+      "plugin/skills/excalidraw-diagram/scripts/mcp_server.py": "ffaaabe1e1f34bc073db9a78c85bb5eed9ea6a2bf1e360466745f6e4634428ef"
     },
     "REQ-EXCALIDRAW-853": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#_item": "e797e1ab89bd77f1b448638eaffc87fa241ef5e7ef2f9cf4dcfd26db25181408",

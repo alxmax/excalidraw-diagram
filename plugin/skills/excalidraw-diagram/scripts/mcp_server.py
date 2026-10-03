@@ -153,6 +153,19 @@ TOOLS = {
         tool_graph_schema),
 }
 
+# MCP tool annotations. Three tools write files and replace a same-named file without
+# asking, so they are destructive; the same input writes the same bytes, so all four are
+# idempotent; none reaches beyond the local machine.
+_WRITES_FILES = {"readOnlyHint": False, "destructiveHint": True,
+                 "idempotentHint": True, "openWorldHint": False}
+ANNOTATIONS = {
+    "build_scene": _WRITES_FILES,
+    "render_html": _WRITES_FILES,
+    "discover_repo": _WRITES_FILES,
+    "graph_schema": {"readOnlyHint": True, "destructiveHint": False,
+                     "idempotentHint": True, "openWorldHint": False},
+}
+
 _JSON_TYPES = {"object": dict, "string": str}
 
 
@@ -204,8 +217,9 @@ def on_ping(_params):
 
 
 def on_tools_list(_params):
-    """List every tool with its input schema."""
-    return {"tools": [{"name": name, "description": desc, "inputSchema": schema}
+    """List every tool with its input schema and annotations."""
+    return {"tools": [{"name": name, "description": desc, "inputSchema": schema,
+                       "annotations": ANNOTATIONS[name]}
                       for name, (desc, schema, _fn) in TOOLS.items()]}
 
 

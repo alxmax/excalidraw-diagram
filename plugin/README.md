@@ -88,6 +88,25 @@ Found a diagram that came out wrong, or one you wish it could draw? Open an issu
 https://github.com/alxmax/excalidraw-diagram/issues, where there is a form for each. Issues are public, so describe the
 shape of the diagram rather than pasting a system you cannot share.
 
+## Privacy
+
+This plugin collects nothing. It has no account, no analytics, no telemetry and no
+logging, and it sends no data to its author or to anyone else.
+
+- **What it keeps.** Only the files you ask it to write: `.excalidraw` and `.html`
+  files, and starter scripts, in the directory you name. It keeps no copy elsewhere and
+  has no retention period: the files stay until you delete them.
+- **What leaves your machine.** Nothing, from the plugin. As with any plugin, what you
+  tell Claude and what the plugin's tools return are part of your conversation with
+  Claude, which Anthropic's own privacy policy covers.
+- **Third parties, only by your own action.** `--cdn` makes a generated page load its
+  renderer from unpkg, which then sees the viewer's IP address and user agent. Dragging
+  a `.excalidraw` file onto excalidraw.com, or using its Share link, live collaboration
+  or Library browser, sends data to Excalidraw's servers under their terms. A scene with
+  an embed element loads that embed from its host. A page this plugin writes does none
+  of these on its own.
+- **Questions.** Open an issue at https://github.com/alxmax/excalidraw-diagram/issues.
+
 ## Requirements
 
 Python 3.9 or newer, standard library only. The bundled MCP server starts with the
