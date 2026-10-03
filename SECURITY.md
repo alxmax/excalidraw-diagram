@@ -7,7 +7,8 @@ choose **Report a vulnerability**. The report reaches the maintainer alone and s
 private until a fix is out.
 
 For anything that is not a vulnerability, open an
-[issue](https://github.com/alxmax/excalidraw-diagram/issues).
+[issue](https://github.com/alxmax/excalidraw-diagram/issues), or write to
+schipor.alexandru123@gmail.com.
 
 ## What this plugin does, for scoping a report
 
