@@ -24,6 +24,7 @@ Every bullet below is binding.
 - CI runs the version check on every push and every pull request, so a mismatch
   cannot be merged.
 - CI fails a pull request that bumps the version without a matching CHANGELOG heading.
+- A release starts with one command that raises all three copies together. [[REQ-RELEASE-857]]
 
 ## Cases
 CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->
@@ -108,4 +109,64 @@ CASE-4 — `--fix` makes them agree instead of failing
 
 **Current implementation**
 - `main()` in `scripts/check_versions.py`.
+- `TestCheckVersions` in `scripts/test_check_versions.py`.
+
+
+--------------------
+
+
+---
+id: REQ-RELEASE-857
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-RELEASE-035]
+---
+
+# check_versions.py --bump: start a release with no copy left behind
+
+## Description
+> A release starts by raising the version, and the three places it is written are
+> exactly where a hand edit goes wrong. `--bump` raises them in one step, so the
+> state it leaves already passes the check.
+
+Every bullet below is binding.
+- `check_versions.py --bump patch|minor|major` raises the version in `plugin.json`
+  and writes the same value to both `marketplace.json` copies.
+- `--bump` changes only the version string in `plugin.json`, leaving its layout and
+  line endings as they were.
+- `--bump` refuses a version that is not X.Y.Z, and changes no file when it does.
+- After a bump, the script reminds the author to add the matching CHANGELOG heading
+  when it is missing.
+
+## Cases
+CASE-1 — `--bump` raises all three copies together
+  Given  `plugin.json` and both `marketplace.json` copies at `2.4.9`
+  When   `check_versions.py --bump minor` runs
+  Then   it exits 0 and all three copies hold `2.5.0`
+  Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed
+
+CASE-2 — `--bump` resets the parts below the one raised
+  Given  all three copies at `2.4.9`
+  When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`
+  Then   the results are `2.4.10`, `2.5.0` and `3.0.0`
+
+CASE-3 — `--bump` refuses a version that is not X.Y.Z
+  Given  all three copies at `2.5`
+  When   `check_versions.py --bump patch` runs
+  Then   it exits 1 and every copy still holds `2.5`
+
+CASE-4 — the CHANGELOG reminder appears only when the heading is missing
+  Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md`
+  When   `check_versions.py --bump patch` runs
+  Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise
+
+## Context
+**Notes**
+- It does not write the CHANGELOG entry: what changed is for the author to say, and CI
+  already fails a pull request whose bump has no matching heading.
+
+**Current implementation**
+- `_bumped()` and the bump branch of `main()` in `scripts/check_versions.py`.
 - `TestCheckVersions` in `scripts/test_check_versions.py`.

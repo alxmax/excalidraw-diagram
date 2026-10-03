@@ -1,7 +1,7 @@
 ---
 generated: 2026-10-03
 engine: 2026-09-15.1
-nodes: 20
+nodes: 21
 edges: 5
 design OOP: 86/100 (19/22 source files without a design candidate)
 ---
@@ -35,6 +35,7 @@ graph LR
     REQ_EXCALIDRAW_856["SVG export, on request<br><small>REQ-EXCALIDRAW-856</small>"]
     REQ_EXCALIDRAW_851["pack(): layering, ordering, and routing what will not go straight<br><small>REQ-EXCALIDRAW-851</small>"]
     REQ_RELEASE_855["check_versions.py: the three copies of the version agree<br><small>REQ-RELEASE-855</small>"]
+    REQ_RELEASE_857["check_versions.py --bump: start a release with no copy left behind<br><small>REQ-RELEASE-857</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
   end
   subgraph sg_misc["misc"]
@@ -98,7 +99,7 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 ```mermaid
 graph LR
   a_ARCH["ARCH<br><small>6 caps</small>"]
-  a_REQ["REQ<br><small>13 caps</small>"]
+  a_REQ["REQ<br><small>14 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 

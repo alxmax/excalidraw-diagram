@@ -8,17 +8,22 @@ reads the marketplace entry, so a bump that misses either place ships a release 
 receives. That is silent: nothing errors, the plugin simply never updates.
 
 Exit 0 when they agree, 1 when they do not. `--fix` rewrites the marketplace manifest from
-plugin.json rather than making the human retype it.
+plugin.json rather than making the human retype it. `--bump patch|minor|major` raises the
+version in plugin.json and writes it to both marketplace copies in one step, so a release
+cannot be started with one of the three places left behind.
 """
 import argparse
 import io
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGIN = os.path.join(ROOT, "plugin", ".claude-plugin", "plugin.json")
 MARKET = os.path.join(ROOT, ".claude-plugin", "marketplace.json")
+CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
+_SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 
 def _load(path):
@@ -32,15 +37,67 @@ def _dump(path, data):
         f.write("\n")
 
 
+def _bumped(version, part):  # implements: REQ-RELEASE-857
+    """`version` (X.Y.Z) with `part` raised and the parts below it reset."""
+    m = _SEMVER.match(str(version))
+    if not m:
+        raise ValueError("plugin.json version %r is not X.Y.Z" % (version,))
+    major, minor, patch = (int(g) for g in m.groups())
+    if part == "major":
+        return "%d.0.0" % (major + 1)
+    if part == "minor":
+        return "%d.%d.0" % (major, minor + 1)
+    return "%d.%d.%d" % (major, minor, patch + 1)
+
+
+def _set_plugin_version(new):
+    """Write `new` into plugin.json by editing the one version string, so the file's
+    layout and line endings are left exactly as they were."""
+    with io.open(PLUGIN, encoding="utf-8", newline="") as f:
+        text = f.read()
+    text, n = re.subn(r'("version"\s*:\s*")[^"]*(")',
+                      lambda m: m.group(1) + new + m.group(2), text, count=1)
+    if n != 1:
+        raise ValueError("plugin.json has no version string to change")
+    with io.open(PLUGIN, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+
+
+def _sync_marketplace(market, version):
+    """Set every version in the marketplace manifest to `version` and save it."""
+    market["version"] = version
+    for p in market.get("plugins", []):
+        p["version"] = version
+    _dump(MARKET, market)
+
+
 def main(argv=None):  # implements: REQ-RELEASE-855
     """Compare (or with --fix, sync) the three version copies; returns the exit code."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--fix", action="store_true",
-                    help="rewrite marketplace.json from plugin.json instead of failing")
+    group = ap.add_mutually_exclusive_group()
+    group.add_argument("--fix", action="store_true",
+                       help="rewrite marketplace.json from plugin.json instead of failing")
+    group.add_argument("--bump", choices=("patch", "minor", "major"),
+                       help="raise the version in plugin.json and in both marketplace copies")
     a = ap.parse_args(argv)
 
     plugin, market = _load(PLUGIN), _load(MARKET)
     want = plugin["version"]
+
+    if a.bump:
+        try:
+            new = _bumped(want, a.bump)
+        except ValueError as exc:
+            print("error: %s" % exc)
+            return 1
+        _set_plugin_version(new)
+        _sync_marketplace(market, new)
+        print("bumped  %s -> %s  (plugin.json and both marketplace copies)" % (want, new))
+        with io.open(CHANGELOG, encoding="utf-8") as f:
+            if "`v%s`" % new not in f.read():
+                print("next    add a `v%s` heading to CHANGELOG.md; CI fails the PR without one"
+                      % new)
+        return 0
 
     # Named so a failure says WHICH copy disagreed, not just that something did.
     found = [("marketplace.json top level", market.get("version"))]
@@ -53,10 +110,7 @@ def main(argv=None):  # implements: REQ-RELEASE-855
         return 0
 
     if a.fix:
-        market["version"] = want
-        for p in market.get("plugins", []):
-            p["version"] = want
-        _dump(MARKET, market)
+        _sync_marketplace(market, want)
         print("fixed  marketplace.json set to '%s'" % want)
         return 0
 
