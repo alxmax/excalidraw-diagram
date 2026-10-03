@@ -29,8 +29,7 @@ SITE_TEMPLATE = """\
       run (nav links, stats band, commands grid, layer model) — never stale.
     • Everything else is AUTHORED prose, preserved across regenerations.
   Self-contained: no CDN, no network. Plain anchor links (no file:// iframes).
-  Diagram is link-only (no builder coupling). Applies the Senate
-  (2026-06-14, MODIFY) blocking conditions.
+  Diagram is link-only (no builder coupling).
   ============================================================================
 -->
 <style>
@@ -308,8 +307,7 @@ from requirement frontmatter</span></pre>
 <footer>
   Prototype of <code>reqmap.py sync --attach</code> · hybrid (engine links + data / authored \
 prose) ·
-  self-contained, no network, no <code>file://</code> iframes · Senate 2026-06-14 verdict \
-<strong>MODIFY</strong> conditions applied.
+  self-contained, no network, no <code>file://</code> iframes.
 </footer>
 </body>
 </html>

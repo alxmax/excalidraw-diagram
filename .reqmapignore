@@ -48,3 +48,6 @@ plugin/skills/excalidraw-diagram/references/**
 # copied verbatim (its README records the sources and versions). It implements nothing
 # of this repo's, and a minified bundle reads to the scanner as an untagged code file.
 plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
+
+# Local-only pictures: untracked, so they promise nothing the repo has to trace.
+docs/local_*.html
