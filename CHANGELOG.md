@@ -1,5 +1,17 @@
 # Changelog
 
+## plugin `v2.4.2` — 2026-10-03
+
+**A listing icon.** The directory asks for a square PNG, and the icon can be set only
+when the plugin is first saved or submitted, so it goes in before the first submission:
+`.claude-plugin/icon.png`, 512 by 512.
+
+**README corrections found while reading the directory policy.** `discover_repo` always
+writes a starter script, to `make_diagram.py` in the server's working directory unless
+given a path, and overwrites a file of that name; the README had said it wrote only when
+given a path. It now also says where the local MCP server runs, and that a generated
+starter script falls back to the plugin cache to find the builder. No code changed.
+
 ## plugin `v2.4.1` — 2026-10-03
 
 **A README inside the plugin folder.** The directory listing shows the README that sits
