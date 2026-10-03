@@ -12,6 +12,9 @@ that ships only `python3` does not have. No single command works on every system
 `.mcp.json` is unchanged and both skill contracts now say to run the builder with
 `python3` where there is no `python`. The README explains how to get the MCP tools too.
 
+**Independence from Excalidraw.** The README now says the plugin is not affiliated with
+Excalidraw, writes its open file format and bundles its MIT-licensed library.
+
 **A way to send feedback.** `homepage` in the manifest, a Feedback section in the README,
 and two issue forms: something went wrong, and a diagram type you wish it had.
 

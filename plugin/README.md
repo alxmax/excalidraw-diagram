@@ -6,6 +6,10 @@ viewer** (`<name>.html`, opens by double-click). You never write coordinates: yo
 nodes, edges and groups, and the builder places them, routes the connectors and checks
 the result for overlaps and crossings before it writes anything.
 
+This plugin is an independent project and is not affiliated with or endorsed by
+Excalidraw. It writes files in Excalidraw's open `.excalidraw` format and bundles the
+MIT-licensed Excalidraw library to render them.
+
 It is built for the case where someone does not understand a system and asks for a
 picture. The output decodes itself: a title, a stated reading direction, a legend for
 every colour and a glossary for every term.
