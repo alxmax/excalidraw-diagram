@@ -46,12 +46,13 @@ def scripts():
     return tuple(out)
 
 
-@functools.lru_cache(maxsize=1)
-def font_faces():
-    """The `@font-face` rules for the vendored fonts, each carrying its woff2 as a
-    data URI. Declared after Excalidraw's own rules so these win the match."""
+@functools.lru_cache(maxsize=4)
+def font_faces(names=FONTS):
+    """The `@font-face` rules for the vendored fonts (or just `names`), each
+    carrying its woff2 as a data URI. Declared after Excalidraw's own rules so these
+    win the match."""
     rules = []
-    for name in FONTS:
+    for name in names:
         with open(os.path.join(_DIR, name), "rb") as f:
             payload = base64.b64encode(f.read()).decode("ascii")
         family, _, weight = name[:-len(".woff2")].partition("-")

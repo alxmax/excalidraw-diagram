@@ -69,10 +69,10 @@ def server_version():
 # --- tools ------------------------------------------------------------------------------
 
 def tool_build_scene(args):
-    """Build a scene from a graph description; return both written paths."""
-    scene_path, html_path = eb.scene_from_spec(
-        args["graph"], os.path.abspath(args["out_dir"]), args.get("name"))
-    return "wrote %s\nwrote %s" % (os.path.abspath(scene_path), os.path.abspath(html_path))
+    """Build a scene from a graph description; return every written path."""
+    paths = eb.scene_from_spec(args["graph"], os.path.abspath(args["out_dir"]),
+                               args.get("name"), svg=bool(args.get("svg")))
+    return "\n".join("wrote %s" % os.path.abspath(p) for p in paths)
 
 
 def tool_render_html(args):
@@ -125,12 +125,14 @@ TOOLS = {
     "build_scene": (
         "Build an Excalidraw diagram from a coordinate-free graph description (see "
         "graph_schema): auto-layout, readability gates at error level, then write "
-        "<name>.excalidraw and <name>.html into out_dir. A failed gate is a tool error."
-        + _CWD_NOTE,
+        "<name>.excalidraw and <name>.html (and <name>.svg when svg is true) into "
+        "out_dir. A failed gate is a tool error." + _CWD_NOTE,
         _schema({"graph": {"type": "object",
                            "description": "The graph description: nodes, edges, ..."},
-                 "out_dir": _str("Directory to write the two files into."),
-                 "name": _str("Output basename (default: graph.name).")},
+                 "out_dir": _str("Directory to write the files into."),
+                 "name": _str("Output basename (default: graph.name)."),
+                 "svg": {"type": "boolean",
+                         "description": "Also write <name>.svg (default: false)."}},
                 ("graph", "out_dir")),
         tool_build_scene),
     "render_html": (
@@ -166,7 +168,7 @@ ANNOTATIONS = {
                      "idempotentHint": True, "openWorldHint": False},
 }
 
-_JSON_TYPES = {"object": dict, "string": str}
+_JSON_TYPES = {"object": dict, "string": str, "boolean": bool}
 
 
 def validate_arguments(schema, args):

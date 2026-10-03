@@ -2,7 +2,8 @@
 
 Describe a system, a flow or an architecture, and get back an **editable Excalidraw
 scene** (`<name>.excalidraw`, imports into excalidraw.com) and a **self-contained HTML
-viewer** (`<name>.html`, opens by double-click). You never write coordinates: you name
+viewer** (`<name>.html`, opens by double-click), and a standalone `<name>.svg` when you
+ask for one. You never write coordinates: you name
 nodes, edges and groups, and the builder places them, routes the connectors and checks
 the result for overlaps and crossings before it writes anything.
 
@@ -34,8 +35,9 @@ Mermaid flowchart translated into an editable scene. Each has a runnable generat
   It speaks JSON-RPC over stdio, a pipe between two local processes, and listens on no
   port. It exposes four tools: `build_scene`, `render_html`, `discover_repo` and
   `graph_schema`.
-- **Files it writes.** `build_scene` and `render_html` write `<name>.excalidraw` and
-  `<name>.html` into the `out_dir` the caller names. `discover_repo` lists the top-level
+- **Files it writes.** `build_scene` writes `<name>.excalidraw` and `<name>.html`, and
+  `<name>.svg` when asked, into the `out_dir` the caller names. `render_html` writes
+  `<name>.html`. `discover_repo` lists the top-level
   directory and source-file *names* of the repository you point it at, never their
   contents, and always writes a starter generator script: to the `out_path` you give it,
   or else to `make_diagram.py` in the server's working directory. It overwrites a file
@@ -93,7 +95,7 @@ shape of the diagram rather than pasting a system you cannot share.
 This plugin collects nothing. It has no account, no analytics, no telemetry and no
 logging, and it sends no data to its author or to anyone else.
 
-- **What it keeps.** Only the files you ask it to write: `.excalidraw` and `.html`
+- **What it keeps.** Only the files you ask it to write: `.excalidraw`, `.html` and `.svg`
   files, and starter scripts, in the directory you name. It keeps no copy elsewhere and
   has no retention period: the files stay until you delete them.
 - **What leaves your machine.** Nothing, from the plugin. As with any plugin, what you

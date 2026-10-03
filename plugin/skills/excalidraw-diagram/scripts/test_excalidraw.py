@@ -4,6 +4,7 @@
 # tested-by: ARCH-EXCALIDRAW-032
 # tested-by: ARCH-EXCALIDRAW-034
 # tested-by: ARCH-EXCALIDRAW-033
+# tested-by: REQ-EXCALIDRAW-856
 """Regression gate for the excalidraw-diagram skill.
 
 This is the operational definition of "professional / understandable" for a
@@ -26,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1293,6 +1295,95 @@ class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
         page = html_page("demo", scene, offline=False)
         self.assertIn("__RUNTIME__", page)
         self.assertEqual(page.count("excalidraw.production.min.js"), 1)
+
+
+class CasesSvgExport(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-856
+    """SVG export, on request: opt-in, well-formed, deterministic, self-contained."""
+
+    BUILDER = os.path.join(HERE, "excalidraw_builder.py")
+
+    @staticmethod
+    def _scene(typeface="normal", labels=("Client", "API")):
+        s = eb.Scene(seed=5, typeface=typeface)
+        a = s.box(labels[0], (0, 0), paint="blue")
+        b = s.box(labels[1], (300, 0), shape="diamond")
+        s.arrow(a, b, label="go")
+        return s
+
+    def _run(self, *args):
+        return subprocess.run([sys.executable, "-X", "utf8", self.BUILDER] + list(args),
+                              capture_output=True, text=True)
+
+    def test_save_writes_the_svg_only_when_asked(self):  # verifies: REQ-EXCALIDRAW-856#CASE-1
+        with tempfile.TemporaryDirectory() as d:
+            three = self._scene().save("on", d, svg=True)
+            two = self._scene().save("off", d)
+            self.assertEqual(len(three), 3)
+            self.assertTrue(three[2].endswith("on.svg") and os.path.exists(three[2]))
+            self.assertEqual(len(two), 2)
+            self.assertFalse(os.path.exists(os.path.join(d, "off.svg")))
+
+    def test_the_svg_is_well_formed_and_carries_every_label(self):  # verifies: REQ-EXCALIDRAW-856#CASE-2
+        scene = self._scene(labels=("a < b & c", 'say "hi" <go>')).to_dict()
+        root = ET.fromstring(eb.scene_svg(scene))
+        self.assertTrue(root.tag.endswith("svg"))
+        text = "".join(root.itertext())
+        labels = [e["text"] for e in scene["elements"] if e["type"] == "text"]
+        self.assertGreaterEqual(len(labels), 3)
+        for label in labels:
+            self.assertIn(label, text)
+
+    def test_every_shape_is_drawn(self):  # verifies: REQ-EXCALIDRAW-856#CASE-2
+        scene = self._scene().to_dict()
+        root = ET.fromstring(eb.scene_svg(scene))
+        tags = [el.tag.split("}")[-1] for el in root.iter()]
+        self.assertGreaterEqual(tags.count("rect"), 2)       # the box and the background
+        self.assertEqual(tags.count("polygon"), 1)           # the diamond
+        self.assertEqual(tags.count("polyline"), 2)          # the arrow and its head
+
+    def test_the_same_scene_gives_the_same_bytes(self):  # verifies: REQ-EXCALIDRAW-856#CASE-3
+        first = eb.scene_svg(self._scene().to_dict())
+        second = eb.scene_svg(self._scene().to_dict())
+        self.assertEqual(first, second)
+
+    def test_render_and_the_scene_verb_take_svg(self):  # verifies: REQ-EXCALIDRAW-856#CASE-4
+        with tempfile.TemporaryDirectory() as d:
+            spec = os.path.join(d, "graph.json")
+            with open(spec, "w", encoding="utf-8") as fh:
+                json.dump(CasesExcalidrawSceneVerb.GRAPH, fh)
+            done = self._run("scene", "--from-json", spec, "-o", d, "--svg")
+            self.assertEqual(done.returncode, 0, done.stderr)
+            svg = os.path.join(d, "from_json.svg")
+            self.assertTrue(os.path.exists(svg))
+            os.remove(svg)
+            done = self._run("render", os.path.join(d, "from_json.excalidraw"), "--svg")
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertTrue(os.path.exists(svg))
+
+    def test_render_svg_refuses_a_file_that_is_not_a_scene(self):  # verifies: REQ-EXCALIDRAW-856#CASE-4
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "not_a_scene.excalidraw")
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("[1, 2]")
+            with self.assertRaises(ValueError):
+                eb.render_svg(path)
+            self.assertFalse(os.path.exists(os.path.join(d, "not_a_scene.svg")))
+
+    def test_typefaces_are_embedded_only_where_used(self):  # verifies: REQ-EXCALIDRAW-856#CASE-5
+        hand = eb.scene_svg(self._scene("hand").to_dict())
+        plain = eb.scene_svg(self._scene().to_dict())
+        self.assertIn("@font-face", hand)
+        self.assertIn("Virgil", hand)
+        self.assertNotIn("@font-face", plain)
+
+    def test_a_label_on_an_arrow_sits_on_a_patch_of_background(self):  # verifies: REQ-EXCALIDRAW-856#CASE-2
+        scene = self._scene().to_dict()
+        svg = eb.scene_svg(scene)
+        root = ET.fromstring(svg)
+        kids = list(root)
+        at = next(i for i, el in enumerate(kids) if el.tag.endswith("text")
+                  and "".join(el.itertext()) == "go")
+        self.assertTrue(kids[at - 1].tag.endswith("rect"))
 
 
 if __name__ == "__main__":

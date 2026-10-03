@@ -45,12 +45,12 @@ def _checked(spec, where):
     return nodes, edges, groups
 
 
-def scene_from_spec(spec, out_dir, name=None, offline=None):
+def scene_from_spec(spec, out_dir, name=None, offline=None, svg=False):
     """Build and save a scene from a graph description held in memory.
 
     `name` overrides the description's own "name", `offline` the viewer's
-    renderer (see `html_page`). Saves with every gate at "error" and returns the
-    (.excalidraw, .html) paths. Raises ValueError on a malformed description or a
+    renderer (see `html_page`), and `svg=True` also writes the .svg. Saves with every
+    gate at "error" and returns the (.excalidraw, .html) paths, plus the .svg's. Raises ValueError on a malformed description or a
     failed gate."""
     # implements: REQ-EXCALIDRAW-850
     nodes, edges, groups = _checked(spec, "the graph description")
@@ -73,13 +73,14 @@ def scene_from_spec(spec, out_dir, name=None, offline=None):
     if entries:
         scene.glossary(entries, (460, key_y))
     return scene.save(str(name or spec.get("name") or "diagram"), out_dir,
-                      gates=Gates.strict(), offline=offline)
+                      gates=Gates.strict(), offline=offline, svg=svg)
 
 
-def scene_from_json(spec_path, out_dir=None, offline=None):
+def scene_from_json(spec_path, out_dir=None, offline=None, svg=False):
     """Build and save a scene from a graph description file. The output name is
     the description's "name", else the file's stem; the output directory defaults
-    to the file's own. Returns the (.excalidraw, .html) paths."""
+    to the file's own. Returns the (.excalidraw, .html) paths, plus the .svg's when
+    `svg=True`."""
     # implements: REQ-EXCALIDRAW-850
     with open(spec_path, encoding="utf-8") as fh:
         try:
@@ -89,4 +90,4 @@ def scene_from_json(spec_path, out_dir=None, offline=None):
     _checked(spec, spec_path)
     stem = os.path.splitext(os.path.basename(spec_path))[0]
     return scene_from_spec(spec, out_dir or os.path.dirname(spec_path) or ".",
-                           name=spec.get("name") or stem, offline=offline)
+                           name=spec.get("name") or stem, offline=offline, svg=svg)

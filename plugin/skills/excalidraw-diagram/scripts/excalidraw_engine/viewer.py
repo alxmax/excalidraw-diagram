@@ -148,6 +148,20 @@ def html_page(title, scene, offline=None):
                   _HTML_TEMPLATE)
 
 
+def load_scene(scene_path):
+    """The scene dict an .excalidraw file holds. Raises ValueError if the file is not
+    a valid Excalidraw scene (a JSON object carrying an 'elements' list of element
+    objects), and JSONDecodeError, a ValueError too, on bad JSON."""
+    with open(scene_path, encoding="utf-8") as f:
+        scene = json.load(f)
+    elements = scene.get("elements") if isinstance(scene, dict) else None
+    if not isinstance(scene, dict) or not isinstance(elements, list)             or not all(isinstance(e, dict) for e in elements):
+        raise ValueError(
+            f"{scene_path}: not a valid Excalidraw scene "
+            "(expected a JSON object with an 'elements' list of element objects)")
+    return scene
+
+
 def render_html(scene_path, out_dir=None, offline=None):
     # implements: REQ-EXCALIDRAW-848
     """Regenerate the self-contained .html viewer from an existing .excalidraw
@@ -157,14 +171,7 @@ def render_html(scene_path, out_dir=None, offline=None):
     unless told otherwise. Returns the .html path. Raises ValueError if the file is
     not a valid Excalidraw scene (a JSON object carrying an 'elements' list of
     element objects)."""
-    with open(scene_path, encoding="utf-8") as f:
-        scene = json.load(f)                      # JSONDecodeError (a ValueError) on bad JSON
-    elements = scene.get("elements") if isinstance(scene, dict) else None
-    if not isinstance(scene, dict) or not isinstance(elements, list) \
-            or not all(isinstance(e, dict) for e in elements):
-        raise ValueError(
-            f"{scene_path}: not a valid Excalidraw scene "
-            "(expected a JSON object with an 'elements' list of element objects)")
+    scene = load_scene(scene_path)
     base = os.path.splitext(os.path.basename(scene_path))[0]
     out_dir = out_dir or (os.path.dirname(os.path.abspath(scene_path)))
     os.makedirs(out_dir, exist_ok=True)

@@ -166,7 +166,7 @@ when you want the auto-layout inside a generator that also draws things by hand.
 | **Inspection and save** | |
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
 | `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption |
-| `s.save(basename, out_dir=".", gates=None, offline=None) → (excalidraw, html)` | runs the gates and writes both files, once |
+| `s.save(basename, out_dir=".", gates=None, offline=None, svg=False) → (excalidraw, html[, svg])` | runs the gates and writes both files, once; `svg=True` also writes `<basename>.svg` and returns it third |
 | `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow |
 
 **Gates.** `Gates(advisory="warn", hard="error", **per_gate)` sets each gate to
@@ -182,6 +182,13 @@ that loads the same pinned build from unpkg — smaller, but it needs a connecti
 tells unpkg who is opening it. `EXCALIDRAW_DIAGRAM_OFFLINE=0` flips the default for a
 whole run. The lazily imported `vendor-*.js` chunk is deliberately not vendored, so the
 Mermaid-to-Excalidraw dialog is the one thing an offline page cannot open.
+
+**The SVG.** `save(svg=True)`, `scene --svg`, `render --svg` and `build_scene(svg=true)` also write
+`<name>.svg`, drawn from the scene's elements alone by `scene_svg(scene)` / `render_svg(path)`.
+Lines are clean, not hand-drawn (the rough outlines are Excalidraw's own renderer), and the
+hand-drawn and code typefaces are embedded from the vendored fonts, so a browser shows them;
+another SVG reader may fall back to a system font. There is no PNG: the standard library
+cannot rasterise that text.
 
 **Items.** An `arrange()` item is `"text"`, a `(text, paint)` pair, or a dict with
 `box()`'s option names: `text`, `size` (a `(w, h)` pair), `paint`, `font`, `shape`,
@@ -202,7 +209,7 @@ you have already placed.
 ## MCP tools
 
 `scripts/mcp_server.py` (registered by the plugin's `.mcp.json`) offers the entry
-points to an MCP client over stdio: `build_scene(graph, out_dir, name?)`,
+points to an MCP client over stdio: `build_scene(graph, out_dir, name?, svg?)`,
 `render_html(scene_path, out_dir?)`, `discover_repo(repo, out_path?)`, and
 `graph_schema()`, which returns the `jsonc` block above. A failed gate comes back as
 a tool error carrying the gate's message.
