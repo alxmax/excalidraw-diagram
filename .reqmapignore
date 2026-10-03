@@ -49,7 +49,5 @@ plugin/skills/excalidraw-diagram/references/**
 # of this repo's, and a minified bundle reads to the scanner as an untagged code file.
 plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
 
-# Senate deliberation posters. They record one run each and are gitignored, so they are
-# not part of what the repo promises; the bundles in the Senate corpus are their source.
-docs/senate_*.html
-docs/make_senate_*.py
+# Local-only pictures: untracked, so they promise nothing the repo has to trace.
+docs/local_*.html

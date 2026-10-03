@@ -175,7 +175,7 @@ def orphan_code_files(code_root, covered, reqs_dir=None):
     `covered` is the rel-path set already linked (membership tags + `verifies:`
     coverage), derived from the caller's existing scans so this adds no second tag
     scan. Walk discipline matches scan_members: honors `.reqmapignore`, prunes noise.
-    Warn-only at ANY flag combination (the ARCH-COVERAGE-029 Senate audit capped
+    Warn-only at ANY flag combination (ARCH-COVERAGE-029 caps
     coverage signals at advisory — a hard gate makes hollow tags the way to pass CI)."""
     out = []
     for fp, rel in _walk_files(code_root, reqs_dir,

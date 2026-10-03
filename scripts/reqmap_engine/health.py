@@ -17,7 +17,7 @@ def _link_sync_errors(reqs, members):  # implements: ARCH-HEALTH-017  # implemen
     """`gate`'s ERROR-level link-sync problems (dangling tags, enforced requirements
     with no `implements:` member) as message strings, for `health` — the same two
     rules the gate runs (RM001, RM006), read from the registry so the two commands
-    cannot drift apart again (RM-6 / Senate run reqmap-health-gate-cleanliness)."""
+    cannot drift apart again (RM-6)."""
     # Imported here, not at the top: the gate's map-freshness rule embeds this
     # record (mapcmd -> health), and health runs two gate rules — mutual by design.
     from . import rules  # noqa: F401 - registers RM001/RM006 in GATE_RULES
@@ -353,7 +353,7 @@ def cmd_health(ws, as_json=False, as_badge=False, headline_only=False):
     the count of `gate`'s own ERROR-level link-sync problems (dangling tags,
     enforced-status requirements with no `implements:` member), so a 100/100
     reading here can no longer coexist with an unseen `gate` failure — see
-    RM-6 (Senate run reqmap-health-gate-cleanliness). This does NOT detect a
+    RM-6. This does NOT detect a
     value changed with no tag at all; that class of drift needs a sourced/
     `validated-against:` convention on the changed file, which is out of
     scope for this signal."""
