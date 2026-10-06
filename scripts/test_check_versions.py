@@ -30,19 +30,33 @@ def _write(path, data):
         json.dump(data, f, indent=2)
 
 
-class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # tested-by: REQ-RELEASE-855
+class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # tested-by: REQ-RELEASE-855  # tested-by: REQ-RELEASE-857
     """Every case of ARCH-RELEASE-035, against a throwaway pair of manifests."""
 
     def setUp(self):
-        self._saved = (cv.PLUGIN, cv.MARKET)
+        self._saved = (cv.PLUGIN, cv.MARKET, cv.CHANGELOG)
         self._tmp = tempfile.TemporaryDirectory()
         root = self._tmp.name
         cv.PLUGIN = os.path.join(root, "plugin", ".claude-plugin", "plugin.json")
         cv.MARKET = os.path.join(root, ".claude-plugin", "marketplace.json")
+        cv.CHANGELOG = os.path.join(root, "CHANGELOG.md")
+        self._changelog("# Changelog\n")
 
     def tearDown(self):
-        cv.PLUGIN, cv.MARKET = self._saved
+        cv.PLUGIN, cv.MARKET, cv.CHANGELOG = self._saved
         self._tmp.cleanup()
+
+    def _changelog(self, text):
+        with io.open(cv.CHANGELOG, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+
+    def _versions(self):
+        """The three copies as (plugin, top level, plugins[0])."""
+        with io.open(cv.PLUGIN, encoding="utf-8") as f:
+            plugin = json.load(f)["version"]
+        with io.open(cv.MARKET, encoding="utf-8") as f:
+            market = json.load(f)
+        return plugin, market["version"], market["plugins"][0]["version"]
 
     def _manifests(self, plugin_v, top_v, entry_v):
         _write(cv.PLUGIN, {"name": "excalidraw-diagram", "version": plugin_v})
@@ -92,10 +106,51 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
         self.assertEqual(market["version"], "2.0.0")
         self.assertEqual(market["plugins"][0]["version"], "2.0.0")
 
+    def test_bump_raises_all_three_copies_together(self):  # verifies: REQ-RELEASE-857#CASE-1
+        self._manifests("2.4.9", "2.4.9", "2.4.9")
+        code, out = self._run("--bump", "minor")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self._versions(), ("2.5.0",) * 3)
+        code, out = self._run()
+        self.assertEqual(code, 0, out)
+
+    def test_bump_resets_the_parts_below_the_one_raised(self):  # verifies: REQ-RELEASE-857#CASE-2
+        for part, want in (("patch", "2.4.10"), ("minor", "2.5.0"), ("major", "3.0.0")):
+            self._manifests("2.4.9", "2.4.9", "2.4.9")
+            code, out = self._run("--bump", part)
+            self.assertEqual(code, 0, out)
+            self.assertEqual(self._versions(), (want,) * 3, part)
+
+    def test_bump_changes_only_the_version_string(self):  # verifies: REQ-RELEASE-857#CASE-1
+        self._manifests("1.0.0", "1.0.0", "1.0.0")
+        before = '{\n    "name": "x",\n    "version": "%s",\n    "keywords": ["a"]\n}\n'
+        with io.open(cv.PLUGIN, "w", encoding="utf-8", newline="") as f:
+            f.write(before % "1.0.0")
+        self._run("--bump", "patch")
+        with io.open(cv.PLUGIN, encoding="utf-8", newline="") as f:
+            self.assertEqual(f.read(), before % "1.0.1")
+
+    def test_bump_refuses_a_version_that_is_not_x_y_z(self):  # verifies: REQ-RELEASE-857#CASE-3
+        self._manifests("2.5", "2.5", "2.5")
+        code, out = self._run("--bump", "patch")
+        self.assertEqual(code, 1)
+        self.assertIn("2.5", out)
+        self.assertEqual(self._versions(), ("2.5",) * 3)
+
+    def test_bump_reminds_about_the_changelog_only_when_the_heading_is_missing(self):  # verifies: REQ-RELEASE-857#CASE-4
+        self._manifests("1.0.0", "1.0.0", "1.0.0")
+        _, out = self._run("--bump", "patch")
+        self.assertIn("CHANGELOG.md", out)
+        self.assertIn("`v1.0.1`", out)
+        self._manifests("1.0.0", "1.0.0", "1.0.0")
+        self._changelog("# Changelog\n\n## plugin `v1.0.1` - today\n")
+        _, out = self._run("--bump", "patch")
+        self.assertNotIn("CHANGELOG.md", out)
+
     def test_the_real_manifests_agree(self):  # verifies: REQ-RELEASE-855#CASE-1
         # not a fixture: the repo's own manifests, so a bump that misses a copy
         # fails here as well as in the CI job that runs the script directly
-        cv.PLUGIN, cv.MARKET = self._saved
+        cv.PLUGIN, cv.MARKET, cv.CHANGELOG = self._saved
         code, out = self._run()
         self.assertEqual(code, 0, out)
 

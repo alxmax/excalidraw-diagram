@@ -17,6 +17,7 @@ the examples and every generated stub use; this package is how it is organised.
     scene       Scene, assembled from the above
     assets      the vendored Excalidraw runtime the offline viewer inlines
     viewer      the HTML viewer and render_html()
+    svg         the scene as a standalone SVG: scene_svg(), render_svg()
     discover    discover_stub()
     spec        scene_from_spec() / scene_from_json()
     cli         the command line
@@ -29,10 +30,11 @@ from .pack import PackOptions
 from .scene import Scene
 from .spec import scene_from_json, scene_from_spec
 from .style import DASHED, FILL, STROKE, Font, Paint
+from .svg import render_svg, scene_svg
 from .viewer import html_page, render_html
 
 __all__ = [
     "DASHED", "FILL", "Font", "Gates", "PackOptions", "Paint", "Rect", "STROKE", "Scene",
     "discover_components", "discover_stub", "fit_text", "html_page", "render_html",
-    "render_stub", "scene_from_json", "scene_from_spec",
+    "render_stub", "render_svg", "scene_from_json", "scene_from_spec", "scene_svg",
 ]

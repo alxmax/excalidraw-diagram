@@ -114,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:652"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
         },
         {
           "role": "implements",
@@ -189,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:652"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
         },
         {
           "role": "implements",
@@ -201,7 +201,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
         }
       ],
       "test_exempt": null,
@@ -252,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:741"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:744"
         },
         {
           "role": "implements",
@@ -320,7 +320,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1218"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1221"
         },
         {
           "role": "implements",
@@ -443,7 +443,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:169"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
         },
         {
           "role": "implements",
@@ -459,7 +459,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:92"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
         }
       ],
       "test_exempt": null,
@@ -509,11 +509,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:169"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:859"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:862"
         },
         {
           "role": "implements",
@@ -533,7 +533,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:93"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:95"
         }
       ],
       "test_exempt": null,
@@ -554,7 +554,8 @@
       "contract": [
         "The CLI exposes four verbs, each a single unambiguous entry point: no-arg runs the CI smoke test, `render` rebuilds a viewer HTML from an existing `.excalidraw` file, and `discover` scaffolds a generator stub from a repo. Any other verb exits 2 with usage. [[REQ-EXCALIDRAW-848]]",
         "`scene --from-json <graph.json>` lays out a coordinate-free graph description and writes both output files, so a caller gets a diagram without writing Python. [[REQ-EXCALIDRAW-850]]",
-        "An MCP server offers the same entry points as tools to an assistant, so no client has to shell out to the CLI. [[REQ-EXCALIDRAW-852]]"
+        "An MCP server offers the same entry points as tools to an assistant, so no client has to shell out to the CLI. [[REQ-EXCALIDRAW-852]]",
+        "A scene can also be written as a standalone `<name>.svg`, on request, from `save()`, the CLI and the MCP tool, so a diagram can go into a document or a slide. [[REQ-EXCALIDRAW-856]]"
       ],
       "verify": [],
       "notes": [
@@ -564,6 +565,7 @@
       ],
       "current_impl": [
         "`main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html` (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).",
+        "`svg.py` beside it for the SVG a caller can ask for.",
         "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.",
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class, and `CasesExcalidrawSceneVerb` for the `scene` verb).",
         "-------------------"
@@ -593,7 +595,8 @@
       "satisfied_by": [
         "REQ-EXCALIDRAW-848",
         "REQ-EXCALIDRAW-850",
-        "REQ-EXCALIDRAW-852"
+        "REQ-EXCALIDRAW-852",
+        "REQ-EXCALIDRAW-856"
       ],
       "members": [
         {
@@ -653,11 +656,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:491"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:493"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:92"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:105"
         },
         {
           "role": "implements",
@@ -669,7 +672,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:152"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:166"
         }
       ],
       "test_exempt": null,
@@ -724,7 +727,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1101"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1104"
         },
         {
           "role": "implements",
@@ -732,7 +735,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:83"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:84"
         }
       ],
       "test_exempt": null,
@@ -765,7 +768,8 @@
       ],
       "current_impl": [
         "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
+        "`plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.",
+        "-------------------"
       ],
       "acc": [
         "CASE-1 — — the handshake and the tool list Given  a client that sends `initialize`, the `initialized` notification and `tools/list` When   the server handles them Then   it answers the request with its capabilities, sends nothing for the notification, and lists exactly the four tools",
@@ -794,6 +798,75 @@
         {
           "role": "tested-by",
           "loc": "plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 6,
+      "covered": 6
+    },
+    {
+      "id": "REQ-EXCALIDRAW-856",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "SVG export, on request",
+      "intent": "A diagram often has to go into a document or a slide, where a viewer page does not fit. An SVG is plain text that every browser and most editors open. It is opt-in, so the two-file output that existing callers rely on does not change.",
+      "contract": [
+        "`Scene.save(..., svg=True)` also writes `<basename>.svg` and returns its path as a third value. Without `svg=True`, `save()` writes and returns exactly two files.",
+        "`scene --from-json` and `render` accept `--svg`, and the MCP tool `build_scene` accepts `svg: true`, to write the same file.",
+        "The SVG is drawn from the scene's elements alone, so it also works on a scene edited elsewhere. The same scene gives the same text on every run.",
+        "Lines are drawn clean, not hand-drawn. The hand-drawn and code typefaces are embedded from the vendored fonts, so a browser shows them.",
+        "The SVG is well-formed XML, whatever characters a label holds."
+      ],
+      "verify": [],
+      "notes": [
+        "Lines come out clean because the rough outlines belong to Excalidraw's own renderer; writing them here would be a second implementation of it.",
+        "A PNG is not offered: rasterising text in the hand-drawn typeface needs a font rasteriser, which the standard library does not have."
+      ],
+      "current_impl": [
+        "`scene_svg` and `render_svg` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.",
+        "`save(svg=True)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.",
+        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
+      ],
+      "acc": [
+        "CASE-1 — — save writes the SVG only when asked Given  two identical scenes When   one is saved with `svg=True` and the other without Then   the first returns three paths including a `.svg` Then   the second returns two paths and writes no `.svg`",
+        "CASE-2 — — the SVG is well-formed and carries every label Given  a scene whose labels hold `<`, `&` and quotes When   it is saved with `svg=True` Then   the SVG parses as XML, and every label's text appears in it",
+        "CASE-3 — — the same scene gives the same bytes Given  a scene built with a fixed seed When   it is rendered to SVG twice Then   the two documents are identical",
+        "CASE-4 — — render and the scene verb take --svg Given  an existing `.excalidraw` file and a graph description file When   `render <scene> --svg` and `scene --from-json <graph> --svg` run Then   each writes a `.svg` beside its other output",
+        "CASE-5 — — typefaces are embedded only where used Given  one scene in the hand-drawn typeface and one in the default typeface When   both are rendered to SVG Then   the first carries an embedded `@font-face` and the second carries none",
+        "CASE-6 — — the MCP tool takes the option Given  a three-node graph description and an output directory When   `build_scene` runs with `svg: true` Then   the `.svg` exists and its path is in the result"
+      ],
+      "accept": "CASE-1 — save writes the SVG only when asked\n  Given  two identical scenes\n  When   one is saved with `svg=True` and the other without\n  Then   the first returns three paths including a `.svg`\n  Then   the second returns two paths and writes no `.svg`\n\nCASE-2 — the SVG is well-formed and carries every label\n  Given  a scene whose labels hold `<`, `&` and quotes\n  When   it is saved with `svg=True`\n  Then   the SVG parses as XML, and every label's text appears in it\n\nCASE-3 — the same scene gives the same bytes\n  Given  a scene built with a fixed seed\n  When   it is rendered to SVG twice\n  Then   the two documents are identical\n\nCASE-4 — render and the scene verb take --svg\n  Given  an existing `.excalidraw` file and a graph description file\n  When   `render <scene> --svg` and `scene --from-json <graph> --svg` run\n  Then   each writes a `.svg` beside its other output\n\nCASE-5 — typefaces are embedded only where used\n  Given  one scene in the hand-drawn typeface and one in the default typeface\n  When   both are rendered to SVG\n  Then   the first carries an embedded `@font-face` and the second carries none\n\nCASE-6 — the MCP tool takes the option\n  Given  a three-node graph description and an output directory\n  When   `build_scene` runs with `svg: true`\n  Then   the `.svg` exists and its path is in the result",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-032"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:7"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1301"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:202"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:238"
         }
       ],
       "test_exempt": null,
@@ -859,7 +932,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:880"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:883"
         }
       ],
       "test_exempt": null,
@@ -984,7 +1057,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:940"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
         },
         {
           "role": "implements",
@@ -1009,7 +1082,8 @@
       "contract": [
         "`plugin/.claude-plugin/plugin.json` is the source of truth, and every other copy of the version equals it. [[REQ-RELEASE-855]] details the check.",
         "CI runs the version check on every push and every pull request, so a mismatch cannot be merged.",
-        "CI fails a pull request that bumps the version without a matching CHANGELOG heading."
+        "CI fails a pull request that bumps the version without a matching CHANGELOG heading.",
+        "A release starts with one command that raises all three copies together. [[REQ-RELEASE-857]]"
       ],
       "verify": [],
       "notes": [
@@ -1036,7 +1110,8 @@
         "SYS-DIAGRAM-001"
       ],
       "satisfied_by": [
-        "REQ-RELEASE-855"
+        "REQ-RELEASE-855",
+        "REQ-RELEASE-857"
       ],
       "members": [
         {
@@ -1077,7 +1152,8 @@
       ],
       "current_impl": [
         "`main()` in `scripts/check_versions.py`.",
-        "`TestCheckVersions` in `scripts/test_check_versions.py`."
+        "`TestCheckVersions` in `scripts/test_check_versions.py`.",
+        "-------------------"
       ],
       "acc": [
         "CASE-1 — — three matching versions pass Given  `plugin.json` at a version and both `marketplace.json` copies at the same one When   `check_versions.py` runs Then   it exits 0 and prints that the version agrees across three locations",
@@ -1099,7 +1175,63 @@
       "members": [
         {
           "role": "implements",
-          "loc": "scripts/check_versions.py:35"
+          "loc": "scripts/check_versions.py:74"
+        },
+        {
+          "role": "tested-by",
+          "loc": "scripts/test_check_versions.py:33"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
+    },
+    {
+      "id": "REQ-RELEASE-857",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "check_versions.py --bump: start a release with no copy left behind",
+      "intent": "A release starts by raising the version, and the three places it is written are exactly where a hand edit goes wrong. `--bump` raises them in one step, so the state it leaves already passes the check.",
+      "contract": [
+        "`check_versions.py --bump patch|minor|major` raises the version in `plugin.json` and writes the same value to both `marketplace.json` copies.",
+        "`--bump` changes only the version string in `plugin.json`, leaving its layout and line endings as they were.",
+        "`--bump` refuses a version that is not X.Y.Z, and changes no file when it does.",
+        "After a bump, the script reminds the author to add the matching CHANGELOG heading when it is missing."
+      ],
+      "verify": [],
+      "notes": [
+        "It does not write the CHANGELOG entry: what changed is for the author to say, and CI already fails a pull request whose bump has no matching heading."
+      ],
+      "current_impl": [
+        "`_bumped()` and the bump branch of `main()` in `scripts/check_versions.py`.",
+        "`TestCheckVersions` in `scripts/test_check_versions.py`."
+      ],
+      "acc": [
+        "CASE-1 — — `--bump` raises all three copies together Given  `plugin.json` and both `marketplace.json` copies at `2.4.9` When   `check_versions.py --bump minor` runs Then   it exits 0 and all three copies hold `2.5.0` Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed",
+        "CASE-2 — — `--bump` resets the parts below the one raised Given  all three copies at `2.4.9` When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9` Then   the results are `2.4.10`, `2.5.0` and `3.0.0`",
+        "CASE-3 — — `--bump` refuses a version that is not X.Y.Z Given  all three copies at `2.5` When   `check_versions.py --bump patch` runs Then   it exits 1 and every copy still holds `2.5`",
+        "CASE-4 — — the CHANGELOG reminder appears only when the heading is missing Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md` When   `check_versions.py --bump patch` runs Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise"
+      ],
+      "accept": "CASE-1 — `--bump` raises all three copies together\n  Given  `plugin.json` and both `marketplace.json` copies at `2.4.9`\n  When   `check_versions.py --bump minor` runs\n  Then   it exits 0 and all three copies hold `2.5.0`\n  Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed\n\nCASE-2 — `--bump` resets the parts below the one raised\n  Given  all three copies at `2.4.9`\n  When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`\n  Then   the results are `2.4.10`, `2.5.0` and `3.0.0`\n\nCASE-3 — `--bump` refuses a version that is not X.Y.Z\n  Given  all three copies at `2.5`\n  When   `check_versions.py --bump patch` runs\n  Then   it exits 1 and every copy still holds `2.5`\n\nCASE-4 — the CHANGELOG reminder appears only when the heading is missing\n  Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md`\n  When   `check_versions.py --bump patch` runs\n  Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-RELEASE-035"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "scripts/check_versions.py:40"
         },
         {
           "role": "tested-by",
@@ -1158,7 +1290,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:169"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
         },
         {
           "role": "implements",
@@ -1292,6 +1424,10 @@
       "ARCH-EXCALIDRAW-032"
     ],
     [
+      "REQ-EXCALIDRAW-856",
+      "ARCH-EXCALIDRAW-032"
+    ],
+    [
       "ARCH-EXCALIDRAW-033",
       "SYS-DIAGRAM-001"
     ],
@@ -1309,6 +1445,10 @@
     ],
     [
       "REQ-RELEASE-855",
+      "ARCH-RELEASE-035"
+    ],
+    [
+      "REQ-RELEASE-857",
       "ARCH-RELEASE-035"
     ],
     [
@@ -1340,16 +1480,17 @@
     },
     {
       "month": "2026-10",
-      "count": 3,
+      "count": 4,
       "first": "2026-10-03",
       "last": "2026-10-03",
       "versions": [
         "v2.4.1",
         "v2.4.2",
-        "v2.4.3"
+        "v2.4.3",
+        "v2.5.0"
       ],
-      "landmark": "v2.4.3",
-      "headline": "Tool annotations on the MCP server"
+      "landmark": "v2.5.0",
+      "headline": "SVG export, on request"
     }
   ],
   "commands": [
@@ -1531,16 +1672,16 @@
     }
   ],
   "design": {
-    "files": 21,
-    "clean_files": 20,
-    "score": 95,
+    "files": 22,
+    "clean_files": 19,
+    "score": 86,
     "candidates": {
       "encapsulation": 0,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
       "metrics": 1,
-      "standards": 0
+      "standards": 2
     },
     "findings": [
       {
@@ -1550,19 +1691,36 @@
         "line": 58,
         "name": "ArrangeMixin",
         "detail": "`ArrangeMixin` reaches 53 methods (over 50): 12 of its own plus 41 it calls"
+      },
+      {
+        "pillar": "standards",
+        "kind": "line-too-long",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py",
+        "line": 53,
+        "name": "spec.py",
+        "detail": "1 line(s) wider than 100 columns, first at line 53"
+      },
+      {
+        "pillar": "standards",
+        "kind": "line-too-long",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py",
+        "line": 158,
+        "name": "viewer.py",
+        "detail": "1 line(s) wider than 100 columns, first at line 158"
       }
     ],
     "advice": {
-      "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them"
+      "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them",
+      "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them"
     }
   },
   "health": {
     "score": 100,
-    "total": 19,
-    "healthy": 19,
-    "confirmed": 19,
-    "implemented": 18,
-    "tested": 18,
+    "total": 21,
+    "healthy": 21,
+    "confirmed": 21,
+    "implemented": 20,
+    "tested": 20,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

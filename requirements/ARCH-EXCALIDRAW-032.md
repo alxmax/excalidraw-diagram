@@ -22,6 +22,7 @@ Every bullet below is binding.
 - The CLI exposes four verbs, each a single unambiguous entry point: no-arg runs the CI smoke test, `render` rebuilds a viewer HTML from an existing `.excalidraw` file, and `discover` scaffolds a generator stub from a repo. Any other verb exits 2 with usage. [[REQ-EXCALIDRAW-848]]
 - `scene --from-json <graph.json>` lays out a coordinate-free graph description and writes both output files, so a caller gets a diagram without writing Python. [[REQ-EXCALIDRAW-850]]
 - An MCP server offers the same entry points as tools to an assistant, so no client has to shell out to the CLI. [[REQ-EXCALIDRAW-852]]
+- A scene can also be written as a standalone `<name>.svg`, on request, from `save()`, the CLI and the MCP tool, so a diagram can go into a document or a slide. [[REQ-EXCALIDRAW-856]]
 
 ## Cases
 CASE-1
@@ -68,6 +69,7 @@ CASE-6
 **Current implementation**
 - `main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html`
   (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).
+- `svg.py` beside it for the SVG a caller can ask for.
 - `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.
 - `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class,
   and `CasesExcalidrawSceneVerb` for the `scene` verb).
@@ -297,3 +299,79 @@ CASE-6 — stdout carries only protocol
 **Current implementation**
 - `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.
 - `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.
+
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-856
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-032]
+---
+
+# SVG export, on request
+
+## Description
+> A diagram often has to go into a document or a slide, where a viewer page does not
+> fit. An SVG is plain text that every browser and most editors open. It is opt-in, so
+> the two-file output that existing callers rely on does not change.
+
+Every bullet below is binding.
+- `Scene.save(..., svg=True)` also writes `<basename>.svg` and returns its path as a
+  third value. Without `svg=True`, `save()` writes and returns exactly two files.
+- `scene --from-json` and `render` accept `--svg`, and the MCP tool `build_scene`
+  accepts `svg: true`, to write the same file.
+- The SVG is drawn from the scene's elements alone, so it also works on a scene edited
+  elsewhere. The same scene gives the same text on every run.
+- Lines are drawn clean, not hand-drawn. The hand-drawn and code typefaces are embedded
+  from the vendored fonts, so a browser shows them.
+- The SVG is well-formed XML, whatever characters a label holds.
+
+## Cases
+CASE-1 — save writes the SVG only when asked
+  Given  two identical scenes
+  When   one is saved with `svg=True` and the other without
+  Then   the first returns three paths including a `.svg`
+  Then   the second returns two paths and writes no `.svg`
+
+CASE-2 — the SVG is well-formed and carries every label
+  Given  a scene whose labels hold `<`, `&` and quotes
+  When   it is saved with `svg=True`
+  Then   the SVG parses as XML, and every label's text appears in it
+
+CASE-3 — the same scene gives the same bytes
+  Given  a scene built with a fixed seed
+  When   it is rendered to SVG twice
+  Then   the two documents are identical
+
+CASE-4 — render and the scene verb take --svg
+  Given  an existing `.excalidraw` file and a graph description file
+  When   `render <scene> --svg` and `scene --from-json <graph> --svg` run
+  Then   each writes a `.svg` beside its other output
+
+CASE-5 — typefaces are embedded only where used
+  Given  one scene in the hand-drawn typeface and one in the default typeface
+  When   both are rendered to SVG
+  Then   the first carries an embedded `@font-face` and the second carries none
+
+CASE-6 — the MCP tool takes the option
+  Given  a three-node graph description and an output directory
+  When   `build_scene` runs with `svg: true`
+  Then   the `.svg` exists and its path is in the result
+
+## Context
+**Notes**
+- Lines come out clean because the rough outlines belong to Excalidraw's own renderer;
+  writing them here would be a second implementation of it.
+- A PNG is not offered: rasterising text in the hand-drawn typeface needs a font
+  rasteriser, which the standard library does not have.
+
+**Current implementation**
+- `scene_svg` and `render_svg` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.
+- `save(svg=True)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.
+- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and
+  `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.

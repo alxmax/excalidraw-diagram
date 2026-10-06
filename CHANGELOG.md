@@ -1,5 +1,21 @@
 # Changelog
 
+## plugin `v2.5.0` — 2026-10-03
+
+**SVG export, on request.** A scene can now also be written as a standalone `<name>.svg`,
+to go into a document or a slide: `save(svg=True)`, `scene --from-json ... --svg`,
+`render <scene> --svg`, and `build_scene` with `svg: true`. It is opt-in, so the two-file
+output existing callers rely on does not change, and `save()` returns a third path only
+when asked.
+
+The SVG is drawn from the scene's elements alone, so it also works on a scene edited on
+excalidraw.com, and the same scene gives the same text. Lines come out clean, not
+hand-drawn: the rough outlines are Excalidraw's own renderer. The hand-drawn and code
+typefaces are embedded from the vendored fonts, so a browser shows them. There is no PNG;
+rasterising that text needs a font rasteriser the standard library does not have.
+
+`REQ-EXCALIDRAW-856` holds the contract, with six cases.
+
 ## plugin `v2.4.3` — 2026-10-03
 
 **Tool annotations on the MCP server.** The directory policy asks an MCP server to give

@@ -6,6 +6,7 @@ import json
 import os
 import sys
 
+from .svg import scene_svg
 from .viewer import html_page
 
 _MODES = ("error", "warn", "off")
@@ -84,11 +85,12 @@ class Gates(object):
 class GatesMixin(object):
     """The save() contract."""
 
-    def save(self, basename, out_dir=".", gates=None, offline=None):
+    def save(self, basename, out_dir=".", gates=None, offline=None, svg=False):
         """Run the gates, then write <basename>.excalidraw + <basename>.html into
         `out_dir` and return both paths. Refuses a second call: one scene, one
         save() — stack more views as regions of the same scene instead. The viewer
-        carries its own renderer unless `offline=False` asks for the CDN one."""
+        carries its own renderer unless `offline=False` asks for the CDN one.
+        `svg=True` also writes <basename>.svg and returns it as a third path."""
         # implements: REQ-EXCALIDRAW-845  # implements: REQ-EXCALIDRAW-846
         # implements: REQ-EXCALIDRAW-847
         if self._saved:
@@ -107,10 +109,10 @@ class GatesMixin(object):
                                  f"{gate.remedy}")
             print(f"WARNING [{gate.name}]: {gate.problem}{gate.detail(hits)}",
                   file=sys.stderr)
-        return self._write(basename, out_dir, offline)
+        return self._write(basename, out_dir, offline, svg)
 
-    def _write(self, basename, out_dir, offline=None):
-        """Write <basename>.excalidraw + .html and return both paths."""
+    def _write(self, basename, out_dir, offline=None, svg=False):
+        """Write <basename>.excalidraw + .html (+ .svg when asked); return the paths."""
         os.makedirs(out_dir, exist_ok=True)
         scene = self.to_dict()
         p_json = os.path.join(out_dir, basename + ".excalidraw")
@@ -122,4 +124,9 @@ class GatesMixin(object):
         with open(p_html, "w", encoding="utf-8", newline="\n") as f:
             f.write(html_page(basename, scene, offline))
         self._saved = True
-        return p_json, p_html
+        if not svg:
+            return p_json, p_html
+        p_svg = os.path.join(out_dir, basename + ".svg")
+        with open(p_svg, "w", encoding="utf-8", newline="\n") as f:
+            f.write(scene_svg(scene, basename))
+        return p_json, p_html, p_svg

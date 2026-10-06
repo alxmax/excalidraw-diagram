@@ -1,9 +1,9 @@
 ---
 generated: 2026-10-03
 engine: 2026-09-15.1
-nodes: 19
+nodes: 21
 edges: 5
-design OOP: 95/100 (20/21 source files without a design candidate)
+design OOP: 86/100 (19/22 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -32,8 +32,10 @@ graph LR
     REQ_EXCALIDRAW_848["Smoke test, render and discover verbs<br><small>REQ-EXCALIDRAW-848</small>"]
     REQ_EXCALIDRAW_850["The scene verb: a described graph becomes both files<br><small>REQ-EXCALIDRAW-850</small>"]
     REQ_EXCALIDRAW_852["The MCP server: the same entry points as tools<br><small>REQ-EXCALIDRAW-852</small>"]
+    REQ_EXCALIDRAW_856["SVG export, on request<br><small>REQ-EXCALIDRAW-856</small>"]
     REQ_EXCALIDRAW_851["pack(): layering, ordering, and routing what will not go straight<br><small>REQ-EXCALIDRAW-851</small>"]
     REQ_RELEASE_855["check_versions.py: the three copies of the version agree<br><small>REQ-RELEASE-855</small>"]
+    REQ_RELEASE_857["check_versions.py --bump: start a release with no copy left behind<br><small>REQ-RELEASE-857</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
   end
   subgraph sg_misc["misc"]
@@ -74,8 +76,8 @@ graph LR
   ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
   ARCH_EXCALIDRAW_033 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_880["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-880"]
-  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_880
+  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_883["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-883"]
+  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_883
   ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
   ARCH_EXCALIDRAW_034 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6
@@ -97,7 +99,7 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 ```mermaid
 graph LR
   a_ARCH["ARCH<br><small>6 caps</small>"]
-  a_REQ["REQ<br><small>12 caps</small>"]
+  a_REQ["REQ<br><small>14 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 

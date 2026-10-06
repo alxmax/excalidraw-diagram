@@ -96,7 +96,9 @@ job runs only on PRs, so a version bump pushed any other way is never checked.
 repeats the version **twice** — top level and inside `plugins[]` — and an installed copy
 reads the marketplace entry, so a bump that misses either place ships a release nobody
 receives. Nothing errors; the plugin simply never updates. `scripts/check_versions.py`
-enforces the three-way match and CI runs it.
+enforces the three-way match and CI runs it. To start a release, run
+`python scripts/check_versions.py --bump patch|minor|major`: it raises all three copies
+at once and reminds you to add the `CHANGELOG.md` heading.
 
 **Any shipped change bumps the semver**, a skill edit included: an edit with no bump is
 invisible to consumers running `/plugin update`. A bump needs a matching `` `vX.Y.Z` ``
@@ -126,9 +128,10 @@ self-tags of the repository it was written in, and those requirements do not liv
 the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Nineteen requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
-capabilities with their eleven `REQ-*` children, and `ARCH-RELEASE-035` (the version
-match) with its one child `REQ-RELEASE-855` (the script that checks it).
+**Twenty-one requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+capabilities with their twelve `REQ-*` children, and `ARCH-RELEASE-035` (the version
+match) with its two children `REQ-RELEASE-855` (the script that checks it) and
+`REQ-RELEASE-857` (`--bump`, which starts a release).
 `requirements/_config.json` raises `LINT_FILE_SPREAD_MAX` to 6: the engine is one module
 per responsibility on purpose, so a REQ spanning up to five modules is cohesive, not
 diffuse. The count is what `reqmap.py gate` prints, not a number to carry by hand. All are `confirmed`, so the gate enforces them as truth. Editing a confirmed

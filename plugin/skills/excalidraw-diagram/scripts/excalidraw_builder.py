@@ -36,15 +36,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from excalidraw_engine import (  # noqa: E402
     DASHED, FILL, STROKE, Font, Gates, PackOptions, Paint, Rect, Scene,
-    discover_components, discover_stub, fit_text, render_html, scene_from_json,
-    scene_from_spec,
+    discover_components, discover_stub, fit_text, render_html, render_svg,
+    scene_from_json, scene_from_spec, scene_svg,
 )
 from excalidraw_engine.cli import main  # noqa: E402
 
 __all__ = [
     "DASHED", "FILL", "Font", "Gates", "PackOptions", "Paint", "Rect", "STROKE", "Scene",
-    "discover_components", "discover_stub", "fit_text", "render_html", "scene_from_json",
-    "scene_from_spec",
+    "discover_components", "discover_stub", "fit_text", "render_html", "render_svg",
+    "scene_from_json", "scene_from_spec", "scene_svg",
 ]
 
 if __name__ == "__main__":

@@ -114,6 +114,13 @@ class TestTools(unittest.TestCase):
             self.assertTrue(os.path.isfile(path))
             self.assertIn(path, result["content"][0]["text"])
 
+    def test_build_scene_writes_the_svg_when_asked(self):  # verifies: REQ-EXCALIDRAW-856#CASE-6
+        result = call("build_scene", {"graph": GRAPH, "out_dir": self.tmp, "svg": True})
+        self.assertFalse(result["isError"], result)
+        svgs = [n for n in os.listdir(self.tmp) if n.endswith(".svg")]
+        self.assertEqual(len(svgs), 1)
+        self.assertIn(svgs[0], result["content"][0]["text"])
+
     def test_printed_warnings_join_the_result(self):  # verifies: REQ-EXCALIDRAW-852#CASE-2
         def noisy(_args):
             print("gate says out")

@@ -5,14 +5,15 @@ import sys
 from . import selftest
 from .discover import discover_stub
 from .spec import scene_from_json
+from .svg import render_svg
 from .viewer import render_html
 
 USAGE = """usage: excalidraw_builder.py [<command>]
 
   (no command)                          run the builder self-test (smoke test)
-  scene --from-json <graph.json> [-o <dir>] [--cdn]
+  scene --from-json <graph.json> [-o <dir>] [--cdn] [--svg]
                                         lay out a coordinate-free graph and write both files
-  render <scene.excalidraw> [out_dir] [--cdn]
+  render <scene.excalidraw> [out_dir] [--cdn] [--svg]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
 
@@ -23,7 +24,8 @@ control yourself. `render` re-emits the viewer for a scene edited elsewhere (e.g
 excalidraw.com).
 
 The viewer carries the Excalidraw runtime, so it opens with no network — about 1.6 MB
-of page. `--cdn` writes the ~100 KB page that loads the runtime from unpkg instead."""
+of page. `--cdn` writes the ~100 KB page that loads the runtime from unpkg instead.
+`--svg` also writes <name>.svg: clean lines, not hand-drawn, for a document or a slide."""
 
 
 def _cdn_flag(args):
@@ -35,6 +37,12 @@ def _cdn_flag(args):
     return kept, (None if len(kept) == len(args) else False)
 
 
+def _svg_flag(args):
+    """(args without --svg, whether it was present). Like --cdn, it may sit anywhere."""
+    kept = [a for a in args if a != "--svg"]
+    return kept, len(kept) != len(args)
+
+
 def _usage_error(line):
     print("usage: excalidraw_builder.py " + line, file=sys.stderr)
     return 2
@@ -42,10 +50,13 @@ def _usage_error(line):
 
 def _render(args):
     args, offline = _cdn_flag(args)
+    args, svg = _svg_flag(args)
     if not args:
-        return _usage_error("render <scene.excalidraw> [out_dir] [--cdn]")
-    print("wrote", render_html(args[0], args[1] if len(args) > 1 else None,
-                               offline=offline))
+        return _usage_error("render <scene.excalidraw> [out_dir] [--cdn] [--svg]")
+    out_dir = args[1] if len(args) > 1 else None
+    print("wrote", render_html(args[0], out_dir, offline=offline))
+    if svg:
+        print("wrote", render_svg(args[0], out_dir))
     return 0
 
 
@@ -58,6 +69,7 @@ def _discover(args):
 
 def _scene(args):
     args, offline = _cdn_flag(args)
+    args, svg = _svg_flag(args)
     flags = {"--from-json": "spec", "-o": "out", "--out": "out"}
     got = {}
     while args:
@@ -67,8 +79,9 @@ def _scene(args):
             break
         got[key], args = args[1], args[2:]
     if not got.get("spec"):
-        return _usage_error("scene --from-json <graph.json> [-o <dir>] [--cdn]")
-    print("wrote", *scene_from_json(got["spec"], got.get("out"), offline=offline))
+        return _usage_error("scene --from-json <graph.json> [-o <dir>] [--cdn] [--svg]")
+    print("wrote", *scene_from_json(got["spec"], got.get("out"), offline=offline,
+                                    svg=svg))
     return 0
 
 
