@@ -1,5 +1,12 @@
 # Changelog
 
+## plugin `v2.6.0` — 2026-10-13
+
+**The licence is Apache 2.0.** `LICENSE` holds the Apache License 2.0 and `plugin.json` says
+`Apache-2.0`, the same licence as the other plugins by the same author. Releases up to v2.5.0
+stay under MIT. The bundled Excalidraw, React and React DOM builds keep their own MIT licences.
+No code change.
+
 ## plugin `v2.5.0` — 2026-10-03
 
 **SVG export, on request.** A scene can now also be written as a standalone `<name>.svg`,
