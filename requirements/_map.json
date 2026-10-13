@@ -1480,17 +1480,18 @@
     },
     {
       "month": "2026-10",
-      "count": 4,
+      "count": 5,
       "first": "2026-10-03",
-      "last": "2026-10-03",
+      "last": "2026-10-13",
       "versions": [
         "v2.4.1",
         "v2.4.2",
         "v2.4.3",
-        "v2.5.0"
+        "v2.5.0",
+        "v2.6.0"
       ],
-      "landmark": "v2.5.0",
-      "headline": "SVG export, on request"
+      "landmark": "v2.6.0",
+      "headline": "The licence is Apache 2.0"
     }
   ],
   "commands": [

@@ -280,4 +280,4 @@ oldest the code happens to work on: a floor nothing tests is a claim, not a guar
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE). Use it, change it, ship it.
+Apache License 2.0 — see [LICENSE](LICENSE). Use it, change it, ship it. Releases up to v2.5.0 were published under MIT.
