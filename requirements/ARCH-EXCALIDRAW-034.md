@@ -223,6 +223,8 @@ Every bullet below is binding.
   layer, so a bus nested in a wider one never crosses it.
 - `PackOptions` raises `ValueError` for an `edge_style` other than `"straight"` or
   `"orthogonal"`, and `graph.json` passes its `edge_style` to it.
+- `pack()` writes each node's id into its shape's `customData`, so an edited scene can
+  be matched back to the description that drew it.
 
 ## Cases
 CASE-1 — a node's font reaches its label
@@ -255,7 +257,16 @@ CASE-6 — a graph description picks the edge style
   When   `scene_from_spec()` builds each
   Then   the first draws only unbound bus legs, and the second raises `ValueError`
 
+CASE-7 — every placed node carries its id
+  Given  a description with a process, a decision and a data node
+  When   `scene_from_spec()` writes the scene
+  Then   each node's shape carries `customData.id` equal to its id, on the element holding its label
+
 ## Context
+**Notes**
+- `customData` survives the viewer. A headless Chrome run deleted an arrow and
+  downloaded the scene, and all four node ids came back.
+
 **Current implementation**
 - `diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`,
   `_PackRun._trunks()` and `_PackRun._bus()` in
