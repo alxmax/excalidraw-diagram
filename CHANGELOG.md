@@ -1,5 +1,38 @@
 # Changelog
 
+## plugin `v2.6.0` — 2026-10-21
+
+**The viewer's download button saves your edits.** The page is a full editor, but the
+button serialised the scene embedded when it was built, so a reader who edited the
+page got back the file they were sent. It now saves the scene as it stands in the
+page. A refresh or a closed tab with unsaved edits asks first.
+
+**A fan-out can be drawn as a bus.** `PackOptions(edge_style="orthogonal")`, or
+`"edge_style": "orthogonal"` in `graph.json`, draws every edge between neighbouring
+layers as a trunk beside its source with a square branch into each target. A
+one-to-eight fan-out lays out clean in both directions, with no leg cutting a box and
+no detour round the diagram. A bus nested inside a wider one never crosses it.
+
+**Labels stay readable on dark fills.** A shape's label with no colour of its own is
+now white wherever black would fall short of WCAG's 4.5:1 against the fill. A colour
+you give still wins.
+
+**`pack()` nodes take a `font`**: a `Font`, a size, or a `{size, color, align}` dict in
+`graph.json`. The box is sized at that size.
+
+**Decision diamonds fit their question.** A `diamond` or `decision` node is sized so
+its wrapped label sits inside the rhombus rather than inside its bounding box.
+
+**Every `pack()` shape carries its node id** in `customData`, which survives an edit in
+the viewer, so an edited scene can be matched back to the description that drew it.
+
+**The plugin-cache resolver honours `CLAUDE_CONFIG_DIR`.** The import snippet in
+`builder_api.md` and the fallback in every `discover` stub looked only under
+`~/.claude`, and failed for a non-default config directory.
+
+`REQ-EXCALIDRAW-858` holds the per-node contract with seven cases; `REQ-EXCALIDRAW-848`,
+`-853` and `-854` gained one or two cases each.
+
 ## plugin `v2.5.0` — 2026-10-03
 
 **SVG export, on request.** A scene can now also be written as a standalone `<name>.svg`,
