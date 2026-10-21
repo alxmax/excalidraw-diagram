@@ -12,9 +12,20 @@ check_arrow_crossings() empty.
 """
 
 from .geometry import as_point, fit_text, text_extent
-from .style import Paint
+from .style import Font, Paint
 
 ROUTED = Paint(stroke="grey", dashed=True)
+_DIAMONDS = ("diamond", "decision")
+
+
+def diamond_size(text, size):
+    """(w, h) of a rhombus that holds `text` set at `size`. A centred w x h rhombus
+    contains a tw x th text box when tw/w + th/h <= 1, so a box sized like a
+    rectangle spills over the slanted edges. The width takes 1.7x the text, the
+    height whatever then keeps the sum at 0.85, the rest being clear margin."""
+    tw, th = text_extent(text, size)
+    w = max(180.0, tw * 1.7)
+    return w, max(100.0, th / (0.85 - tw / w))
 
 
 class PackOptions(object):
@@ -22,15 +33,22 @@ class PackOptions(object):
 
     direction: "LR" (layers become columns) or "TB" (layers become rows).
     gap_major: space between layers. gap_minor: space between siblings in a layer.
-    lane_gap:  space between routed lanes. font_size: the node label size."""
+    lane_gap:  space between routed lanes. font_size: the node label size.
+    edge_style: "straight" draws an edge between neighbouring layers as a straight
+               arrow where it clears every box; "orthogonal" draws every such edge
+               as a bus: a trunk beside its source and a square branch to each
+               target, so a wide fan-out needs no detour round the diagram."""
 
-    __slots__ = ("direction", "gap_major", "gap_minor", "lane_gap", "font_size")
+    __slots__ = ("direction", "gap_major", "gap_minor", "lane_gap", "font_size",
+                 "edge_style")
 
     def __init__(self, direction="LR", gap_major=140, gap_minor=46, lane_gap=54,
-                 font_size=13):
+                 font_size=13, edge_style="straight"):
         if direction not in ("LR", "TB"):
             raise ValueError("pack(): direction must be 'LR' or 'TB'")
-        self.direction, self.font_size = direction, font_size
+        if edge_style not in ("straight", "orthogonal"):
+            raise ValueError("pack(): edge_style must be 'straight' or 'orthogonal'")
+        self.direction, self.font_size, self.edge_style = direction, font_size, edge_style
         self.gap_major, self.gap_minor, self.lane_gap = gap_major, gap_minor, lane_gap
 
 
@@ -156,7 +174,7 @@ class _PackRun(object):
         self.back = back_edges(self.ids, self.links)
         self.forward = [link for k, link in enumerate(self.links) if k not in self.back]
         self.layer = layer_of(self.ids, self.forward)
-        self.placed, self.size, self.at, self.extent = {}, {}, [], []
+        self.placed, self.size, self.font, self.at, self.extent = {}, {}, {}, [], []
 
     def layers(self, groups):
         """The ids per layer, ordered by four barycenter sweeps each way, with
@@ -185,9 +203,12 @@ class _PackRun(object):
         """Each node's size, and each layer's start coordinate and extent. A gap
         carrying a labelled arrow widens so the label keeps line on both sides."""
         for nid in self.ids:
-            text, w, h = fit_text(str(self.specs[nid].get("label", nid)),
-                                  size=self.opts.font_size, max_chars=22, min_size=(150, 58))
             spec = self.specs[nid]
+            font = self.font[nid] = Font.coerce(spec.get("font"), Font(self.opts.font_size))
+            text, w, h = fit_text(str(spec.get("label", nid)),
+                                  size=font.size, max_chars=22, min_size=(150, 58))
+            if spec.get("kind") in _DIAMONDS:
+                w, h = diamond_size(text, font.size)
             self.size[nid] = (float(spec.get("w", w)), float(spec.get("h", h)), text)
         gaps = [float(self.opts.gap_major)] * max(1, len(layers) - 1)
         for link in self.forward:
@@ -227,7 +248,10 @@ class _PackRun(object):
                 spec = self.specs[nid]
                 self.placed[nid] = self.scene.box(
                     text, (x, y, w, h), paint=spec.get("fill"),
-                    shape=spec.get("kind", "rectangle"), font=self.opts.font_size)
+                    shape=spec.get("kind", "rectangle"), font=self.font[nid])
+                # the caller's id travels with the shape, so an edited scene can
+                # be matched back to the description that drew it
+                self.scene._element(self.placed[nid])["customData"] = {"id": nid}
 
     def _clear_frames(self, layers, groups, start):
         """Move non-members out of each group's frame, in `start` (node -> its
@@ -289,10 +313,14 @@ class _PackRun(object):
         channel.append(self.at[-1] + self.extent[-1] + 60.0)
         _, _, far_x, far_y = self.scene.bounds()
         far = (far_y if self.lr else far_x) + margin
-        lane = 0
+        lane, trunk = 0, self._trunks()
         for k, link in enumerate(self.links):
             src, dst = str(link["src"]), str(link["dst"])
             a, b = self.placed[src], self.placed[dst]
+            if (src in trunk and k not in self.back
+                    and self.layer[dst] - self.layer[src] == 1):
+                self._bus((a, b), trunk[src], link)
+                continue
             if (k not in self.back and self.layer[dst] - self.layer[src] == 1
                     and not self.scene._straight_hits(a, b)):
                 self.scene.arrow(a, b, label=link.get("label"),
@@ -302,6 +330,55 @@ class _PackRun(object):
                         (far + self.opts.lane_gap * (lane + 1), min(lane * 5.0, 10.0),
                          link.get("label")))
             lane += 1
+
+    def _trunks(self):
+        """{source id: trunk coordinate} for every node with a bus edge, empty
+        unless edge_style is "orthogonal". A trunk runs along the gap after its
+        source's layer, 30px past the layer's far side, each further source in
+        that layer 12px beyond the last so two buses never share one line. The
+        offset stops at half the gap, keeping the branches the longer part.
+
+        The bus spanning less goes nearer. A bus nested inside a wider one then
+        stays wholly inside it: its stub stops short of the wider trunk, and the
+        wider bus's branches start beyond its own."""
+        if self.opts.edge_style != "orthogonal":
+            return {}
+        minor = 1 if self.lr else 0
+        sources, reach = {}, {}
+        for k, link in enumerate(self.links):
+            src, dst = str(link["src"]), str(link["dst"])
+            if k not in self.back and self.layer[dst] - self.layer[src] == 1:
+                sources.setdefault(self.layer[src], set()).add(src)
+                ends = [self.scene._centre(self.placed[n])[minor] for n in (src, dst)]
+                lo, hi = reach.get(src, ends)
+                reach[src] = (min(lo, *ends), max(hi, *ends))
+        trunk = {}
+        for k, ids in sources.items():
+            far = self.at[k] + self.extent[k]
+            room = (self.at[k + 1] - far) / 2.0
+            ordered = sorted(ids, key=lambda n: (reach[n][1] - reach[n][0], reach[n][0]))
+            for rank, nid in enumerate(ordered):
+                trunk[nid] = far + min(30.0 + 12.0 * rank, room)
+        return trunk
+
+    def _bus(self, ends, at, link):
+        """One bus edge: out of the source's far side to its trunk at `at`, along
+        the trunk, and square into the target's near side. Every leg lies in the
+        gap between the two layers, so no box can be in its way. The label goes
+        on the branch into the target, the one leg no sibling shares."""
+        sx, sy, sw, sh, _ = self.scene._geom[ends[0]]
+        dx, dy, dw, dh, _ = self.scene._geom[ends[1]]
+        if self.lr:
+            y0, y1 = sy + sh / 2, dy + dh / 2
+            pts = [(sx + sw, y0), (at, y0), (at, y1), (dx, y1)]
+        else:
+            x0, x1 = sx + sw / 2, dx + dw / 2
+            pts = [(x0, sy + sh), (x0, at), (x1, at), (x1, dy)]
+        if pts[1] == pts[2]:        # target square on the source: one straight leg
+            pts = [pts[0], pts[3]]
+        self.scene.path(pts, paint=Paint(dashed=bool(link.get("dashed"))))
+        if link.get("label"):
+            self.scene._path_label(pts[-2:], str(link["label"]), None)
 
     def _route(self, ends, spans, channel, lane):
         """Route a connector out of one box, along a lane past the diagram, and
@@ -345,13 +422,15 @@ class PackMixin(object):
     def pack(self, nodes, edges=(), *, groups=(), at=(40, 0), options=None):
         """Lay out a directed graph from ids and edges alone — no coordinates.
 
-        nodes:   dicts {id, label, fill, kind, w, h}; only `id` is required and
-                 `kind` is any box() shape name.
+        nodes:   dicts {id, label, fill, kind, w, h, font}; only `id` is required,
+                 `kind` is any box() shape name and `font` a Font, a size or a
+                 dict {size, color, align}.
         edges:   dicts {src, dst, label, dashed}.
         groups:  dicts {label, members: [id, ...]}, each drawn as an enclose() frame.
-        options: a PackOptions (direction, spacing, font size).
+        options: a PackOptions (direction, spacing, font size, edge style).
         Returns {node id: scene id} so the caller can keep annotating."""
         # implements: REQ-EXCALIDRAW-851
+        # implements: REQ-EXCALIDRAW-858
         run = _PackRun(self, validate(nodes, edges), at, options or PackOptions())
         layers = run.layers(groups)
         run.measure(layers)

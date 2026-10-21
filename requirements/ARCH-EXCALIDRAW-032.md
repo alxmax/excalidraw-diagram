@@ -109,6 +109,8 @@ Every bullet below is binding.
   for source files and emits a runnable multi-layer poster stub (STRUCTURE layer
   pre-populated, WORKFLOW / INTEGRATION / MODES / MODEL / DATA layers
   commented as scaffolds) to `out.py` (default: `make_diagram.py`).
+- A discover stub run away from the builder imports the newest installed copy. It
+  looks in the `CLAUDE_CONFIG_DIR` plugin cache first, then in `~/.claude`.
 - Any unrecognised verb exits with code 2 and prints a usage message. The
   message names every verb the CLI accepts, `scene` included.
 
@@ -132,6 +134,11 @@ CASE-4 — an unknown verb exits 2 with usage
   Given  the verb `frobnicate`
   When   `python excalidraw_builder.py frobnicate` runs
   Then   it exits with code 2 and prints a usage message
+
+CASE-5 — a stub finds the plugin under a custom config directory
+  Given  the builder installed only in the plugin cache under `CLAUDE_CONFIG_DIR`
+  When   a discover stub runs with no `PYTHONPATH` and an empty home directory
+  Then   it imports that builder, exits 0 and writes a scene
 
 --------------------
 

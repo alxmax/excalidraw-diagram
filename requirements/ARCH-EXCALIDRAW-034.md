@@ -24,6 +24,8 @@ Every bullet below is binding.
 - `Scene.pack(nodes, edges, groups, at, options)` places a directed graph whose description carries no
   coordinates, and returns the scene id of every node it placed.
   [[REQ-EXCALIDRAW-851]] details the behaviour.
+- A node can say how its label is set, and `pack()` sizes and connects it for
+  that. [[REQ-EXCALIDRAW-858]] details the behaviour.
 - A layout `pack()` produces passes the same gates a hand-written generator's does.
   Passing is the definition of a finished layout: a run that places every node and
   leaves a shape sitting on another one has failed.
@@ -187,5 +189,88 @@ CASE-7 — a frame caption dodges the arrows entering the group
 - `pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`,
   `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in
   `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.
+- `CasesExcalidraw034` in
+  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-858
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-034]
+---
+
+# pack(): what a node says about itself
+
+## Description
+> A described graph carries no coordinates, so everything a caller wants from a
+> node has to travel in the node itself. A key `pack()` ignores is one the caller
+> cannot reach at all: there is no box call left to pass it to by hand.
+
+Every bullet below is binding.
+- `pack()` sets a node's label in the node's own `font` when it gives one: a `Font`,
+  a size, or a dict of `size`, `color` and `align`.
+- `pack()` sizes a diamond or decision node so its wrapped label sits inside the
+  rhombus, not just inside the box around it.
+- With `edge_style="orthogonal"`, `pack()` draws each edge between neighbouring
+  layers as a bus: a trunk in the gap beside its source, a square branch per target.
+- Each source in a layer gets its own trunk. The bus spanning less sits nearer its
+  layer, so a bus nested in a wider one never crosses it.
+- `PackOptions` raises `ValueError` for an `edge_style` other than `"straight"` or
+  `"orthogonal"`, and `graph.json` passes its `edge_style` to it.
+- `pack()` writes each node's id into its shape's `customData`, so an edited scene can
+  be matched back to the description that drew it.
+
+## Cases
+CASE-1 — a node's font reaches its label
+  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font
+  When   `pack()` lays them out
+  Then   the first label has that size and colour, and the second is white
+
+CASE-2 — a two-line question fits its diamond
+  Given  a decision node whose label wraps to two lines
+  When   `pack()` sizes it
+  Then   the text box's width share plus its height share of the rhombus is at most 0.86
+
+CASE-3 — a graph description reaches the same font
+  Given  a `graph.json` node carrying a `font` dict, beside a node with none
+  When   `scene_from_spec()` builds it
+  Then   the first label has that size and colour, and the second keeps 13px
+
+CASE-4 — a wide fan-out becomes a bus
+  Given  one node fanning out to eight, laid out once `"LR"` and once `"TB"`
+  When   `pack()` runs with `edge_style="orthogonal"`
+  Then   all seven checks return empty, and every leg is square and cuts no box
+
+CASE-5 — a nested bus does not cross the one around it
+  Given  a fan-out whose child c0 spans the targets of a sibling c5
+  When   `pack()` lays it out orthogonally in both directions
+  Then   no leg of one bus properly crosses a leg of the other
+
+CASE-6 — a graph description picks the edge style
+  Given  a `graph.json` whose `edge_style` is `"orthogonal"`, then the same with `"curvy"`
+  When   `scene_from_spec()` builds each
+  Then   the first draws only unbound bus legs, and the second raises `ValueError`
+
+CASE-7 — every placed node carries its id
+  Given  a description with a process, a decision and a data node
+  When   `scene_from_spec()` writes the scene
+  Then   each node's shape carries `customData.id` equal to its id, on the element holding its label
+
+## Context
+**Notes**
+- `customData` survives the viewer. A headless Chrome run deleted an arrow and
+  downloaded the scene, and all four node ids came back.
+
+**Current implementation**
+- `diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`,
+  `_PackRun._trunks()` and `_PackRun._bus()` in
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`;
+  `scene_from_spec()` in `excalidraw_engine/spec.py`.
 - `CasesExcalidraw034` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

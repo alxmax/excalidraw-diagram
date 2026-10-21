@@ -53,10 +53,12 @@ except ModuleNotFoundError:                      # not alongside the stub — fi
     # Falls back to the newest INSTALLED plugin build; if you run this stub outside
     # the plugin, that cached build may lag an unreleased local edit to the builder.
     import glob, re
-    _cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                          "cache", "excalidraw-diagram", "excalidraw-diagram")
-    _hits = glob.glob(os.path.join(_cache, "*", "skills",
-                                   "excalidraw-diagram", "scripts"))
+    # a non-default config dir (CLAUDE_CONFIG_DIR) first, then ~/.claude
+    _roots = [os.environ.get("CLAUDE_CONFIG_DIR"), os.path.expanduser("~/.claude")]
+    _hits = [h for _root in _roots if _root
+             for h in glob.glob(os.path.join(_root, "plugins", "cache",
+                                             "excalidraw-diagram", "excalidraw-diagram",
+                                             "*", "skills", "excalidraw-diagram", "scripts"))]
     if not _hits:
         raise
     def _ver(p):

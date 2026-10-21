@@ -23,6 +23,7 @@ import json
 import os
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -562,6 +563,26 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
             self.assertTrue(glob.glob(os.path.join(d, "*.excalidraw")),
                             "stub ran but saved no scene")
 
+    def test_discover_stub_finds_a_custom_config_dir(self):  # verifies: REQ-EXCALIDRAW-848#CASE-5
+        # the builder installed ONLY under CLAUDE_CONFIG_DIR, an empty home, and no
+        # PYTHONPATH: the stub's cache fallback is the one way it can import
+        with tempfile.TemporaryDirectory() as d:
+            cfg, home = os.path.join(d, "cfg"), os.path.join(d, "home")
+            os.makedirs(home)
+            shutil.copytree(HERE, os.path.join(
+                cfg, "plugins", "cache", "excalidraw-diagram", "excalidraw-diagram",
+                "9.9.9", "skills", "excalidraw-diagram", "scripts"),
+                ignore=shutil.ignore_patterns("__pycache__", "test_*"))
+            repo = os.path.join(d, "repo")
+            os.makedirs(repo)
+            stub = eb.discover_stub(repo, out_path=os.path.join(repo, "make_diagram.py"))
+            env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+            env.update(CLAUDE_CONFIG_DIR=cfg, HOME=home, USERPROFILE=home)
+            r = subprocess.run([sys.executable, "-X", "utf8", stub],
+                               cwd=repo, capture_output=True, text=True, env=env)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(glob.glob(os.path.join(repo, "*.excalidraw")))
+
     def test_discover_empty_repo_stub_still_runs(self):
         with tempfile.TemporaryDirectory() as d:
             stub = eb.discover_stub(d, out_path=os.path.join(d, "make_diagram.py"))
@@ -819,6 +840,20 @@ class CasesExcalidrawValues(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-853
         self.assertEqual(default["overlap"], "error")
         self.assertEqual(default["crossing"], "warn")
 
+    def test_a_dark_fill_gets_a_label_that_reads(self):  # verifies: REQ-EXCALIDRAW-853#CASE-4
+        from excalidraw_engine.style import contrast
+        s = eb.Scene(seed=1)
+        dark = s.box("archived", (0, 0), paint="#5c2d91")
+        light = s.box("exists", (300, 0), paint="blue")
+        told = s.box("told", (600, 0), paint="#5c2d91", font=eb.Font(color="#ffec99"))
+        by_id = {e["id"]: e for e in s.elements}
+        ink = {n: by_id[by_id[n]["boundElements"][0]["id"]]["strokeColor"]
+               for n in (dark, light, told)}
+        self.assertEqual(ink[dark], "#ffffff")
+        self.assertGreaterEqual(contrast(ink[dark], "#5c2d91"), 4.5)
+        self.assertEqual(ink[light], eb.STROKE["black"], "a palette tint keeps black")
+        self.assertEqual(ink[told], "#ffec99", "a colour the caller gives wins")
+
 
 class TestReferenceDocs(unittest.TestCase):
     """The snippets in the contract and references are what an assistant copies. A
@@ -940,7 +975,7 @@ def _all_gates(scene):
     return {name: hits for name, hits in checks.items() if hits}
 
 
-class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
+class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851  # tested-by: REQ-EXCALIDRAW-858
     """pack() lays a described graph out cleanly, whatever shape it has."""
 
     # a 13-node graph with two groups, a back edge and a layer-skipping edge —
@@ -1087,6 +1122,129 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                options=eb.PackOptions(direction="TB"))
         self.assertEqual(s.check_arrow_crossings(), [])
 
+
+    def test_a_node_carries_its_own_font(self):  # verifies: REQ-EXCALIDRAW-858#CASE-1
+        nodes = [{"id": "a", "label": "a long label at a larger size",
+                  "font": {"size": 20, "color": "#e03131"}},
+                 {"id": "b", "fill": "#5c2d91"}]
+        s = eb.Scene(seed=3)
+        placed = s.pack(nodes, [{"src": "a", "dst": "b"}])
+        by_id = {e["id"]: e for e in s.elements}
+        text = {n: by_id[by_id[placed[n]]["boundElements"][0]["id"]] for n in "ab"}
+        self.assertEqual(text["a"]["fontSize"], 20)
+        self.assertEqual(text["a"]["strokeColor"], "#e03131")
+        self.assertEqual(text["b"]["strokeColor"], "#ffffff", "dark fill, no font given")
+        self.assertEqual(s.check_text_overflow(), [], "the box is sized at the node's size")
+
+    def test_a_decision_holds_its_question_inside_the_rhombus(self):  # verifies: REQ-EXCALIDRAW-858#CASE-2
+        s = eb.Scene(seed=3)
+        placed = s.pack([{"id": "q", "kind": "decision",
+                          "label": "Is the customer already signed in?"}])
+        by_id = {e["id"]: e for e in s.elements}
+        shape = by_id[placed["q"]]
+        text = by_id[shape["boundElements"][0]["id"]]
+        self.assertIn("\n", text["text"], "the question wraps to two lines")
+        # the text box's corner, against the rhombus |dx|/(w/2) + |dy|/(h/2) <= 1
+        reach = text["width"] / shape["width"] + text["height"] / shape["height"]
+        self.assertLessEqual(reach, 0.86)
+
+    def test_a_graph_description_carries_a_node_font(self):  # verifies: REQ-EXCALIDRAW-858#CASE-3
+        spec = {"name": "fonts", "seed": 3,
+                "nodes": [{"id": "a", "font": {"size": 18, "color": "#1971c2"}},
+                          {"id": "b"}],
+                "edges": [{"src": "a", "dst": "b"}]}
+        with tempfile.TemporaryDirectory() as d:
+            scene_path = eb.scene_from_spec(spec, d)[0]
+            with open(scene_path, encoding="utf-8") as f:
+                texts = {e["text"]: e for e in json.load(f)["elements"]
+                         if e["type"] == "text"}
+        self.assertEqual((texts["a"]["fontSize"], texts["a"]["strokeColor"]),
+                         (18, "#1971c2"))
+        self.assertEqual(texts["b"]["fontSize"], 13, "a node without one keeps the default")
+
+    @staticmethod
+    def _legs(scene):
+        """Every unbound connector as (its first point, [its legs])."""
+        out = []
+        for e in scene.elements:
+            if e.get("type") == "arrow" and not e.get("startBinding"):
+                pts = [(e["x"] + px, e["y"] + py) for px, py in e["points"]]
+                out.append((pts[0], list(zip(pts, pts[1:]))))
+        return out
+
+    def test_a_wide_fan_out_becomes_a_bus(self):  # verifies: REQ-EXCALIDRAW-858#CASE-4
+        # one hub fanning out to eight leaves, laid out both ways. Unbound
+        # legs are invisible to the crossing gate, so the geometry is asserted here
+        from excalidraw_engine.geometry import seg_rect_overlap
+        kids = ["leaf %d" % i for i in range(8)]
+        nodes = [{"id": "hub"}] + [{"id": k} for k in kids]
+        edges = [{"src": "hub", "dst": k, "label": "feeds" if i % 3 == 0 else None}
+                 for i, k in enumerate(kids)]
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=5)
+            s.pack(nodes, edges, options=eb.PackOptions(direction=direction,
+                                                        edge_style="orthogonal"))
+            self.assertEqual(_all_gates(s), {}, direction)
+            legs = self._legs(s)
+            self.assertEqual(len(legs), 8, "every edge is a bus branch")
+            self.assertEqual(len({first for first, _ in legs}), 1, "one shared stub")
+            for _, path in legs:
+                for p, q in path:
+                    self.assertTrue(p[0] == q[0] or p[1] == q[1], "a leg is not square")
+                    for x, y, w, h, _shape in s._geom.values():
+                        self.assertEqual(seg_rect_overlap(
+                            p, q, (x + 4, y + 4, w - 8, h - 8)), 0, direction)
+
+    def test_a_bus_nested_in_another_never_crosses_it(self):  # verifies: REQ-EXCALIDRAW-858#CASE-5
+        # c0's bus spans c5's in both layouts. Ranking trunks by position instead
+        # of by span puts the wider one nearer and crosses them twice
+        kids = ["c%d" % i for i in range(8)]
+        nodes = [{"id": n} for n in ["root"] + kids + ["t0", "t1", "t2"]]
+        edges = [{"src": "root", "dst": c} for c in kids] + [
+            {"src": "c0", "dst": "t0"}, {"src": "c0", "dst": "t1"},
+            {"src": "c5", "dst": "t2"}]
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=5)
+            s.pack(nodes, edges, options=eb.PackOptions(direction=direction,
+                                                        edge_style="orthogonal"))
+            self.assertEqual(_all_gates(s), {}, direction)
+            buses = self._legs(s)
+            for i, (o1, a) in enumerate(buses):
+                for o2, b in buses[i + 1:]:
+                    if o1 == o2:
+                        continue                # siblings share their trunk
+                    for h, v in [(m, n) for m in a for n in b] + [(n, m) for m in a for n in b]:
+                        if h[0][1] != h[1][1] or v[0][0] != v[1][0]:
+                            continue
+                        x, y = v[0][0], h[0][1]
+                        crossed = (min(h[0][0], h[1][0]) < x < max(h[0][0], h[1][0])
+                                   and min(v[0][1], v[1][1]) < y < max(v[0][1], v[1][1]))
+                        self.assertFalse(crossed, "%s: two buses cross" % direction)
+
+    def test_a_graph_description_picks_the_edge_style(self):  # verifies: REQ-EXCALIDRAW-858#CASE-6
+        spec = {"seed": 3, "edge_style": "orthogonal",
+                "nodes": [{"id": n} for n in "abcd"],
+                "edges": [{"src": "a", "dst": n} for n in "bcd"]}
+        with tempfile.TemporaryDirectory() as d:
+            with open(eb.scene_from_spec(spec, d)[0], encoding="utf-8") as f:
+                arrows = [e for e in json.load(f)["elements"] if e["type"] == "arrow"]
+            self.assertTrue(arrows)
+            self.assertTrue(all(e["startBinding"] is None for e in arrows))
+            with self.assertRaises(ValueError):
+                eb.scene_from_spec(dict(spec, edge_style="curvy"), d)
+
+    def test_every_placed_node_carries_its_id(self):  # verifies: REQ-EXCALIDRAW-858#CASE-7
+        spec = {"seed": 3, "nodes": [{"id": "start", "label": "Read input"},
+                                     {"id": "q", "kind": "decision"}, {"id": "io", "kind": "data"}],
+                "edges": [{"src": "start", "dst": "q"}, {"src": "q", "dst": "io"}]}
+        with tempfile.TemporaryDirectory() as d:
+            with open(eb.scene_from_spec(spec, d)[0], encoding="utf-8") as f:
+                elements = json.load(f)["elements"]
+        tagged = {e["customData"]["id"]: e for e in elements if "customData" in e}
+        self.assertEqual(sorted(tagged), ["io", "q", "start"])
+        texts = {e["containerId"]: e["text"] for e in elements
+                 if e["type"] == "text" and e.get("containerId")}
+        self.assertEqual(texts[tagged["start"]["id"]], "Read input", "the id is on the shape")
 
     def test_a_back_edge_between_neighbouring_layers_loops_instead_of_retracing(self):
         # both legs of the route used to share one channel, so the connector went
@@ -1261,6 +1419,24 @@ class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
             page = html_page("demo", self.SCENE)
         self.assertIn(assets.CDN, page)
         self.assertIn("WARNING [viewer]", err.getvalue())
+
+    def test_download_serialises_the_live_scene(self):  # verifies: REQ-EXCALIDRAW-854#CASE-5
+        # the JS cannot run here; what is pinned is the wiring a browser run proved:
+        # the API handle is kept, download() serialises through it, and the
+        # embedded scene is only the fallback for a page whose renderer failed
+        script = html_page("demo", self.SCENE, offline=False).rsplit("<script>", 1)[1]
+        self.assertIn("excalidrawAPI: function(a){ api = a; }", script)
+        self.assertIn("E.serializeAsJSON(api.getSceneElements()", script)
+        self.assertIn("new Blob([current()]", script)
+        self.assertNotIn("new Blob([JSON.stringify(SCENE", script)
+
+    def test_unsaved_edits_warn_before_unload(self):  # verifies: REQ-EXCALIDRAW-854#CASE-6
+        script = html_page("demo", self.SCENE, offline=False).rsplit("<script>", 1)[1]
+        self.assertIn('addEventListener("beforeunload"', script)
+        self.assertIn("if (edited)", script)
+        # the baseline follows the scene until the reader touches it, so the font
+        # re-measure on load is not mistaken for an edit
+        self.assertIn("if (!touched) saved = v;", script)
 
     def test_environment_can_opt_out(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
         with mock.patch.dict(os.environ, {"EXCALIDRAW_DIAGRAM_OFFLINE": "0"}):

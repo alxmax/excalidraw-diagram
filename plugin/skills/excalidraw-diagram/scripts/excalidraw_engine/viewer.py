@@ -57,18 +57,37 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 __RUNTIME__
 <script>
 const SCENE = __SCENE__;
+// The page is an editor, so the file it hands back is the scene as it stands now:
+// the live elements when the renderer is up, the embedded scene only when it is not.
+// `edited` compares the scene version with the one last saved. Until the reader
+// first touches the canvas the baseline follows the scene, because loading the
+// fonts re-measures every label and bumps the version with no edit made.
+let api = null, saved = null, edited = false, touched = false;
+
+function current(){
+  const E = window.ExcalidrawLib;
+  if (api && E && E.serializeAsJSON)
+    return E.serializeAsJSON(api.getSceneElements(), api.getAppState(),
+                             api.getFiles(), "local");
+  return JSON.stringify(SCENE, null, 2);
+}
 
 function download(){
-  const blob = new Blob([JSON.stringify(SCENE, null, 2)],
-                        {type:"application/json"});
+  const blob = new Blob([current()], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "__TITLE__.excalidraw";
   a.click();
   URL.revokeObjectURL(a.href);
+  if (api) saved = window.ExcalidrawLib.getSceneVersion(api.getSceneElements());
+  edited = false;
 }
 document.getElementById("dl").onclick = download;
 const dl2 = document.getElementById("dl2"); if (dl2) dl2.onclick = download;
+// A refresh or a closed tab would drop the edits without a word.
+window.addEventListener("beforeunload", function(ev){
+  if (edited) { ev.preventDefault(); ev.returnValue = ""; }
+});
 
 window.addEventListener("load", function(){
   try {
@@ -81,11 +100,20 @@ window.addEventListener("load", function(){
         appState: { viewBackgroundColor: SCENE.appState.viewBackgroundColor },
         scrollToContent: true
       },
+      excalidrawAPI: function(a){ api = a; },
+      onChange: function(elements){
+        const v = E.getSceneVersion(elements);
+        if (!touched) saved = v;
+        edited = v !== saved;
+      },
       viewModeEnabled: false,
       zenModeEnabled: false,
       gridModeEnabled: false,
       UIOptions: { canvasActions: { loadScene: false } }
     }));
+    for (const ev of ["pointerdown", "keydown"])
+      document.getElementById("app").addEventListener(ev, function(){ touched = true; },
+                                                      true);
   } catch (err) {
     console.error(err);
     document.getElementById("app").style.display = "none";
