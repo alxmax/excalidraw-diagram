@@ -52,6 +52,10 @@
     "REQ-EXCALIDRAW-851": {
       "hash": "e0b7380e2a31",
       "reason": "REQ-846/847: crossing and overlap also judge enclose() frames; REQ-851: pack() clears non-members out of frames and draws arrows before frames"
+    },
+    "REQ-EXCALIDRAW-854": {
+      "hash": "440a78e33c0d",
+      "reason": "viewer download saves the live edits; unload warning"
     }
   }
 }

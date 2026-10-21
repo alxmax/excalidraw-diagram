@@ -290,11 +290,14 @@
         "The viewer page inlines the vendored Excalidraw runtime, its React pair and its fonts, so opening it issues no network request.",
         "`offline=False`, the CLI's `--cdn`, writes the page that loads that runtime from the pinned CDN path instead.",
         "A vendored runtime that is incomplete makes the builder warn and emit the CDN page.",
-        "The runtime is vendored, never downloaded: the builder still imports no HTTP client."
+        "The runtime is vendored, never downloaded: the builder still imports no HTTP client.",
+        "The viewer's download button saves the scene as edited in the page. The embedded scene is saved only when the renderer did not load.",
+        "The viewer warns before the page unloads with edits made since the last download."
       ],
       "verify": [],
       "notes": [
-        "The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves that case."
+        "The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves that case.",
+        "The download and the unload warning run only in a browser. The tests pin their wiring in the page. A headless Chrome run deleted one element and the download dropped from 49 elements to 48."
       ],
       "current_impl": [
         "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
@@ -304,9 +307,11 @@
         "CASE-1 — — the default page loads nothing remote Given  a scene saved with no viewer options When   the written `.html` is inspected Then   no `script` or `link` tag in its markup carries an `http` source, and the fonts are present as `data:` URIs",
         "CASE-2 — — the CDN page stays available on request Given  the same scene When   it is saved with `offline=False` or rendered with `--cdn` Then   the page links the pinned unpkg build and is an order of magnitude smaller",
         "CASE-3 — — a missing runtime degrades loudly Given  a vendored runtime whose files are absent When   a viewer page is built with the default options Then   the CDN page is written and a `WARNING [viewer]` line names the fallback",
-        "CASE-4 — — the asset path never falls back to the CDN Given  an offline page When   `window.EXCALIDRAW_ASSET_PATH` is read Then   it is a truthy local path, because the bundle reads it as `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch"
+        "CASE-4 — — the asset path never falls back to the CDN Given  an offline page When   `window.EXCALIDRAW_ASSET_PATH` is read Then   it is a truthy local path, because the bundle reads it as `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch",
+        "CASE-5 — — the download button returns the edits Given  a viewer page whose scene the reader has changed When   the download button is pressed Then   the file holds the live scene through `serializeAsJSON`, not the embedded one",
+        "CASE-6 — — unsaved edits are not dropped silently Given  a viewer page edited since its last download When   the page is about to unload Then   a `beforeunload` handler asks first. Loading the fonts alone does not count as an edit"
       ],
-      "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch",
+      "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch\n\nCASE-5 — the download button returns the edits\n  Given  a viewer page whose scene the reader has changed\n  When   the download button is pressed\n  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one\n\nCASE-6 — unsaved edits are not dropped silently\n  Given  a viewer page edited since its last download\n  When   the page is about to unload\n  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count\n         as an edit",
       "input": "",
       "output": "",
       "desc": "",
@@ -328,15 +333,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:132"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:160"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "ARCH-EXCALIDRAW-031",
@@ -672,7 +677,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:166"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:194"
         }
       ],
       "test_exempt": null,
@@ -858,7 +863,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1301"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1319"
         },
         {
           "role": "implements",
@@ -1704,9 +1709,9 @@
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py",
-        "line": 158,
+        "line": 186,
         "name": "viewer.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 158"
+        "detail": "1 line(s) wider than 100 columns, first at line 186"
       }
     ],
     "advice": {

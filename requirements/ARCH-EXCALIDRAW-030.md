@@ -269,6 +269,9 @@ Every bullet below is binding.
   pinned CDN path instead.
 - A vendored runtime that is incomplete makes the builder warn and emit the CDN page.
 - The runtime is vendored, never downloaded: the builder still imports no HTTP client.
+- The viewer's download button saves the scene as edited in the page. The embedded
+  scene is saved only when the renderer did not load.
+- The viewer warns before the page unloads with edits made since the last download.
 
 ## Cases
 CASE-1 — the default page loads nothing remote
@@ -293,11 +296,26 @@ CASE-4 — the asset path never falls back to the CDN
   Then   it is a truthy local path, because the bundle reads it as
          `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch
 
+CASE-5 — the download button returns the edits
+  Given  a viewer page whose scene the reader has changed
+  When   the download button is pressed
+  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one
+
+CASE-6 — unsaved edits are not dropped silently
+  Given  a viewer page edited since its last download
+  When   the page is about to unload
+  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count
+         as an edit
+
 ## Context
 **Notes**
 - The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A
   scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves
   that case.
+
+- The download and the unload warning run only in a browser. The tests pin their
+  wiring in the page. A headless Chrome run deleted one element and the download
+  dropped from 49 elements to 48.
 
 **Current implementation**
 - `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the

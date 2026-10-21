@@ -1262,6 +1262,24 @@ class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
         self.assertIn(assets.CDN, page)
         self.assertIn("WARNING [viewer]", err.getvalue())
 
+    def test_download_serialises_the_live_scene(self):  # verifies: REQ-EXCALIDRAW-854#CASE-5
+        # the JS cannot run here; what is pinned is the wiring a browser run proved:
+        # the API handle is kept, download() serialises through it, and the
+        # embedded scene is only the fallback for a page whose renderer failed
+        script = html_page("demo", self.SCENE, offline=False).rsplit("<script>", 1)[1]
+        self.assertIn("excalidrawAPI: function(a){ api = a; }", script)
+        self.assertIn("E.serializeAsJSON(api.getSceneElements()", script)
+        self.assertIn("new Blob([current()]", script)
+        self.assertNotIn("new Blob([JSON.stringify(SCENE", script)
+
+    def test_unsaved_edits_warn_before_unload(self):  # verifies: REQ-EXCALIDRAW-854#CASE-6
+        script = html_page("demo", self.SCENE, offline=False).rsplit("<script>", 1)[1]
+        self.assertIn('addEventListener("beforeunload"', script)
+        self.assertIn("if (edited)", script)
+        # the baseline follows the scene until the reader touches it, so the font
+        # re-measure on load is not mistaken for an edit
+        self.assertIn("if (!touched) saved = v;", script)
+
     def test_environment_can_opt_out(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
         with mock.patch.dict(os.environ, {"EXCALIDRAW_DIAGRAM_OFFLINE": "0"}):
             self.assertIn(assets.CDN, html_page("demo", self.SCENE))
