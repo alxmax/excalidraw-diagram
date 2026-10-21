@@ -1561,7 +1561,7 @@
     },
     {
       "month": "2026-10",
-      "count": 5,
+      "count": 6,
       "first": "2026-10-03",
       "last": "2026-10-21",
       "versions": [
@@ -1569,9 +1569,10 @@
         "v2.4.2",
         "v2.4.3",
         "v2.5.0",
-        "v2.6.0"
+        "v2.6.0",
+        "v2.7.0"
       ],
-      "landmark": "v2.6.0",
+      "landmark": "v2.7.0",
       "headline": "The viewer's download button saves your edits"
     }
   ],

@@ -1,6 +1,6 @@
 # Changelog
 
-## plugin `v2.6.0` — 2026-10-21
+## plugin `v2.7.0` — 2026-10-21
 
 **The viewer's download button saves your edits.** The page is a full editor, but the
 button serialised the scene embedded when it was built, so a reader who edited the
@@ -32,6 +32,12 @@ the viewer, so an edited scene can be matched back to the description that drew 
 
 `REQ-EXCALIDRAW-858` holds the per-node contract with seven cases; `REQ-EXCALIDRAW-848`,
 `-853` and `-854` gained one or two cases each.
+## plugin `v2.6.0` — 2026-10-13
+
+**The licence is Apache 2.0.** `LICENSE` holds the Apache License 2.0 and `plugin.json` says
+`Apache-2.0`, the same licence as the other plugins by the same author. Releases up to v2.5.0
+stay under MIT. The bundled Excalidraw, React and React DOM builds keep their own MIT licences.
+No code change.
 
 ## plugin `v2.5.0` — 2026-10-03
 

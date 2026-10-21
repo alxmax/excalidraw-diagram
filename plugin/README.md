@@ -123,5 +123,5 @@ through a shell.
 
 ## Licence
 
-MIT. See `LICENSE` at the repository root, or the `license` field in
-`.claude-plugin/plugin.json`.
+Apache License 2.0. See `LICENSE` at the repository root, or the `license` field in
+`.claude-plugin/plugin.json`. The bundled Excalidraw, React and React DOM builds keep their own MIT licences.
