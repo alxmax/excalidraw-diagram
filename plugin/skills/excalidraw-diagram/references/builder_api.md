@@ -23,10 +23,12 @@ there. This survives any plugin update without ever needing to edit the script.
 import sys, os, glob, re
 
 def _builder_path():
-    cache = os.path.join(os.path.expanduser("~"), ".claude", "plugins",
-                         "cache", "excalidraw-diagram", "excalidraw-diagram")
-    hits = glob.glob(os.path.join(cache, "*", "skills",
-                                  "excalidraw-diagram", "scripts"))
+    # a non-default config dir (CLAUDE_CONFIG_DIR) first, then ~/.claude
+    roots = [os.environ.get("CLAUDE_CONFIG_DIR"), os.path.expanduser("~/.claude")]
+    hits = [h for root in roots if root
+            for h in glob.glob(os.path.join(root, "plugins", "cache",
+                                            "excalidraw-diagram", "excalidraw-diagram",
+                                            "*", "skills", "excalidraw-diagram", "scripts"))]
     if not hits:
         raise RuntimeError(
             "excalidraw-diagram skill not found — run: /plugin install excalidraw-diagram"

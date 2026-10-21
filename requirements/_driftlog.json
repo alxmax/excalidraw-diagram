@@ -41,6 +41,10 @@
       "hash": "cdf0d3ec5f01",
       "reason": "REQ-846/847: crossing and overlap also judge enclose() frames; REQ-851: pack() clears non-members out of frames and draws arrows before frames"
     },
+    "REQ-EXCALIDRAW-848": {
+      "hash": "37f7423248ee",
+      "reason": "discover stub honours CLAUDE_CONFIG_DIR"
+    },
     "REQ-EXCALIDRAW-849": {
       "hash": "0abfd9b89884",
       "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"

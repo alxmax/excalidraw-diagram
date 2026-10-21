@@ -23,6 +23,7 @@ import json
 import os
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -561,6 +562,26 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertTrue(glob.glob(os.path.join(d, "*.excalidraw")),
                             "stub ran but saved no scene")
+
+    def test_discover_stub_finds_a_custom_config_dir(self):  # verifies: REQ-EXCALIDRAW-848#CASE-5
+        # the builder installed ONLY under CLAUDE_CONFIG_DIR, an empty home, and no
+        # PYTHONPATH: the stub's cache fallback is the one way it can import
+        with tempfile.TemporaryDirectory() as d:
+            cfg, home = os.path.join(d, "cfg"), os.path.join(d, "home")
+            os.makedirs(home)
+            shutil.copytree(HERE, os.path.join(
+                cfg, "plugins", "cache", "excalidraw-diagram", "excalidraw-diagram",
+                "9.9.9", "skills", "excalidraw-diagram", "scripts"),
+                ignore=shutil.ignore_patterns("__pycache__", "test_*"))
+            repo = os.path.join(d, "repo")
+            os.makedirs(repo)
+            stub = eb.discover_stub(repo, out_path=os.path.join(repo, "make_diagram.py"))
+            env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+            env.update(CLAUDE_CONFIG_DIR=cfg, HOME=home, USERPROFILE=home)
+            r = subprocess.run([sys.executable, "-X", "utf8", stub],
+                               cwd=repo, capture_output=True, text=True, env=env)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(glob.glob(os.path.join(repo, "*.excalidraw")))
 
     def test_discover_empty_repo_stub_still_runs(self):
         with tempfile.TemporaryDirectory() as d:
