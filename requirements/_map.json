@@ -114,7 +114,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:676"
         },
         {
           "role": "implements",
@@ -189,7 +189,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:655"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:676"
         },
         {
           "role": "implements",
@@ -252,7 +252,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:744"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:765"
         },
         {
           "role": "implements",
@@ -325,7 +325,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1221"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1242"
         },
         {
           "role": "implements",
@@ -448,7 +448,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
         },
         {
           "role": "implements",
@@ -514,11 +514,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:862"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:883"
         },
         {
           "role": "implements",
@@ -636,6 +636,7 @@
         "Invoking `python excalidraw_builder.py` with **no arguments** runs the builder smoke test, prints a human-readable summary, and exits 0 on success. This is the CI health-check entry point and is never shadowed by a new default verb.",
         "`python excalidraw_builder.py render <scene.excalidraw> [out_dir]` reads an existing `.excalidraw` file and writes a fresh self-contained `<basename>.html` viewer beside it (or into `out_dir` when given). The source `.excalidraw` file is never modified.",
         "`python excalidraw_builder.py discover <repo> [out.py]` scans `<repo>` for source files and emits a runnable multi-layer poster stub (STRUCTURE layer pre-populated, WORKFLOW / INTEGRATION / MODES / MODEL / DATA layers commented as scaffolds) to `out.py` (default: `make_diagram.py`).",
+        "A discover stub run away from the builder imports the newest installed copy. It looks in the `CLAUDE_CONFIG_DIR` plugin cache first, then in `~/.claude`.",
         "Any unrecognised verb exits with code 2 and prints a usage message. The message names every verb the CLI accepts, `scene` included."
       ],
       "verify": [],
@@ -645,9 +646,10 @@
         "CASE-1 — — no-arg invocation runs the smoke test and exits 0 Given  no command-line arguments When   `python excalidraw_builder.py` runs Then   it prints a success summary line and exits 0",
         "CASE-2 — — render rebuilds the HTML viewer without touching the source Given  an existing `<scene>.excalidraw` file When   `render <scene>.excalidraw` runs Then   a fresh `<scene>.html` is written and the `.excalidraw` file's bytes are unchanged",
         "CASE-3 — — discover emits a runnable multi-layer stub Given  a repository containing at least one source file When   `discover <repo> out.py` runs Then   `out.py` is written, imports `excalidraw_builder`, and runs without error",
-        "CASE-4 — — an unknown verb exits 2 with usage Given  the verb `frobnicate` When   `python excalidraw_builder.py frobnicate` runs Then   it exits with code 2 and prints a usage message --------------------"
+        "CASE-4 — — an unknown verb exits 2 with usage Given  the verb `frobnicate` When   `python excalidraw_builder.py frobnicate` runs Then   it exits with code 2 and prints a usage message",
+        "CASE-5 — — a stub finds the plugin under a custom config directory Given  the builder installed only in the plugin cache under `CLAUDE_CONFIG_DIR` When   a discover stub runs with no `PYTHONPATH` and an empty home directory Then   it imports that builder, exits 0 and writes a scene --------------------"
       ],
-      "accept": "CASE-1 — no-arg invocation runs the smoke test and exits 0\n  Given  no command-line arguments\n  When   `python excalidraw_builder.py` runs\n  Then   it prints a success summary line and exits 0\n\nCASE-2 — render rebuilds the HTML viewer without touching the source\n  Given  an existing `<scene>.excalidraw` file\n  When   `render <scene>.excalidraw` runs\n  Then   a fresh `<scene>.html` is written and the `.excalidraw` file's bytes are unchanged\n\nCASE-3 — discover emits a runnable multi-layer stub\n  Given  a repository containing at least one source file\n  When   `discover <repo> out.py` runs\n  Then   `out.py` is written, imports `excalidraw_builder`, and runs without error\n\nCASE-4 — an unknown verb exits 2 with usage\n  Given  the verb `frobnicate`\n  When   `python excalidraw_builder.py frobnicate` runs\n  Then   it exits with code 2 and prints a usage message\n\n--------------------",
+      "accept": "CASE-1 — no-arg invocation runs the smoke test and exits 0\n  Given  no command-line arguments\n  When   `python excalidraw_builder.py` runs\n  Then   it prints a success summary line and exits 0\n\nCASE-2 — render rebuilds the HTML viewer without touching the source\n  Given  an existing `<scene>.excalidraw` file\n  When   `render <scene>.excalidraw` runs\n  Then   a fresh `<scene>.html` is written and the `.excalidraw` file's bytes are unchanged\n\nCASE-3 — discover emits a runnable multi-layer stub\n  Given  a repository containing at least one source file\n  When   `discover <repo> out.py` runs\n  Then   `out.py` is written, imports `excalidraw_builder`, and runs without error\n\nCASE-4 — an unknown verb exits 2 with usage\n  Given  the verb `frobnicate`\n  When   `python excalidraw_builder.py frobnicate` runs\n  Then   it exits with code 2 and prints a usage message\n\nCASE-5 — a stub finds the plugin under a custom config directory\n  Given  the builder installed only in the plugin cache under `CLAUDE_CONFIG_DIR`\n  When   a discover stub runs with no `PYTHONPATH` and an empty home directory\n  Then   it imports that builder, exits 0 and writes a scene\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
@@ -661,7 +663,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:493"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:494"
         },
         {
           "role": "implements",
@@ -669,7 +671,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:182"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:184"
         },
         {
           "role": "implements",
@@ -684,8 +686,8 @@
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "REQ-EXCALIDRAW-850",
@@ -732,7 +734,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1104"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1125"
         },
         {
           "role": "implements",
@@ -863,7 +865,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1319"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1340"
         },
         {
           "role": "implements",
@@ -937,7 +939,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:883"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:904"
         }
       ],
       "test_exempt": null,
@@ -1062,7 +1064,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:964"
         },
         {
           "role": "implements",
@@ -1295,7 +1297,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:171"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
         },
         {
           "role": "implements",

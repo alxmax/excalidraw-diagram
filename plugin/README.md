@@ -46,8 +46,9 @@ Mermaid flowchart translated into an editable scene. Each has a runnable generat
   and in Cowork sessions on your computer, not in claude.ai chat.
 - **A starter script looks in the plugin cache.** A script written by `discover_repo`
   imports the builder from beside itself. If the builder is not there, it lists the
-  directories under `~/.claude/plugins/cache/excalidraw-diagram/` and imports the builder
-  from the newest installed copy of this plugin. It reads no credentials, no file
+  directories under `plugins/cache/excalidraw-diagram/` in the `CLAUDE_CONFIG_DIR`
+  directory and in `~/.claude`, and imports the builder from the newest installed copy
+  of this plugin. It reads no credentials, no file
   contents and sends nothing.
 - **Network: none.** The builder is Python standard library only. It imports no HTTP
   client, no socket module and no subprocess module, and nothing is installed from PyPI
