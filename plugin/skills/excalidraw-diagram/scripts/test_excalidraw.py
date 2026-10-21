@@ -840,6 +840,20 @@ class CasesExcalidrawValues(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-853
         self.assertEqual(default["overlap"], "error")
         self.assertEqual(default["crossing"], "warn")
 
+    def test_a_dark_fill_gets_a_label_that_reads(self):  # verifies: REQ-EXCALIDRAW-853#CASE-4
+        from excalidraw_engine.style import contrast
+        s = eb.Scene(seed=1)
+        dark = s.box("archived", (0, 0), paint="#5c2d91")
+        light = s.box("exists", (300, 0), paint="blue")
+        told = s.box("told", (600, 0), paint="#5c2d91", font=eb.Font(color="#ffec99"))
+        by_id = {e["id"]: e for e in s.elements}
+        ink = {n: by_id[by_id[n]["boundElements"][0]["id"]]["strokeColor"]
+               for n in (dark, light, told)}
+        self.assertEqual(ink[dark], "#ffffff")
+        self.assertGreaterEqual(contrast(ink[dark], "#5c2d91"), 4.5)
+        self.assertEqual(ink[light], eb.STROKE["black"], "a palette tint keeps black")
+        self.assertEqual(ink[told], "#ffec99", "a colour the caller gives wins")
+
 
 class TestReferenceDocs(unittest.TestCase):
     """The snippets in the contract and references are what an assistant copies. A
@@ -961,7 +975,7 @@ def _all_gates(scene):
     return {name: hits for name, hits in checks.items() if hits}
 
 
-class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
+class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851  # tested-by: REQ-EXCALIDRAW-858
     """pack() lays a described graph out cleanly, whatever shape it has."""
 
     # a 13-node graph with two groups, a back edge and a layer-skipping edge —
@@ -1108,6 +1122,45 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851
                options=eb.PackOptions(direction="TB"))
         self.assertEqual(s.check_arrow_crossings(), [])
 
+
+    def test_a_node_carries_its_own_font(self):  # verifies: REQ-EXCALIDRAW-858#CASE-1
+        nodes = [{"id": "a", "label": "a long label at a larger size",
+                  "font": {"size": 20, "color": "#e03131"}},
+                 {"id": "b", "fill": "#5c2d91"}]
+        s = eb.Scene(seed=3)
+        placed = s.pack(nodes, [{"src": "a", "dst": "b"}])
+        by_id = {e["id"]: e for e in s.elements}
+        text = {n: by_id[by_id[placed[n]]["boundElements"][0]["id"]] for n in "ab"}
+        self.assertEqual(text["a"]["fontSize"], 20)
+        self.assertEqual(text["a"]["strokeColor"], "#e03131")
+        self.assertEqual(text["b"]["strokeColor"], "#ffffff", "dark fill, no font given")
+        self.assertEqual(s.check_text_overflow(), [], "the box is sized at the node's size")
+
+    def test_a_decision_holds_its_question_inside_the_rhombus(self):  # verifies: REQ-EXCALIDRAW-858#CASE-2
+        s = eb.Scene(seed=3)
+        placed = s.pack([{"id": "q", "kind": "decision",
+                          "label": "Is the customer already signed in?"}])
+        by_id = {e["id"]: e for e in s.elements}
+        shape = by_id[placed["q"]]
+        text = by_id[shape["boundElements"][0]["id"]]
+        self.assertIn("\n", text["text"], "the question wraps to two lines")
+        # the text box's corner, against the rhombus |dx|/(w/2) + |dy|/(h/2) <= 1
+        reach = text["width"] / shape["width"] + text["height"] / shape["height"]
+        self.assertLessEqual(reach, 0.86)
+
+    def test_a_graph_description_carries_a_node_font(self):  # verifies: REQ-EXCALIDRAW-858#CASE-3
+        spec = {"name": "fonts", "seed": 3,
+                "nodes": [{"id": "a", "font": {"size": 18, "color": "#1971c2"}},
+                          {"id": "b"}],
+                "edges": [{"src": "a", "dst": "b"}]}
+        with tempfile.TemporaryDirectory() as d:
+            scene_path = eb.scene_from_spec(spec, d)[0]
+            with open(scene_path, encoding="utf-8") as f:
+                texts = {e["text"]: e for e in json.load(f)["elements"]
+                         if e["type"] == "text"}
+        self.assertEqual((texts["a"]["fontSize"], texts["a"]["strokeColor"]),
+                         (18, "#1971c2"))
+        self.assertEqual(texts["b"]["fontSize"], 13, "a node without one keeps the default")
 
     def test_a_back_edge_between_neighbouring_layers_loops_instead_of_retracing(self):
         # both legs of the route used to share one channel, so the connector went

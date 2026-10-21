@@ -40,6 +40,35 @@ def resolve(color, table, default):
     return table.get(color, default)
 
 
+def _luminance(hex_colour):
+    """WCAG relative luminance of a `#rrggbb` colour."""
+    def channel(c):
+        c = int(c, 16) / 255.0
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    h = hex_colour.lstrip("#")
+    r, g, b = (channel(h[i:i + 2]) for i in (0, 2, 4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(a, b):
+    """The WCAG contrast ratio of two `#rrggbb` colours, 1 to 21."""
+    hi, lo = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def ink_on(fill):
+    """The default label colour for a shape filled with `fill`: the usual black,
+    or white when black would fall short of WCAG's 4.5:1 and white reads better.
+    A fill that is not a `#rrggbb` colour (transparent) keeps black."""
+    # implements: REQ-EXCALIDRAW-853
+    black, white = STROKE["black"], "#ffffff"
+    if not (isinstance(fill, str) and len(fill) == 7 and fill.startswith("#")):
+        return black
+    if contrast(black, fill) >= 4.5 or contrast(white, fill) <= contrast(black, fill):
+        return black
+    return white
+
+
 class Paint(object):  # implements: REQ-EXCALIDRAW-853
     """What a caller says about an element's colour and line: its fill, its
     stroke, whether the line is dashed, and the group it belongs to.
@@ -72,7 +101,8 @@ class Font(object):  # implements: REQ-EXCALIDRAW-853
     """What a caller says about a run of text: its size, colour and alignment.
     A field left as None keeps the calling method's own default — a label stays
     grey and a title stays left-aligned when only the size is given. An int is
-    accepted wherever a Font is, and means its size."""
+    accepted wherever a Font is, and means its size; a dict means the Font of
+    those fields, the form a JSON graph description can carry."""
 
     __slots__ = ("size", "color", "align")
 
@@ -87,8 +117,10 @@ class Font(object):  # implements: REQ-EXCALIDRAW-853
             return default
         if isinstance(font, (int, float)) and not isinstance(font, bool):
             font = cls(font)
+        elif isinstance(font, dict):
+            font = cls(**font)
         if not isinstance(font, cls):
-            raise TypeError("font must be a Font, a size or None, not %r"
+            raise TypeError("font must be a Font, a size, a dict or None, not %r"
                             % type(font).__name__)
         return cls(default.size if font.size is None else font.size,
                    default.color if font.color is None else font.color,

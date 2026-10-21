@@ -12,9 +12,20 @@ check_arrow_crossings() empty.
 """
 
 from .geometry import as_point, fit_text, text_extent
-from .style import Paint
+from .style import Font, Paint
 
 ROUTED = Paint(stroke="grey", dashed=True)
+_DIAMONDS = ("diamond", "decision")
+
+
+def diamond_size(text, size):
+    """(w, h) of a rhombus that holds `text` set at `size`. A centred w x h rhombus
+    contains a tw x th text box when tw/w + th/h <= 1, so a box sized like a
+    rectangle spills over the slanted edges. The width takes 1.7x the text, the
+    height whatever then keeps the sum at 0.85, the rest being clear margin."""
+    tw, th = text_extent(text, size)
+    w = max(180.0, tw * 1.7)
+    return w, max(100.0, th / (0.85 - tw / w))
 
 
 class PackOptions(object):
@@ -156,7 +167,7 @@ class _PackRun(object):
         self.back = back_edges(self.ids, self.links)
         self.forward = [link for k, link in enumerate(self.links) if k not in self.back]
         self.layer = layer_of(self.ids, self.forward)
-        self.placed, self.size, self.at, self.extent = {}, {}, [], []
+        self.placed, self.size, self.font, self.at, self.extent = {}, {}, {}, [], []
 
     def layers(self, groups):
         """The ids per layer, ordered by four barycenter sweeps each way, with
@@ -185,9 +196,12 @@ class _PackRun(object):
         """Each node's size, and each layer's start coordinate and extent. A gap
         carrying a labelled arrow widens so the label keeps line on both sides."""
         for nid in self.ids:
-            text, w, h = fit_text(str(self.specs[nid].get("label", nid)),
-                                  size=self.opts.font_size, max_chars=22, min_size=(150, 58))
             spec = self.specs[nid]
+            font = self.font[nid] = Font.coerce(spec.get("font"), Font(self.opts.font_size))
+            text, w, h = fit_text(str(spec.get("label", nid)),
+                                  size=font.size, max_chars=22, min_size=(150, 58))
+            if spec.get("kind") in _DIAMONDS:
+                w, h = diamond_size(text, font.size)
             self.size[nid] = (float(spec.get("w", w)), float(spec.get("h", h)), text)
         gaps = [float(self.opts.gap_major)] * max(1, len(layers) - 1)
         for link in self.forward:
@@ -227,7 +241,7 @@ class _PackRun(object):
                 spec = self.specs[nid]
                 self.placed[nid] = self.scene.box(
                     text, (x, y, w, h), paint=spec.get("fill"),
-                    shape=spec.get("kind", "rectangle"), font=self.opts.font_size)
+                    shape=spec.get("kind", "rectangle"), font=self.font[nid])
 
     def _clear_frames(self, layers, groups, start):
         """Move non-members out of each group's frame, in `start` (node -> its
@@ -345,13 +359,15 @@ class PackMixin(object):
     def pack(self, nodes, edges=(), *, groups=(), at=(40, 0), options=None):
         """Lay out a directed graph from ids and edges alone — no coordinates.
 
-        nodes:   dicts {id, label, fill, kind, w, h}; only `id` is required and
-                 `kind` is any box() shape name.
+        nodes:   dicts {id, label, fill, kind, w, h, font}; only `id` is required,
+                 `kind` is any box() shape name and `font` a Font, a size or a
+                 dict {size, color, align}.
         edges:   dicts {src, dst, label, dashed}.
         groups:  dicts {label, members: [id, ...]}, each drawn as an enclose() frame.
         options: a PackOptions (direction, spacing, font size).
         Returns {node id: scene id} so the caller can keep annotating."""
         # implements: REQ-EXCALIDRAW-851
+        # implements: REQ-EXCALIDRAW-858
         run = _PackRun(self, validate(nodes, edges), at, options or PackOptions())
         layers = run.layers(groups)
         run.measure(layers)

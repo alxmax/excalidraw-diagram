@@ -2,7 +2,7 @@
 and the frame that sits behind a group of them."""
 
 from .geometry import as_rect, text_extent
-from .style import FILL, STROKE, Font, Paint, Style, TextStyle, resolve
+from .style import FILL, STROKE, Font, Paint, Style, TextStyle, ink_on, resolve
 
 # The size a shape gets when the caller gives only a point. A flowchart symbol has
 # its own proportions, so the default follows the shape rather than the call.
@@ -42,7 +42,8 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
 
         at:    (x, y) — sized by the shape's default — or (x, y, w, h), or a Rect.
         paint: a Paint, or a fill colour / role name.
-        font:  a Font, or a size.
+        font:  a Font, or a size. With no colour given, the label is black, or
+               white on a fill too dark for black to reach 4.5:1 contrast.
         shape: rectangle, ellipse, diamond, or an ISO 5807 name.
         container=True marks a visual wrapper meant to hold other shapes; it is
         exempt from the save-time overlap check, as frames always are.
@@ -54,7 +55,7 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         font = Font.coerce(font, BODY_FONT)
         stroke = resolve(paint.stroke, STROKE, STROKE["black"])
         fill = resolve(self.roles.get(paint.fill, paint.fill), FILL, "transparent")
-        ts = TextStyle(font.size, resolve(font.color, STROKE, STROKE["black"]))
+        ts = TextStyle(font.size, resolve(font.color, STROKE, ink_on(fill)))
         label = (text or "").split("\n")[0] or shape
         if shape in _POLYGON:
             nid = self._polygon(shape, text, rect, Style(stroke, fill, group=paint.group), ts)
