@@ -1162,6 +1162,77 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851  #
                          (18, "#1971c2"))
         self.assertEqual(texts["b"]["fontSize"], 13, "a node without one keeps the default")
 
+    @staticmethod
+    def _legs(scene):
+        """Every unbound connector as (its first point, [its legs])."""
+        out = []
+        for e in scene.elements:
+            if e.get("type") == "arrow" and not e.get("startBinding"):
+                pts = [(e["x"] + px, e["y"] + py) for px, py in e["points"]]
+                out.append((pts[0], list(zip(pts, pts[1:]))))
+        return out
+
+    def test_a_wide_fan_out_becomes_a_bus(self):  # verifies: REQ-EXCALIDRAW-858#CASE-4
+        # one hub fanning out to eight leaves, laid out both ways. Unbound
+        # legs are invisible to the crossing gate, so the geometry is asserted here
+        from excalidraw_engine.geometry import seg_rect_overlap
+        kids = ["leaf %d" % i for i in range(8)]
+        nodes = [{"id": "hub"}] + [{"id": k} for k in kids]
+        edges = [{"src": "hub", "dst": k, "label": "feeds" if i % 3 == 0 else None}
+                 for i, k in enumerate(kids)]
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=5)
+            s.pack(nodes, edges, options=eb.PackOptions(direction=direction,
+                                                        edge_style="orthogonal"))
+            self.assertEqual(_all_gates(s), {}, direction)
+            legs = self._legs(s)
+            self.assertEqual(len(legs), 8, "every edge is a bus branch")
+            self.assertEqual(len({first for first, _ in legs}), 1, "one shared stub")
+            for _, path in legs:
+                for p, q in path:
+                    self.assertTrue(p[0] == q[0] or p[1] == q[1], "a leg is not square")
+                    for x, y, w, h, _shape in s._geom.values():
+                        self.assertEqual(seg_rect_overlap(
+                            p, q, (x + 4, y + 4, w - 8, h - 8)), 0, direction)
+
+    def test_a_bus_nested_in_another_never_crosses_it(self):  # verifies: REQ-EXCALIDRAW-858#CASE-5
+        # c0's bus spans c5's in both layouts. Ranking trunks by position instead
+        # of by span puts the wider one nearer and crosses them twice
+        kids = ["c%d" % i for i in range(8)]
+        nodes = [{"id": n} for n in ["root"] + kids + ["t0", "t1", "t2"]]
+        edges = [{"src": "root", "dst": c} for c in kids] + [
+            {"src": "c0", "dst": "t0"}, {"src": "c0", "dst": "t1"},
+            {"src": "c5", "dst": "t2"}]
+        for direction in ("LR", "TB"):
+            s = eb.Scene(seed=5)
+            s.pack(nodes, edges, options=eb.PackOptions(direction=direction,
+                                                        edge_style="orthogonal"))
+            self.assertEqual(_all_gates(s), {}, direction)
+            buses = self._legs(s)
+            for i, (o1, a) in enumerate(buses):
+                for o2, b in buses[i + 1:]:
+                    if o1 == o2:
+                        continue                # siblings share their trunk
+                    for h, v in [(m, n) for m in a for n in b] + [(n, m) for m in a for n in b]:
+                        if h[0][1] != h[1][1] or v[0][0] != v[1][0]:
+                            continue
+                        x, y = v[0][0], h[0][1]
+                        crossed = (min(h[0][0], h[1][0]) < x < max(h[0][0], h[1][0])
+                                   and min(v[0][1], v[1][1]) < y < max(v[0][1], v[1][1]))
+                        self.assertFalse(crossed, "%s: two buses cross" % direction)
+
+    def test_a_graph_description_picks_the_edge_style(self):  # verifies: REQ-EXCALIDRAW-858#CASE-6
+        spec = {"seed": 3, "edge_style": "orthogonal",
+                "nodes": [{"id": n} for n in "abcd"],
+                "edges": [{"src": "a", "dst": n} for n in "bcd"]}
+        with tempfile.TemporaryDirectory() as d:
+            with open(eb.scene_from_spec(spec, d)[0], encoding="utf-8") as f:
+                arrows = [e for e in json.load(f)["elements"] if e["type"] == "arrow"]
+            self.assertTrue(arrows)
+            self.assertTrue(all(e["startBinding"] is None for e in arrows))
+            with self.assertRaises(ValueError):
+                eb.scene_from_spec(dict(spec, edge_style="curvy"), d)
+
     def test_a_back_edge_between_neighbouring_layers_loops_instead_of_retracing(self):
         # both legs of the route used to share one channel, so the connector went
         # down and came back up the same vertical line: a stub, not a loop

@@ -3,7 +3,7 @@ generated: 2026-10-21
 engine: 2026-09-15.1
 nodes: 22
 edges: 5
-design OOP: 86/100 (19/22 source files without a design candidate)
+design OOP: 82/100 (18/22 source files without a design candidate)
 ---
 
 # Requirement Map

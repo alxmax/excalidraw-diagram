@@ -64,6 +64,10 @@
     "REQ-EXCALIDRAW-854": {
       "hash": "440a78e33c0d",
       "reason": "viewer download saves the live edits; unload warning"
+    },
+    "REQ-EXCALIDRAW-858": {
+      "hash": "38c13d850a21",
+      "reason": "pack edge_style orthogonal: bus fan-out (REQ-858)"
     }
   }
 }

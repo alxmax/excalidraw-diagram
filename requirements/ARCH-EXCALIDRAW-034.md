@@ -217,6 +217,12 @@ Every bullet below is binding.
   a size, or a dict of `size`, `color` and `align`.
 - `pack()` sizes a diamond or decision node so its wrapped label sits inside the
   rhombus, not just inside the box around it.
+- With `edge_style="orthogonal"`, `pack()` draws each edge between neighbouring
+  layers as a bus: a trunk in the gap beside its source, a square branch per target.
+- Each source in a layer gets its own trunk. The bus spanning less sits nearer its
+  layer, so a bus nested in a wider one never crosses it.
+- `PackOptions` raises `ValueError` for an `edge_style` other than `"straight"` or
+  `"orthogonal"`, and `graph.json` passes its `edge_style` to it.
 
 ## Cases
 CASE-1 — a node's font reaches its label
@@ -234,9 +240,26 @@ CASE-3 — a graph description reaches the same font
   When   `scene_from_spec()` builds it
   Then   the first label has that size and colour, and the second keeps 13px
 
+CASE-4 — a wide fan-out becomes a bus
+  Given  one node fanning out to eight, laid out once `"LR"` and once `"TB"`
+  When   `pack()` runs with `edge_style="orthogonal"`
+  Then   all seven checks return empty, and every leg is square and cuts no box
+
+CASE-5 — a nested bus does not cross the one around it
+  Given  a fan-out whose child c0 spans the targets of a sibling c5
+  When   `pack()` lays it out orthogonally in both directions
+  Then   no leg of one bus properly crosses a leg of the other
+
+CASE-6 — a graph description picks the edge style
+  Given  a `graph.json` whose `edge_style` is `"orthogonal"`, then the same with `"curvy"`
+  When   `scene_from_spec()` builds each
+  Then   the first draws only unbound bus legs, and the second raises `ValueError`
+
 ## Context
 **Current implementation**
-- `diamond_size()`, `_PackRun.measure()` and `_PackRun.place()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
+- `diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`,
+  `_PackRun._trunks()` and `_PackRun._bus()` in
+  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`;
+  `scene_from_spec()` in `excalidraw_engine/spec.py`.
 - `CasesExcalidraw034` in
   `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

@@ -111,6 +111,7 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
   "title": "Auth flow",                // -> title()
   "subtitle": "Left to right: ...",    // -> label(), one line, say the direction
   "direction": "LR",                   // "LR" = layers are columns, "TB" = rows
+  "edge_style": "straight",            // or "orthogonal": a bus per fan-out
   "seed": 7,                           // byte-identical re-runs; set it if committed
   "roles": {"service": "blue"},        // colour = meaning
   "nodes": [
@@ -131,6 +132,12 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
 connected nodes near each other, and then decides per edge: a straight arrow when its
 line clears every other box, a routed connector otherwise. Feedback edges are always
 routed, so a cycle never cuts back across the flow.
+
+`"edge_style": "orthogonal"` draws every edge between neighbouring layers as a bus
+instead: a trunk in the gap beside its source and a square branch into each target,
+with the label on the branch. It is the shape for a tree or a dependency map, where one
+node fans out to many; every leg lies in the gap between two layers, so none can cut
+a box. The legs are unbound lines, so dragging a box in the editor leaves them behind.
 
 A label left without a colour is black, or white on a fill too dark for black to
 reach 4.5:1 contrast, so a dark role needs no `font`. A `diamond` or `decision` node is
@@ -170,7 +177,7 @@ when you want the auto-layout inside a generator that also draws things by hand.
 | `s.free_arrow(p0, p1, …)` | `path()` with two points |
 | `s.route_under(src, dst, drop=70, label=None, paint=…)` | a dashed grey feedback connector below the row |
 | **Graph layout** | |
-| `s.pack(nodes, edges=(), groups=(), at=(40, 0), options=None) → {id: node id}` | the coordinate-free layout; `PackOptions(direction, gap_major, gap_minor, lane_gap, font_size)` |
+| `s.pack(nodes, edges=(), groups=(), at=(40, 0), options=None) → {id: node id}` | the coordinate-free layout; `PackOptions(direction, gap_major, gap_minor, lane_gap, font_size, edge_style)` |
 | **Inspection and save** | |
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
 | `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption |

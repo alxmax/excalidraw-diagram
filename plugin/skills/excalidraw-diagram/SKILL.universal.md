@@ -115,8 +115,8 @@ them all as tools (`build_scene`, `render_html`, `discover_repo`, `graph_schema`
 - **Column gaps.** Every column needs ≥80px clearance each side:
   `col_x[i+1] ≥ col_x[i] + col_width[i] + 80`.
 - **Arrow crossing check.** Before coding each arrow, trace the straight line
-  between the two centres. If it passes through a box that is neither end,
-  restructure or use `route_under()`.
+  between the two centres. If it cuts a box that is neither end, restructure or
+  `route_under()`; a wide fan-out takes `PackOptions(edge_style="orthogonal")`.
 - **Backward / feedback arrows.** A right-to-left arrow crosses the whole
   forward flow. Always `route_under()` (below the row and back), or drop it and
   note the feedback in a `label()`.
