@@ -114,8 +114,10 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
   "seed": 7,                           // byte-identical re-runs; set it if committed
   "roles": {"service": "blue"},        // colour = meaning
   "nodes": [
-    {"id": "api", "label": "API gateway", "fill": "service", "kind": "process"}
-  ],                                   // kind: any box() shape name
+    {"id": "api", "label": "API gateway", "fill": "service", "kind": "process"},
+    {"id": "todo", "label": "not built yet", "fill": "#a61e1e",
+     "font": {"size": 15, "color": "#ffffff"}}
+  ],                                   // kind: any box() shape name; font: size/color/align
   "edges": [
     {"src": "api", "dst": "auth", "label": "verify", "dashed": false}
   ],
@@ -129,6 +131,10 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
 connected nodes near each other, and then decides per edge: a straight arrow when its
 line clears every other box, a routed connector otherwise. Feedback edges are always
 routed, so a cycle never cuts back across the flow.
+
+A label left without a colour is black, or white on a fill too dark for black to
+reach 4.5:1 contrast, so a dark role needs no `font`. A `diamond` or `decision` node is
+sized so its wrapped question sits inside the rhombus; `w` and `h` still override it.
 
 Call `s.pack(nodes, edges, groups=…, options=PackOptions(direction="TB"))` directly
 when you want the auto-layout inside a generator that also draws things by hand.

@@ -134,11 +134,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:101"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:133"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:119"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:151"
         }
       ],
       "test_exempt": null,
@@ -222,6 +222,7 @@
       "contract": [
         "A call takes its position as one `at` value: a `Rect`, an `(x, y, w, h)` tuple, or an `(x, y)` point. A point on a shape call takes the shape's own default size.",
         "A call takes its colour as one `paint` value and its text setting as one `font` value. A bare colour string stands for a `Paint` and a bare number for a `Font` size. A `Font` field left unset keeps the calling method's own default.",
+        "A shape's label with no colour given is black. On a fill where black falls short of 4.5:1 contrast and white does better, the label is white.",
         "An `arrange()` item or cell carrying an option name `box()` does not accept raises `ValueError` that lists the accepted names."
       ],
       "verify": [],
@@ -236,9 +237,10 @@
       "acc": [
         "CASE-1 — — the three forms of `at` place a shape identically Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point `(10, 20)` given to `process()`, whose default size is 170 x 64 When   each places one shape in its own scene Then   the three shape elements carry the same x, y, width and height",
         "CASE-2 — — a shorthand value means what the full object would Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)` on `label()` When   the elements are built Then   the box has blue's fill and 20px text, and the label keeps its grey colour",
-        "CASE-3 — — a mistyped option is refused, not ignored Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()` When   the row is placed Then   `ValueError` is raised naming `fill` and listing the accepted names"
+        "CASE-3 — — a mistyped option is refused, not ignored Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()` When   the row is placed Then   `ValueError` is raised naming `fill` and listing the accepted names",
+        "CASE-4 — — a label on a dark fill stays readable Given  a box filled `#a61e1e`, a box with a palette tint, and a dark box given a colour When   the elements are built Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins"
       ],
-      "accept": "CASE-1 — the three forms of `at` place a shape identically\n  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point\n         `(10, 20)` given to `process()`, whose default size is 170 x 64\n  When   each places one shape in its own scene\n  Then   the three shape elements carry the same x, y, width and height\n\nCASE-2 — a shorthand value means what the full object would\n  Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)`\n         on `label()`\n  When   the elements are built\n  Then   the box has blue's fill and 20px text, and the label keeps its grey colour\n\nCASE-3 — a mistyped option is refused, not ignored\n  Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()`\n  When   the row is placed\n  Then   `ValueError` is raised naming `fill` and listing the accepted names",
+      "accept": "CASE-1 — the three forms of `at` place a shape identically\n  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point\n         `(10, 20)` given to `process()`, whose default size is 170 x 64\n  When   each places one shape in its own scene\n  Then   the three shape elements carry the same x, y, width and height\n\nCASE-2 — a shorthand value means what the full object would\n  Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)`\n         on `label()`\n  When   the elements are built\n  Then   the box has blue's fill and 20px text, and the label keeps its grey colour\n\nCASE-3 — a mistyped option is refused, not ignored\n  Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()`\n  When   the row is placed\n  Then   `ValueError` is raised naming `fill` and listing the accepted names\n\nCASE-4 — a label on a dark fill stays readable\n  Given  a box filled `#a61e1e`, a box with a palette tint, and a dark box given a colour\n  When   the elements are built\n  Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins",
       "input": "",
       "output": "",
       "desc": "",
@@ -264,19 +266,23 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:43"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:63"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:71"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:72"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:100"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 3,
-      "covered": 3
+      "clauses": 4,
+      "covered": 4
     },
     {
       "id": "REQ-EXCALIDRAW-854",
@@ -325,7 +331,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1242"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1295"
         },
         {
           "role": "implements",
@@ -518,7 +524,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:883"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:897"
         },
         {
           "role": "implements",
@@ -734,7 +740,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1125"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1178"
         },
         {
           "role": "implements",
@@ -865,7 +871,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1340"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1393"
         },
         {
           "role": "implements",
@@ -939,7 +945,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:904"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:918"
         }
       ],
       "test_exempt": null,
@@ -959,6 +965,7 @@
       "intent": "Writing a generator gives a caller full control of the layout, and costs an afternoon of choosing coordinates. Someone who wants a picture of a fifteen-node flow in twenty seconds pays that price for control they did not ask for, and the quality gates make it worse: they are excellent at refusing a bad layout and no help at all in proposing a good one. So the builder computes the coordinates itself from a description of what connects to what, and the gates judge the result exactly as they judge a hand-placed one.",
       "contract": [
         "`Scene.pack(nodes, edges, groups, at, options)` places a directed graph whose description carries no coordinates, and returns the scene id of every node it placed. [[REQ-EXCALIDRAW-851]] details the behaviour.",
+        "A node can say how its label is set, and `pack()` sizes and connects it for that. [[REQ-EXCALIDRAW-858]] details the behaviour.",
         "A layout `pack()` produces passes the same gates a hand-written generator's does. Passing is the definition of a finished layout: a run that places every node and leaves a shape sitting on another one has failed.",
         "The CLI reaches `pack()` through `scene --from-json`, so a caller never has to write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb."
       ],
@@ -994,7 +1001,8 @@
         "SYS-DIAGRAM-001"
       ],
       "satisfied_by": [
-        "REQ-EXCALIDRAW-851"
+        "REQ-EXCALIDRAW-851",
+        "REQ-EXCALIDRAW-858"
       ],
       "members": [
         {
@@ -1039,7 +1047,8 @@
       ],
       "current_impl": [
         "`pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.",
-        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "-------------------"
       ],
       "acc": [
         "CASE-1 — — a back edge becomes a routed connector, never a straight arrow Given  a three-node cycle When   `pack()` lays it out Then   the two forward edges are bound arrows and the cycle-closing edge is an unbound routed connector with more than two points",
@@ -1064,11 +1073,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:964"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:354"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:369"
         }
       ],
       "test_exempt": null,
@@ -1077,6 +1086,57 @@
       "risks": [],
       "clauses": 7,
       "covered": 7
+    },
+    {
+      "id": "REQ-EXCALIDRAW-858",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "pack(): what a node says about itself",
+      "intent": "A described graph carries no coordinates, so everything a caller wants from a node has to travel in the node itself. A key `pack()` ignores is one the caller cannot reach at all: there is no box call left to pass it to by hand.",
+      "contract": [
+        "`pack()` sets a node's label in the node's own `font` when it gives one: a `Font`, a size, or a dict of `size`, `color` and `align`.",
+        "`pack()` sizes a diamond or decision node so its wrapped label sits inside the rhombus, not just inside the box around it."
+      ],
+      "verify": [],
+      "notes": [],
+      "current_impl": [
+        "`diamond_size()`, `_PackRun.measure()` and `_PackRun.place()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
+        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "acc": [
+        "CASE-1 — — a node's font reaches its label Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font When   `pack()` lays them out Then   the first label has that size and colour, and the second is white",
+        "CASE-2 — — a two-line question fits its diamond Given  a decision node whose label wraps to two lines When   `pack()` sizes it Then   the text box's width share plus its height share of the rhombus is at most 0.86",
+        "CASE-3 — — a graph description reaches the same font Given  a `graph.json` node carrying a `font` dict, beside a node with none When   `scene_from_spec()` builds it Then   the first label has that size and colour, and the second keeps 13px"
+      ],
+      "accept": "CASE-1 — a node's font reaches its label\n  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font\n  When   `pack()` lays them out\n  Then   the first label has that size and colour, and the second is white\n\nCASE-2 — a two-line question fits its diamond\n  Given  a decision node whose label wraps to two lines\n  When   `pack()` sizes it\n  Then   the text box's width share plus its height share of the rhombus is at most 0.86\n\nCASE-3 — a graph description reaches the same font\n  Given  a `graph.json` node carrying a `font` dict, beside a node with none\n  When   `scene_from_spec()` builds it\n  Then   the first label has that size and colour, and the second keeps 13px",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-034"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:370"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3
     },
     {
       "id": "ARCH-RELEASE-035",
@@ -1447,6 +1507,10 @@
       "ARCH-EXCALIDRAW-034"
     ],
     [
+      "REQ-EXCALIDRAW-858",
+      "ARCH-EXCALIDRAW-034"
+    ],
+    [
       "ARCH-RELEASE-035",
       "SYS-DIAGRAM-001"
     ],
@@ -1723,11 +1787,11 @@
   },
   "health": {
     "score": 100,
-    "total": 21,
-    "healthy": 21,
-    "confirmed": 21,
-    "implemented": 20,
-    "tested": 20,
+    "total": 22,
+    "healthy": 22,
+    "confirmed": 22,
+    "implemented": 21,
+    "tested": 21,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

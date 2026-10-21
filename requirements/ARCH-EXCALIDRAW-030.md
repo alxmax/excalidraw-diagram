@@ -207,6 +207,8 @@ Every bullet below is binding.
 - A call takes its colour as one `paint` value and its text setting as one
   `font` value. A bare colour string stands for a `Paint` and a bare number for a
   `Font` size. A `Font` field left unset keeps the calling method's own default.
+- A shape's label with no colour given is black. On a fill where black falls short
+  of 4.5:1 contrast and white does better, the label is white.
 - An `arrange()` item or cell carrying an option name `box()` does not accept
   raises `ValueError` that lists the accepted names.
 
@@ -227,6 +229,11 @@ CASE-3 — a mistyped option is refused, not ignored
   Given  a 1.x-style item `{"text": "a", "fill": "blue"}` passed to `row()`
   When   the row is placed
   Then   `ValueError` is raised naming `fill` and listing the accepted names
+
+CASE-4 — a label on a dark fill stays readable
+  Given  a box filled `#a61e1e`, a box with a palette tint, and a dark box given a colour
+  When   the elements are built
+  Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins
 
 ## Context
 **Notes**

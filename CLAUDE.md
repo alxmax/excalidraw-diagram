@@ -128,8 +128,8 @@ self-tags of the repository it was written in, and those requirements do not liv
 the installed plugin (the `update-engine` action does the copy). `.reqmapignore` also excludes `examples/`: a generator demonstrates the builder
 rather than implementing a capability, so tagging one claims a requirement it does not carry.
 
-**Twenty-one requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
-capabilities with their twelve `REQ-*` children, and `ARCH-RELEASE-035` (the version
+**Twenty-two requirements:** `SYS-DIAGRAM-001` (the need), five `ARCH-EXCALIDRAW-*`
+capabilities with their thirteen `REQ-*` children, and `ARCH-RELEASE-035` (the version
 match) with its two children `REQ-RELEASE-855` (the script that checks it) and
 `REQ-RELEASE-857` (`--bump`, which starts a release).
 `requirements/_config.json` raises `LINT_FILE_SPREAD_MAX` to 6: the engine is one module
