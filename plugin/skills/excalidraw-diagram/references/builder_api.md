@@ -142,6 +142,8 @@ a box. The legs are unbound lines, so dragging a box in the editor leaves them b
 A label left without a colour is black, or white on a fill too dark for black to
 reach 4.5:1 contrast, so a dark role needs no `font`. A `diamond` or `decision` node is
 sized so its wrapped question sits inside the rhombus; `w` and `h` still override it.
+Each placed shape carries `customData: {"id": <node id>}`, which survives an edit in the
+viewer, so a scene that comes back edited can be matched to the description by id.
 
 Call `s.pack(nodes, edges, groups=…, options=PackOptions(direction="TB"))` directly
 when you want the auto-layout inside a generator that also draws things by hand.

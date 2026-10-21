@@ -249,6 +249,9 @@ class _PackRun(object):
                 self.placed[nid] = self.scene.box(
                     text, (x, y, w, h), paint=spec.get("fill"),
                     shape=spec.get("kind", "rectangle"), font=self.font[nid])
+                # the caller's id travels with the shape, so an edited scene can
+                # be matched back to the description that drew it
+                self.scene._element(self.placed[nid])["customData"] = {"id": nid}
 
     def _clear_frames(self, layers, groups, start):
         """Move non-members out of each group's frame, in `start` (node -> its

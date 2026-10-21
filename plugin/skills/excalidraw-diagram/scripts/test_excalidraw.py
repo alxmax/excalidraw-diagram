@@ -1233,6 +1233,19 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851  #
             with self.assertRaises(ValueError):
                 eb.scene_from_spec(dict(spec, edge_style="curvy"), d)
 
+    def test_every_placed_node_carries_its_id(self):  # verifies: REQ-EXCALIDRAW-858#CASE-7
+        spec = {"seed": 3, "nodes": [{"id": "page", "label": "Checkout"},
+                                     {"id": "q", "kind": "decision"}, {"id": "io", "kind": "data"}],
+                "edges": [{"src": "page", "dst": "q"}, {"src": "q", "dst": "io"}]}
+        with tempfile.TemporaryDirectory() as d:
+            with open(eb.scene_from_spec(spec, d)[0], encoding="utf-8") as f:
+                elements = json.load(f)["elements"]
+        tagged = {e["customData"]["id"]: e for e in elements if "customData" in e}
+        self.assertEqual(sorted(tagged), ["io", "page", "q"])
+        texts = {e["containerId"]: e["text"] for e in elements
+                 if e["type"] == "text" and e.get("containerId")}
+        self.assertEqual(texts[tagged["page"]["id"]], "Checkout", "the id is on the shape")
+
     def test_a_back_edge_between_neighbouring_layers_loops_instead_of_retracing(self):
         # both legs of the route used to share one channel, so the connector went
         # down and came back up the same vertical line: a stub, not a loop
