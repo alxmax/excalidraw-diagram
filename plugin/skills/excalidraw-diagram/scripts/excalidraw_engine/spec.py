@@ -9,6 +9,7 @@ Python API. A caller who wants control over the layout writes a generator instea
       "title": "Auth flow",             // title() + label() subtitle
       "subtitle": "Left to right: ...",
       "direction": "LR",                // or "TB"
+      "edge_style": "orthogonal",       // or "straight" (the default)
       "seed": 7,                        // byte-stable re-runs
       "roles": {"service": "blue"},     // colour = meaning, decoded by legend()
       "nodes": [{"id": "api", "label": "API gateway", "fill": "service",
@@ -56,7 +57,8 @@ def scene_from_spec(spec, out_dir, name=None, offline=None, svg=False):
     nodes, edges, groups = _checked(spec, "the graph description")
     scene = Scene(seed=spec.get("seed"), roles=spec.get("roles") or {})
     scene.pack(nodes, edges, groups=groups, at=(40, 0.0),
-               options=PackOptions(direction=str(spec.get("direction", "LR"))))
+               options=PackOptions(direction=str(spec.get("direction", "LR")),
+                                   edge_style=str(spec.get("edge_style", "straight"))))
     # above whatever pack() drew highest: a group on the first row puts its frame
     # label above y=0, where a fixed-height subtitle would sit on it
     top = min(0.0, scene.bounds()[1])

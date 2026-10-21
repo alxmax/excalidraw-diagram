@@ -331,7 +331,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1295"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1366"
         },
         {
           "role": "implements",
@@ -740,15 +740,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1178"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1249"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:55"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:56"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:84"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:86"
         }
       ],
       "test_exempt": null,
@@ -871,7 +871,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1393"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1464"
         },
         {
           "role": "implements",
@@ -1077,7 +1077,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:369"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:429"
         }
       ],
       "test_exempt": null,
@@ -1097,20 +1097,26 @@
       "intent": "A described graph carries no coordinates, so everything a caller wants from a node has to travel in the node itself. A key `pack()` ignores is one the caller cannot reach at all: there is no box call left to pass it to by hand.",
       "contract": [
         "`pack()` sets a node's label in the node's own `font` when it gives one: a `Font`, a size, or a dict of `size`, `color` and `align`.",
-        "`pack()` sizes a diamond or decision node so its wrapped label sits inside the rhombus, not just inside the box around it."
+        "`pack()` sizes a diamond or decision node so its wrapped label sits inside the rhombus, not just inside the box around it.",
+        "With `edge_style=\"orthogonal\"`, `pack()` draws each edge between neighbouring layers as a bus: a trunk in the gap beside its source, a square branch per target.",
+        "Each source in a layer gets its own trunk. The bus spanning less sits nearer its layer, so a bus nested in a wider one never crosses it.",
+        "`PackOptions` raises `ValueError` for an `edge_style` other than `\"straight\"` or `\"orthogonal\"`, and `graph.json` passes its `edge_style` to it."
       ],
       "verify": [],
       "notes": [],
       "current_impl": [
-        "`diamond_size()`, `_PackRun.measure()` and `_PackRun.place()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
+        "`diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`, `_PackRun._trunks()` and `_PackRun._bus()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `scene_from_spec()` in `excalidraw_engine/spec.py`.",
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "acc": [
         "CASE-1 — — a node's font reaches its label Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font When   `pack()` lays them out Then   the first label has that size and colour, and the second is white",
         "CASE-2 — — a two-line question fits its diamond Given  a decision node whose label wraps to two lines When   `pack()` sizes it Then   the text box's width share plus its height share of the rhombus is at most 0.86",
-        "CASE-3 — — a graph description reaches the same font Given  a `graph.json` node carrying a `font` dict, beside a node with none When   `scene_from_spec()` builds it Then   the first label has that size and colour, and the second keeps 13px"
+        "CASE-3 — — a graph description reaches the same font Given  a `graph.json` node carrying a `font` dict, beside a node with none When   `scene_from_spec()` builds it Then   the first label has that size and colour, and the second keeps 13px",
+        "CASE-4 — — a wide fan-out becomes a bus Given  one node fanning out to eight, laid out once `\"LR\"` and once `\"TB\"` When   `pack()` runs with `edge_style=\"orthogonal\"` Then   all seven checks return empty, and every leg is square and cuts no box",
+        "CASE-5 — — a nested bus does not cross the one around it Given  a fan-out whose child c0 spans the targets of a sibling c5 When   `pack()` lays it out orthogonally in both directions Then   no leg of one bus properly crosses a leg of the other",
+        "CASE-6 — — a graph description picks the edge style Given  a `graph.json` whose `edge_style` is `\"orthogonal\"`, then the same with `\"curvy\"` When   `scene_from_spec()` builds each Then   the first draws only unbound bus legs, and the second raises `ValueError`"
       ],
-      "accept": "CASE-1 — a node's font reaches its label\n  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font\n  When   `pack()` lays them out\n  Then   the first label has that size and colour, and the second is white\n\nCASE-2 — a two-line question fits its diamond\n  Given  a decision node whose label wraps to two lines\n  When   `pack()` sizes it\n  Then   the text box's width share plus its height share of the rhombus is at most 0.86\n\nCASE-3 — a graph description reaches the same font\n  Given  a `graph.json` node carrying a `font` dict, beside a node with none\n  When   `scene_from_spec()` builds it\n  Then   the first label has that size and colour, and the second keeps 13px",
+      "accept": "CASE-1 — a node's font reaches its label\n  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font\n  When   `pack()` lays them out\n  Then   the first label has that size and colour, and the second is white\n\nCASE-2 — a two-line question fits its diamond\n  Given  a decision node whose label wraps to two lines\n  When   `pack()` sizes it\n  Then   the text box's width share plus its height share of the rhombus is at most 0.86\n\nCASE-3 — a graph description reaches the same font\n  Given  a `graph.json` node carrying a `font` dict, beside a node with none\n  When   `scene_from_spec()` builds it\n  Then   the first label has that size and colour, and the second keeps 13px\n\nCASE-4 — a wide fan-out becomes a bus\n  Given  one node fanning out to eight, laid out once `\"LR\"` and once `\"TB\"`\n  When   `pack()` runs with `edge_style=\"orthogonal\"`\n  Then   all seven checks return empty, and every leg is square and cuts no box\n\nCASE-5 — a nested bus does not cross the one around it\n  Given  a fan-out whose child c0 spans the targets of a sibling c5\n  When   `pack()` lays it out orthogonally in both directions\n  Then   no leg of one bus properly crosses a leg of the other\n\nCASE-6 — a graph description picks the edge style\n  Given  a `graph.json` whose `edge_style` is `\"orthogonal\"`, then the same with `\"curvy\"`\n  When   `scene_from_spec()` builds each\n  Then   the first draws only unbound bus legs, and the second raises `ValueError`",
       "input": "",
       "output": "",
       "desc": "",
@@ -1128,15 +1134,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:370"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:430"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 3,
-      "covered": 3
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "ARCH-RELEASE-035",
@@ -1744,14 +1750,14 @@
   ],
   "design": {
     "files": 22,
-    "clean_files": 19,
-    "score": 86,
+    "clean_files": 18,
+    "score": 82,
     "candidates": {
       "encapsulation": 0,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
-      "metrics": 1,
+      "metrics": 2,
       "standards": 2
     },
     "findings": [
@@ -1764,12 +1770,20 @@
         "detail": "`ArrangeMixin` reaches 53 methods (over 50): 12 of its own plus 41 it calls"
       },
       {
+        "pillar": "metrics",
+        "kind": "high-response",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py",
+        "line": 166,
+        "name": "_PackRun",
+        "detail": "`_PackRun` reaches 55 methods (over 50): 13 of its own plus 42 it calls"
+      },
+      {
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py",
-        "line": 53,
+        "line": 54,
         "name": "spec.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 53"
+        "detail": "1 line(s) wider than 100 columns, first at line 54"
       },
       {
         "pillar": "standards",
