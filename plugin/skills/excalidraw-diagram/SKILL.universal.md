@@ -71,10 +71,9 @@ and flow, never a generic template. Pretty-but-shallow fails. Three things pass:
 | **`scene --from-json`** | the subject is a graph you can describe — parts and connections — and you do not care where each box lands; a Mermaid flowchart already is one, so translate it with `references/mermaid_to_graph.md` rather than pasting an image | write `graph.json` (schema in `references/builder_api.md`), then `python scripts/excalidraw_builder.py scene --from-json graph.json -o out/` (`python3` where there is no `python`); add `--svg` for a clean-line `.svg` too |
 | **A generator script** | the layout itself carries meaning: stacked layers, a lane per tool, a poster | write Python against the `Scene` API — position as `at=(x, y)`, colour as `paint=`, type as `font=` — and run it |
 
-Two more verbs: `render <scene.excalidraw> [out_dir]` rebuilds the `.html` for a
-scene edited elsewhere; `discover <repo> [out.py]` scaffolds a poster stub. **No
-arguments is the smoke test CI depends on — never shadow it.** An MCP client gets
-them all as tools (`build_scene`, `render_html`, `discover_repo`, `graph_schema`).
+Three more verbs: `render <scene.excalidraw> [out_dir]` rebuilds the `.html` for a scene edited elsewhere; `discover <repo> [out.py]` scaffolds a poster stub; `data-model --from-ddl <schema.sql> [-o out/]` draws SQL tables with roles and amber review notes (`references/builder_api.md`).
+**No arguments is the smoke test CI depends on — never shadow it.** An MCP client gets every verb but `data-model` as a tool
+(`build_scene`, `render_html`, `discover_repo`, `graph_schema`).
 
 ## Workflow
 

@@ -3,6 +3,73 @@
   "repo": "alxmax/excalidraw-diagram",
   "nodes": [
     {
+      "id": "ARCH-DATAMODEL-036",
+      "layer": "feature",
+      "level": "architecture",
+      "status": "confirmed",
+      "area": "ARCH",
+      "title": "A data model drawn and reviewed from its SQL",
+      "intent": "A data model with ten tables is slow to draw by hand and easy to get wrong, and the existing tools only draw it. This capability reads the SQL that defines the tables, draws them as a coordinate-free graph the builder already lays out, and says what is wrong with the model. Every role and every warning carries the reason it was given, because a label the reader cannot check is a label the reader will not trust.",
+      "contract": [
+        "The `data-model` command reads DDL with the standard library alone and turns each table, key and foreign key into a table record. [[REQ-DATAMODEL-900]]",
+        "The graph builder turns those records into the graph description that `scene --from-json` takes, so layout and gates stay unchanged. [[REQ-DATAMODEL-901]]",
+        "The classifier gives each table a role, a confidence and a written reason from names and structure alone. [[REQ-DATAMODEL-902]]",
+        "The review runs five rules over the classified tables. [[REQ-DATAMODEL-903]]",
+        "Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]"
+      ],
+      "verify": [],
+      "notes": [
+        "Stdlib only: the DDL reader is hand-written rather than built on a SQL library, because this plugin installs nothing from PyPI. A dialect it cannot read raises an error.",
+        "This is a module of the existing plugin, not a second plugin: it emits the graph the builder already draws and adds no layout or renderer of its own."
+      ],
+      "current_impl": [
+        "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with `ddl.py`, `classify.py` and `review.py` beside it.",
+        "`plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — Given  the demo shop schema with six tables and four planted problems When   `data-model --from-ddl` is run on it Then   a `.excalidraw` scene and an `.html` viewer are written, with four amber notes",
+        "CASE-2 — Given  the same schema with every planted problem fixed When   `data-model --from-ddl` is run on it Then   the diagram shows no amber note and no review-note entry in its legend",
+        "CASE-3 — Given  a DDL script the parser cannot read When   `data-model --from-ddl` is run on it Then   the command exits non-zero and names the file and the statement, writing no output"
+      ],
+      "accept": "CASE-1\n  Given  the demo shop schema with six tables and four planted problems\n  When   `data-model --from-ddl` is run on it\n  Then   a `.excalidraw` scene and an `.html` viewer are written, with four amber notes\n\nCASE-2\n  Given  the same schema with every planted problem fixed\n  When   `data-model --from-ddl` is run on it\n  Then   the diagram shows no amber note and no review-note entry in its legend\n\nCASE-3\n  Given  a DDL script the parser cannot read\n  When   `data-model --from-ddl` is run on it\n  Then   the command exits non-zero and names the file and the statement, writing no output",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "depends_on": [
+        "ARCH-EXCALIDRAW-030"
+      ],
+      "used_by": [],
+      "satisfies": [
+        "SYS-DIAGRAM-001"
+      ],
+      "satisfied_by": [
+        "REQ-DATAMODEL-900",
+        "REQ-DATAMODEL-901",
+        "REQ-DATAMODEL-902",
+        "REQ-DATAMODEL-903",
+        "REQ-DATAMODEL-904"
+      ],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3
+    },
+    {
       "id": "ARCH-EXCALIDRAW-030",
       "layer": "feature",
       "level": "architecture",
@@ -38,6 +105,7 @@
       "deps": [],
       "depends_on": [],
       "used_by": [
+        "ARCH-DATAMODEL-036",
         "ARCH-EXCALIDRAW-031",
         "ARCH-EXCALIDRAW-032",
         "ARCH-EXCALIDRAW-033",
@@ -673,7 +741,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:105"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:126"
         },
         {
           "role": "implements",
@@ -1323,6 +1391,297 @@
       "covered": 4
     },
     {
+      "id": "REQ-DATAMODEL-900",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Reading tables, keys and foreign keys from DDL",
+      "intent": "A table the parser drops without a word is drawn as if it never existed, and the diagram still looks complete. So the reader takes what it understands, ignores statements that are not about tables, and refuses what it cannot read.",
+      "contract": [
+        "`parse_ddl(sql)` returns one table record per `CREATE TABLE`, in order of appearance, with its columns, primary key and foreign keys.",
+        "`parse_ddl()` reads `PRIMARY KEY` and `REFERENCES` written inline or as table constraints.",
+        "`parse_ddl()` reads `ALTER TABLE ... ADD ... FOREIGN KEY` and attaches it to the named table.",
+        "`parse_ddl()` folds unquoted names to lower case, keeps quoted names as written, drops a schema prefix and strips comments.",
+        "`parse_ddl()` ignores statements that define no table, and treats MySQL `KEY name (col)` as an index but `key varchar(20)` as a column.",
+        "`parse_ddl()` raises `ValueError` for an unreadable `CREATE TABLE`, a table defined twice, an `ALTER TABLE` on an unknown table, or a script without tables."
+      ],
+      "verify": [],
+      "notes": [
+        "A `CREATE TABLE ... AS SELECT` is refused rather than skipped: skipping it would hide a table."
+      ],
+      "current_impl": [
+        "`parse_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.",
+        "`TestParseDdl` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — tables and primary keys Given  the six-table demo schema When   `parse_ddl()` reads it Then   six tables come back in order, each with the primary key it declares",
+        "CASE-2 — — foreign keys in every form Given  foreign keys written inline, as table constraints and through `ALTER TABLE` When   `parse_ddl()` reads them Then   each table lists its foreign keys with the referenced table and columns",
+        "CASE-3 — — names, comments and index keywords Given  a quoted schema-qualified name, comments holding semicolons and a MySQL `KEY` index When   `parse_ddl()` reads the script Then   the table is named without its schema and the index is not taken for a column",
+        "CASE-4 — — an unreadable script is refused Given  `CREATE TABLE t AS SELECT 1`, a duplicate table or an `ALTER TABLE` on an unknown table When   `parse_ddl()` reads it Then   `ValueError` is raised naming the offending statement or table"
+      ],
+      "accept": "CASE-1 — tables and primary keys\n  Given  the six-table demo schema\n  When   `parse_ddl()` reads it\n  Then   six tables come back in order, each with the primary key it declares\n\nCASE-2 — foreign keys in every form\n  Given  foreign keys written inline, as table constraints and through `ALTER TABLE`\n  When   `parse_ddl()` reads them\n  Then   each table lists its foreign keys with the referenced table and columns\n\nCASE-3 — names, comments and index keywords\n  Given  a quoted schema-qualified name, comments holding semicolons and a MySQL `KEY` index\n  When   `parse_ddl()` reads the script\n  Then   the table is named without its schema and the index is not taken for a column\n\nCASE-4 — an unreadable script is refused\n  Given  `CREATE TABLE t AS SELECT 1`, a duplicate table or an `ALTER TABLE` on an unknown table\n  When   `parse_ddl()` reads it\n  Then   `ValueError` is raised naming the offending statement or table",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py:229"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
+    },
+    {
+      "id": "REQ-DATAMODEL-901",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Tables as the graph the builder already draws",
+      "intent": "The module adds no layout and no renderer. It describes the tables as nodes and foreign keys as edges, and the existing `pack()` and gates do the rest, so a data model is judged by the same bar as every other diagram.",
+      "contract": [
+        "`graph_from_tables(tables)` returns a graph description with one node per table and one edge per foreign-key relationship.",
+        "`graph_from_tables()` merges several foreign keys between the same two tables into one edge labelled with all their columns.",
+        "`graph_from_tables()` leaves out a foreign key whose target table is not defined, and `unresolved_fks()` lists it.",
+        "`scene_from_ddl(path)` and the `data-model --from-ddl` command save the scene through every gate.",
+        "`graph_from_tables()` sets a fixed seed, so one schema always produces byte-identical files."
+      ],
+      "verify": [],
+      "notes": [],
+      "current_impl": [
+        "`graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.",
+        "`TestGraph`, `TestScene` and `TestCli` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — one node per table, one edge per relationship Given  the demo schema and a table with two foreign keys to one dimension When   `graph_from_tables()` is called Then   there is one node per table, and the two keys share one edge labelled with both columns",
+        "CASE-2 — — an unresolved foreign key is listed, not drawn Given  a table whose foreign key names a table the script never defines When   `graph_from_tables()` and `unresolved_fks()` are called Then   the graph holds no edge for it, and `unresolved_fks()` returns that key",
+        "CASE-3 — — the scene passes every gate Given  the demo, clean and no-prefix schemas When   `scene_from_ddl()` or the `data-model` command is run Then   both files are written without a failed gate, and a call with no input is a usage error",
+        "CASE-4 — — the output is byte-stable Given  one DDL file When   `scene_from_ddl()` is run twice Then   the two `.excalidraw` files are identical byte for byte"
+      ],
+      "accept": "CASE-1 — one node per table, one edge per relationship\n  Given  the demo schema and a table with two foreign keys to one dimension\n  When   `graph_from_tables()` is called\n  Then   there is one node per table, and the two keys share one edge labelled with both columns\n\nCASE-2 — an unresolved foreign key is listed, not drawn\n  Given  a table whose foreign key names a table the script never defines\n  When   `graph_from_tables()` and `unresolved_fks()` are called\n  Then   the graph holds no edge for it, and `unresolved_fks()` returns that key\n\nCASE-3 — the scene passes every gate\n  Given  the demo, clean and no-prefix schemas\n  When   `scene_from_ddl()` or the `data-model` command is run\n  Then   both files are written without a failed gate, and a call with no input is a usage error\n\nCASE-4 — the output is byte-stable\n  Given  one DDL file\n  When   `scene_from_ddl()` is run twice\n  Then   the two `.excalidraw` files are identical byte for byte",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:39"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:101"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
+    },
+    {
+      "id": "REQ-DATAMODEL-902",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "A role, a confidence and a reason for every table",
+      "intent": "A heuristic that is wrong without saying why costs the reader's trust in everything else on the page. Each table gets a role from weighed evidence, and the evidence is written next to the role so a wrong call can be seen and argued with.",
+      "contract": [
+        "`classify_tables(tables)` returns, for every table, a role of fact, dimension, bridge or unknown, a confidence from 0 to 1 and a reason.",
+        "The reason lists the evidence behind the role: name prefix, foreign keys out, numeric measures, tables that reference it and descriptive columns.",
+        "A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.",
+        "The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.",
+        "A table whose best score is below three, or ties for first, is unknown with confidence 0; a staging prefix such as `stg_` is always unknown.",
+        "`graph_from_tables()` fills each node by role, adds the role and confidence to its label, and lists in the legend only the roles in use."
+      ],
+      "verify": [],
+      "notes": [
+        "Confidence is the winner's score over the winner's plus the runner-up's. It reads 1.0 whenever every other role scores zero, so it ranks doubt rather than certainty.",
+        "A table with only key columns is a bridge by structure but may be a factless fact; the reason says so."
+      ],
+      "current_impl": [
+        "`classify_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
+        "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — accuracy on the test set Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects When   `classify_tables()` is run on each schema Then   at least ninety percent of the tables get the expected role",
+        "CASE-2 — — structure alone is enough Given  a shop schema whose tables carry no `fact_` or `dim_` prefix When   `classify_tables()` is run Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix",
+        "CASE-3 — — every role is explained Given  any classified table When   its classification is read Then   the reason is not empty and the confidence lies between 0 and 1",
+        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, and a staging table shaped like a fact When   `classify_tables()` is run Then   both are unknown with confidence 0, and the reason says why",
+        "CASE-5 — — colour and legend follow the role Given  a schema holding only facts and dimensions When   `graph_from_tables()` is called Then   nodes are filled fact or dimension, and the legend holds those two roles only"
+      ],
+      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, and a staging table shaped like a fact\n  When   `classify_tables()` is run\n  Then   both are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:103"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 5,
+      "covered": 5
+    },
+    {
+      "id": "REQ-DATAMODEL-903",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Five review rules over the classified tables",
+      "intent": "Drawing a model is what every other tool does. What this one adds is a second reader that says where the model is weak. A rule fires only on evidence it can quote, so a clean schema stays silent: an invented warning costs more trust than a missed one.",
+      "contract": [
+        "`review_tables(tables, roles)` returns issues ordered by table, each naming its table and its rule.",
+        "The `grain` rule flags a fact table that has no primary key.",
+        "The `surrogate-key` rule flags a dimension whose key is missing, composite or named like a source id instead of `*_key` or `*_sk`.",
+        "The `scd2` rule flags a dimension with attributes that change over time but no `valid_from` and `valid_to`, or with only one of them.",
+        "The `orphan-fk` rule flags a foreign key to a table, or to a column, that does not exist.",
+        "The `snowflake` rule flags a dimension referenced by another dimension, and calls the chain deep from two levels down; an outrigger shared by two dimensions is not flagged."
+      ],
+      "verify": [],
+      "notes": [
+        "The `scd2` rule reads column names, so it is a heuristic: it names the columns it suspects.",
+        "`snowflake` flags the sub-dimension, not the dimension that points at it, because that is the table a modeller would fold away."
+      ],
+      "current_impl": [
+        "`review_tables()` and its five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
+        "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — every planted problem is found Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key When   `review_tables()` is run Then   exactly those four issues are returned, each on its table",
+        "CASE-2 — — a clean schema raises no alarm Given  the demo schema with every problem fixed When   `review_tables()` is run Then   no issue is returned",
+        "CASE-3 — — grain Given  a fact with no primary key, and the same fact with one When   `review_tables()` is run on each Then   only the first raises a `grain` issue",
+        "CASE-4 — — surrogate key Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk` When   `review_tables()` is run Then   the first three raise `surrogate-key` and the last does not",
+        "CASE-5 — — SCD type 2 Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes When   `review_tables()` is run Then   the first two raise `scd2` and the others do not",
+        "CASE-6 — — orphan foreign key Given  a foreign key to a missing table, one to a missing column, and one to an existing target When   `review_tables()` is run Then   the first two raise `orphan-fk` and the third does not",
+        "CASE-7 — — snowflake Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions When   `review_tables()` is run Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged"
+      ],
+      "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:137"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 7,
+      "covered": 7
+    },
+    {
+      "id": "REQ-DATAMODEL-904",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Review findings explained and drawn as amber notes",
+      "intent": "A finding is only useful if the reader can check it and find the table it is about. So every issue carries a sentence saying why, and every issue is drawn on the page beside the table it concerns, where a reviewer would put a sticky note.",
+      "contract": [
+        "Each issue from `review_tables()` carries a message that states the cause in a sentence, not a bare label.",
+        "`graph_from_tables()` draws each issue as an amber note joined to its table by a dashed line.",
+        "`graph_from_tables()` adds the review-note colour to the legend only when at least one issue exists."
+      ],
+      "verify": [],
+      "notes": [],
+      "current_impl": [
+        "`graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.",
+        "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — every issue is explained Given  the issues found in the demo schema When   their messages are read Then   each message is a sentence stating the cause, not a bare label",
+        "CASE-2 — — issues become amber notes Given  the demo schema When   `graph_from_tables()` is called Then   it gains four review notes, each joined to its table by a dashed edge",
+        "CASE-3 — — a clean schema draws no note Given  the demo schema with every problem fixed When   `graph_from_tables()` is called Then   no review note is drawn and the legend has no review-note entry"
+      ],
+      "accept": "CASE-1 — every issue is explained\n  Given  the issues found in the demo schema\n  When   their messages are read\n  Then   each message is a sentence stating the cause, not a bare label\n\nCASE-2 — issues become amber notes\n  Given  the demo schema\n  When   `graph_from_tables()` is called\n  Then   it gains four review notes, each joined to its table by a dashed edge\n\nCASE-3 — a clean schema draws no note\n  Given  the demo schema with every problem fixed\n  When   `graph_from_tables()` is called\n  Then   no review note is drawn and the legend has no review-note entry",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:40"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3
+    },
+    {
       "id": "REQ-EXCALIDRAW-849",
       "layer": "feature",
       "level": "code",
@@ -1415,6 +1774,7 @@
       "used_by": [],
       "satisfies": [],
       "satisfied_by": [
+        "ARCH-DATAMODEL-036",
         "ARCH-EXCALIDRAW-030",
         "ARCH-EXCALIDRAW-031",
         "ARCH-EXCALIDRAW-032",
@@ -1430,6 +1790,10 @@
     }
   ],
   "edges": [
+    [
+      "ARCH-DATAMODEL-036",
+      "ARCH-EXCALIDRAW-030"
+    ],
     [
       "ARCH-EXCALIDRAW-031",
       "ARCH-EXCALIDRAW-030"
@@ -1452,6 +1816,10 @@
     ]
   ],
   "upstream_edges": [
+    [
+      "ARCH-DATAMODEL-036",
+      "SYS-DIAGRAM-001"
+    ],
     [
       "ARCH-EXCALIDRAW-030",
       "SYS-DIAGRAM-001"
@@ -1533,6 +1901,26 @@
       "ARCH-RELEASE-035"
     ],
     [
+      "REQ-DATAMODEL-900",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-901",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-902",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-903",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-904",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ]
@@ -1574,6 +1962,17 @@
       ],
       "landmark": "v2.7.0",
       "headline": "The viewer's download button saves your edits"
+    },
+    {
+      "month": "2026-11",
+      "count": 1,
+      "first": "2026-11-06",
+      "last": "2026-11-06",
+      "versions": [
+        "v2.8.0"
+      ],
+      "landmark": "v2.8.0",
+      "headline": "Draw and review a data model from its SQL"
     }
   ],
   "commands": [
@@ -1755,16 +2154,16 @@
     }
   ],
   "design": {
-    "files": 22,
-    "clean_files": 18,
-    "score": 82,
+    "files": 26,
+    "clean_files": 20,
+    "score": 77,
     "candidates": {
-      "encapsulation": 0,
+      "encapsulation": 1,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
       "metrics": 2,
-      "standards": 2
+      "standards": 3
     },
     "findings": [
       {
@@ -1776,12 +2175,28 @@
         "detail": "`ArrangeMixin` reaches 53 methods (over 50): 12 of its own plus 41 it calls"
       },
       {
+        "pillar": "standards",
+        "kind": "line-too-long",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py",
+        "line": 120,
+        "name": "cli.py",
+        "detail": "1 line(s) wider than 100 columns, first at line 120"
+      },
+      {
         "pillar": "metrics",
         "kind": "high-response",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py",
         "line": 166,
         "name": "_PackRun",
         "detail": "`_PackRun` reaches 56 methods (over 50): 13 of its own plus 43 it calls"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "data-clump",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py",
+        "line": 38,
+        "name": "_grain",
+        "detail": "_by_name, roles, tables travel together through 3 functions: _grain, _scd2, _surrogate_key"
       },
       {
         "pillar": "standards",
@@ -1801,17 +2216,18 @@
       }
     ],
     "advice": {
+      "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
       "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them",
       "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them"
     }
   },
   "health": {
     "score": 100,
-    "total": 22,
-    "healthy": 22,
-    "confirmed": 22,
-    "implemented": 21,
-    "tested": 21,
+    "total": 28,
+    "healthy": 28,
+    "confirmed": 28,
+    "implemented": 27,
+    "tested": 27,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

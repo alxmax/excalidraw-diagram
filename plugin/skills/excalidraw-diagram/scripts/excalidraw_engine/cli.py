@@ -3,6 +3,7 @@
 import sys
 
 from . import selftest
+from .data_model import scene_from_ddl
 from .discover import discover_stub
 from .spec import scene_from_json
 from .svg import render_svg
@@ -16,6 +17,9 @@ USAGE = """usage: excalidraw_builder.py [<command>]
   render <scene.excalidraw> [out_dir] [--cdn] [--svg]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
+  data-model --from-ddl <schema.sql> [-o <dir>] [--cdn] [--svg]
+                                        draw the tables of a SQL DDL script, one node per
+                                        table and one edge per foreign key
 
 Two authoring paths. `scene` is the short one: describe nodes, edges and groups in
 JSON with no coordinates, and pack() places everything and runs the gates. Writing a
@@ -85,6 +89,23 @@ def _scene(args):
     return 0
 
 
+def _data_model(args):
+    args, offline = _cdn_flag(args)
+    args, svg = _svg_flag(args)
+    flags = {"--from-ddl": "ddl", "-o": "out", "--out": "out"}
+    got = {}
+    while args:
+        key = flags.get(args[0])
+        if key is None or len(args) < 2:
+            got = {}
+            break
+        got[key], args = args[1], args[2:]
+    if not got.get("ddl"):
+        return _usage_error("data-model --from-ddl <schema.sql> [-o <dir>] [--cdn] [--svg]")
+    print("wrote", *scene_from_ddl(got["ddl"], got.get("out"), offline=offline, svg=svg))
+    return 0
+
+
 def _selftest(_args):
     selftest.run()
     return 0
@@ -96,7 +117,7 @@ def _help(_args):
 
 
 VERBS = {"render": _render, "discover": _discover, "scene": _scene,
-         "selftest": _selftest, "help": _help, "-h": _help, "--help": _help}
+         "data-model": _data_model, "selftest": _selftest, "help": _help, "-h": _help, "--help": _help}
 
 
 def main(argv):

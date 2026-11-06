@@ -1,12 +1,18 @@
 {
   "_schema": 1,
   "questions": {
+    "ARCH-DATAMODEL-036": [],
     "ARCH-EXCALIDRAW-030": [],
     "ARCH-EXCALIDRAW-031": [],
     "ARCH-EXCALIDRAW-032": [],
     "ARCH-EXCALIDRAW-033": [],
     "ARCH-EXCALIDRAW-034": [],
     "ARCH-RELEASE-035": [],
+    "REQ-DATAMODEL-900": [],
+    "REQ-DATAMODEL-901": [],
+    "REQ-DATAMODEL-902": [],
+    "REQ-DATAMODEL-903": [],
+    "REQ-DATAMODEL-904": [],
     "REQ-EXCALIDRAW-844": [],
     "REQ-EXCALIDRAW-845": [],
     "REQ-EXCALIDRAW-846": [],

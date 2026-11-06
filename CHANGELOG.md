@@ -1,5 +1,19 @@
 # Changelog
 
+## plugin `v2.8.0` — 2026-11-06
+
+**Draw and review a data model from its SQL.** `data-model --from-ddl schema.sql -o out/`
+reads `CREATE TABLE` and `ALTER TABLE ... ADD ... FOREIGN KEY` (PostgreSQL and generic
+SQL, standard library only) and draws one node per table and one arrow per foreign key
+through the same layout and gates as every other diagram.
+
+Each table is classified as a fact, dimension, bridge or unknown, coloured by role, and
+labelled with a confidence; the glossary gives the reason for every call. Five review
+rules (`grain`, `surrogate-key`, `scd2`, `orphan-fk`, `snowflake`) draw their findings as
+amber notes joined to the table they concern. The roles and the `scd2` rule are
+heuristics on names and structure. The fact sits in one column with its dimensions
+beside it rather than at the centre of a star. Not an MCP tool yet.
+
 ## plugin `v2.7.0` — 2026-10-21
 
 **The viewer's download button saves your edits.** The page is a full editor, but the
