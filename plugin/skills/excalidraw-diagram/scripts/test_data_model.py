@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909  # tested-by: REQ-DATAMODEL-910  # tested-by: REQ-DATAMODEL-911  # tested-by: REQ-DATAMODEL-912
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909  # tested-by: REQ-DATAMODEL-910  # tested-by: REQ-DATAMODEL-911  # tested-by: REQ-DATAMODEL-912  # tested-by: REQ-DATAMODEL-913
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -963,9 +963,69 @@ class TestExplain(unittest.TestCase):
 
     def test_a_wide_legend_never_overlaps_the_glossary(self):  # verifies: REQ-DATAMODEL-911#CASE-7
         with tempfile.TemporaryDirectory() as out:
-            for fixture in ("shop_demo.sql", "shop_clean.sql", "shop_noprefix.sql"):
+            for fixture in ("shop_demo.sql", "shop_clean.sql", "shop_noprefix.sql",
+                        "order_process.sql"):
                 for path in scene_from_ddl(os.path.join(DATA, fixture), out, columns=True):
                     self.assertTrue(os.path.getsize(path) > 0, fixture)
+
+
+def _scene_elements(fixture, columns=True):
+    """The elements of the scene data-model draws for a fixture."""
+    with tempfile.TemporaryDirectory() as out:
+        path = scene_from_ddl(os.path.join(DATA, fixture), out, columns=columns)[0]
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)["elements"]
+
+
+def _crossing_pairs(elements):
+    """(unbound or routed lines, pairs of lines whose segments cross)."""
+    def segments(el):
+        pts = [(el["x"] + p[0], el["y"] + p[1]) for p in el["points"]]
+        return list(zip(pts, pts[1:]))
+
+    def cross(a, b):
+        (p1, p2), (p3, p4) = a, b
+        def turn(p, q, r):
+            return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+        return (turn(p3, p4, p1) * turn(p3, p4, p2) < 0
+                and turn(p1, p2, p3) * turn(p1, p2, p4) < 0)
+
+    lines = [e for e in elements if e["type"] in ("arrow", "line") and len(e.get("points") or ()) >= 2]
+    routed = [e for e in lines if e["type"] == "line" or not e.get("startBinding")]
+    pairs = sum(1 for i in range(len(lines)) for j in range(i + 1, len(lines))
+                if any(cross(a, b) for a in segments(lines[i]) for b in segments(lines[j])))
+    return len(routed), pairs
+
+
+class TestStarLayout(unittest.TestCase):
+    """REQ-DATAMODEL-913: facts sharing dimensions sit on opposite sides of them."""
+
+    def test_every_second_fact_like_table_is_flipped(self):  # verifies: REQ-DATAMODEL-913#CASE-1
+        spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
+        flipped = {e["src"] for e in spec["edges"] if e.get("flip")}
+        self.assertEqual(flipped, {"fact_payment"})
+        self.assertFalse(any(e.get("flip") for e in spec["edges"] if e["src"] == "fact_order_line"))
+
+    def test_two_facts_sharing_dimensions_draw_no_crossing_arrows(self):  # verifies: REQ-DATAMODEL-913#CASE-1
+        routed, pairs = _crossing_pairs(_scene_elements("shop_clean.sql"))
+        self.assertEqual((routed, pairs), (0, 0))
+
+    def test_one_fact_changes_nothing(self):  # verifies: REQ-DATAMODEL-913#CASE-2
+        # shop_demo has one fact table (stg_payments is unknown): nothing to put on the other side
+        single = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
+        self.assertFalse(any(e.get("flip") for e in single["edges"]))
+
+    def test_the_order_process_keeps_its_routed_edges_and_crossings_down(self):  # verifies: REQ-DATAMODEL-913#CASE-3
+        # five facts and eight dimensions: measured at 1 routed edge and 10 crossing pairs
+        # (3 and 11 before the flip). A ratchet: it may fall, it must not rise.
+        routed, pairs = _crossing_pairs(_scene_elements("order_process.sql"))
+        self.assertLessEqual(routed, 1)
+        self.assertLessEqual(pairs, 10)
+
+    def test_a_dimension_only_a_right_hand_table_reaches_sits_beside_it(self):  # verifies: REQ-DATAMODEL-913#CASE-3
+        elements = _scene_elements("order_process.sql")
+        x = {e["customData"]["id"]: e["x"] for e in elements if e.get("customData")}
+        self.assertEqual(x["segment"], x["customer"])           # in the dimensions' column
 
 
 class TestCapability(unittest.TestCase):

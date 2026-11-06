@@ -1,5 +1,19 @@
 # Changelog
 
+## plugin `v2.15.0` — 2026-11-07
+
+**Facts that share dimensions no longer cross each other.** With two or more fact tables (a bridge
+counts), `data-model` now lays every second one out on the far side of the dimensions, so each
+arrow runs straight into the dimension beside it. Two facts sharing dimensions went from one
+crossing pair of arrows to none. On a five-fact order process the long routed loops fell from 3 to
+1 but crossing pairs only from 11 to 10: with many facts crossings are a property of the graph, so
+the layout reduces them and does not remove them. The facts are assigned in schema order, not by
+searching for the fewest crossings.
+
+It rests on a new optional `"flip": true` on a `graph.json` edge: the edge is laid out as if it ran
+target to source, while its arrow still runs source to target. A node that only flipped edges reach
+sits beside the nearest of them. Without the key a graph is laid out exactly as before.
+
 ## plugin `v2.14.0` — 2026-11-07
 
 **Modelled by hand first, then compared: two defects the fixtures hid.** An order process

@@ -31,6 +31,7 @@ Every bullet below is binding.
 - The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]
 - dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]
 - The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]
+- Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]
 
 ## Cases
 CASE-1

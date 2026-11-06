@@ -57,6 +57,7 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
     # facts sharing dimensions the arrows cross and their labels pile up, and with columns
     # listed in the boxes the FK lines already name the key.
     named = not columns and sum(c.role == "fact" for c in roles.values()) <= 1
+    right = _right_side(tables, roles)
     edges, seen = [], {}
     for table in tables:
         for fk in table.foreign_keys:
@@ -69,6 +70,8 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
                     seen[key]["label"] += ", " + label
             else:
                 seen[key] = {"src": table.name, "dst": fk.ref_table}
+                if table.name in right:
+                    seen[key]["flip"] = True
                 if named:
                     seen[key]["label"] = label
                 edges.append(seen[key])
@@ -95,6 +98,16 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
     if title:
         spec["title"] = title
     return spec
+
+
+def _right_side(tables, roles):
+    """The names of every second fact-like table (a fact or a bridge), which pack() lays out on
+    the far side of the dimensions they share. Alternating puts two facts one on each side of
+    their dimensions, so their arrows do not cross; fewer than two fact-like tables change
+    nothing."""
+    # implements: REQ-DATAMODEL-913
+    fact_like = [t.name for t in tables if roles[t.name].role in ("fact", "bridge")]
+    return set(fact_like[1::2]) if len(fact_like) >= 2 else set()
 
 
 def _free_id(wanted, taken):

@@ -163,6 +163,15 @@ def validate(nodes, edges):
 # ---------------------------------------------------------------------------
 # one layout run
 # ---------------------------------------------------------------------------
+def _laid(link):
+    """The link as the layering sees it. An edge marked `"flip": true` is laid out as if it
+    ran target -> source, which puts its source on the far side of its target; the arrow is
+    still drawn source -> target. Two facts that share dimensions then sit one on each side
+    of them, and no arrow has to cross the other's."""
+    # implements: REQ-EXCALIDRAW-859
+    return dict(link, src=link["dst"], dst=link["src"]) if link.get("flip") else link
+
+
 class _PackRun(object):
     """The state of laying out one graph on one scene, one step per method."""
 
@@ -171,10 +180,30 @@ class _PackRun(object):
         self.specs, self.ids, self.links = graph
         self.origin = as_point(at)
         self.lr = opts.direction == "LR"
-        self.back = back_edges(self.ids, self.links)
-        self.forward = [link for k, link in enumerate(self.links) if k not in self.back]
+        laid = [_laid(link) for link in self.links]     # layering sees a flipped edge reversed
+        self.back = back_edges(self.ids, laid)
+        self.forward = [link for k, link in enumerate(laid) if k not in self.back]
         self.layer = layer_of(self.ids, self.forward)
+        self._pull_flipped_targets()
         self.placed, self.size, self.font, self.at, self.extent = {}, {}, {}, [], []
+
+    def _pull_flipped_targets(self):
+        """Longest-path layering starts a node nothing points at in layer 0. For a node that
+        only flipped edges reach (a dimension that only right-hand facts point at) that is the
+        far side of the diagram from them; it moves next to the nearest of them instead. A
+        graph with no flipped edge has no such node, so nothing else moves."""
+        reached = {str(link["dst"]) for link in self.forward}
+        for nid in {str(link["dst"]) for link in self.links if link.get("flip")} - reached:
+            after = [self.layer[str(link["dst"])] for link in self.forward
+                     if str(link["src"]) == nid]
+            if after:
+                self.layer[nid] = min(after) - 1
+
+    def _span(self, link):
+        """How many layers the arrow of `link` advances: 1 for a neighbour. A flipped edge is
+        laid out with its source after its target, so its arrow runs back by one layer."""
+        gap = self.layer[str(link["dst"])] - self.layer[str(link["src"])]
+        return -gap if link.get("flip") else gap
 
     def layers(self, groups):
         """The ids per layer, ordered by four barycenter sweeps each way, with
@@ -321,7 +350,7 @@ class _PackRun(object):
                     and self.layer[dst] - self.layer[src] == 1):
                 self._bus((a, b), trunk[src], link)
                 continue
-            if (k not in self.back and self.layer[dst] - self.layer[src] == 1
+            if (k not in self.back and self._span(link) == 1
                     and not self.scene._straight_hits(a, b)):
                 self.scene.arrow(a, b, label=link.get("label"),
                                  paint=Paint(dashed=bool(link.get("dashed"))))

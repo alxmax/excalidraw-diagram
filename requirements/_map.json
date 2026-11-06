@@ -23,7 +23,8 @@
         "A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]",
         "The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]",
         "dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]",
-        "The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]"
+        "The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]",
+        "Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]"
       ],
       "verify": [],
       "notes": [
@@ -58,7 +59,8 @@
         "REQ-DATAMODEL-909",
         "REQ-DATAMODEL-910",
         "REQ-DATAMODEL-911",
-        "REQ-DATAMODEL-912"
+        "REQ-DATAMODEL-912",
+        "REQ-DATAMODEL-913"
       ],
       "members": [
         {
@@ -178,7 +180,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:676"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
         },
         {
           "role": "implements",
@@ -247,7 +249,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:676"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
         },
         {
           "role": "implements",
@@ -316,7 +318,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:789"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:790"
         },
         {
           "role": "implements",
@@ -385,7 +387,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1403"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
         },
         {
           "role": "implements",
@@ -492,7 +494,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "implements",
@@ -551,11 +553,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:921"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:922"
         },
         {
           "role": "implements",
@@ -693,7 +695,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:494"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:495"
         },
         {
           "role": "implements",
@@ -757,7 +759,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1286"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1287"
         },
         {
           "role": "implements",
@@ -872,7 +874,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1501"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1545"
         },
         {
           "role": "implements",
@@ -939,7 +941,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
         }
       ],
       "test_exempt": null,
@@ -961,6 +963,7 @@
       "contract": [
         "`Scene.pack(nodes, edges, groups, at, options)` places a directed graph whose description carries no coordinates, and returns the scene id of every node it placed. [[REQ-EXCALIDRAW-851]] details the behaviour.",
         "A node can say how its label is set, and `pack()` sizes and connects it for that. [[REQ-EXCALIDRAW-858]] details the behaviour.",
+        "An edge can be flipped, laying its source out beyond its target, so two sources that share targets do not cross. [[REQ-EXCALIDRAW-859]] details the behaviour.",
         "A layout `pack()` produces passes the same gates a hand-written generator's does. Passing is the definition of a finished layout: a run that places every node and leaves a shape sitting on another one has failed.",
         "The CLI reaches `pack()` through `scene --from-json`, so a caller never has to write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb."
       ],
@@ -987,7 +990,8 @@
       ],
       "satisfied_by": [
         "REQ-EXCALIDRAW-851",
-        "REQ-EXCALIDRAW-858"
+        "REQ-EXCALIDRAW-858",
+        "REQ-EXCALIDRAW-859"
       ],
       "members": [
         {
@@ -1049,11 +1053,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:432"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:461"
         }
       ],
       "test_exempt": null,
@@ -1111,11 +1115,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:433"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
         }
       ],
       "test_exempt": null,
@@ -1387,7 +1391,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:162"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:175"
         }
       ],
       "test_exempt": null,
@@ -1754,7 +1758,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:184"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:197"
         },
         {
           "role": "implements",
@@ -1938,7 +1942,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:185"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:198"
         }
       ],
       "test_exempt": null,
@@ -2062,7 +2066,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:186"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:199"
         }
       ],
       "test_exempt": null,
@@ -2071,6 +2075,56 @@
       "risks": [],
       "clauses": 4,
       "covered": 4,
+      "clarify": []
+    },
+    {
+      "id": "REQ-DATAMODEL-913",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Facts sharing dimensions on opposite sides of them",
+      "intent": "Two facts that share dimensions drew their arrows across each other, and a bridge or factless table pushed its arrows into long loops round the diagram. Putting every second fact on the other side of the dimensions lets each arrow run straight into the dimension next to it, which is how a star schema is drawn when there is more than one star.",
+      "contract": [
+        "With two or more fact-like tables, a fact or a bridge, every second one in schema order is laid out on the far side of the dimensions.",
+        "The first fact-like table, and the only one when there is one, is laid out as before.",
+        "The foreign-key arrow of a laid-out table still runs from that table to the dimension."
+      ],
+      "verify": [],
+      "notes": [
+        "Measured on the order process before and after: routed edges 3 to 1, crossing pairs 11 to 10. With many facts crossings are a property of the graph, so the layout reduces them and does not remove them. The two-fact case goes from one crossing pair to none.",
+        "The rule alternates in schema order and does not search for the assignment with the fewest crossings."
+      ],
+      "current_impl": [
+        "`_right_side()` and `graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the layout in `pack.py`.",
+        "`TestStarLayout` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "accept": "CASE-1 — two facts, no crossing\n  Given  two fact tables that share two dimensions\n  When   the graph is built and drawn\n  Then   the second fact is flipped, and the drawing has no crossing pair of arrows and no routed edge\n\nCASE-2 — one fact, nothing flipped\n  Given  a schema with one fact table\n  When   the graph is built\n  Then   no edge carries `flip`\n\nCASE-3 — many facts, measured\n  Given  an order process of five fact-like tables and eight dimensions, one dimension reached only by a flipped bridge\n  When   it is drawn\n  Then   at most one edge is routed and at most ten pairs of arrows cross, and that dimension shares its column with the others",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:108"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3,
       "clarify": []
     },
     {
@@ -2110,7 +2164,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:172"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "implements",
@@ -2127,6 +2181,60 @@
       "risks": [],
       "clauses": 5,
       "covered": 5,
+      "clarify": []
+    },
+    {
+      "id": "REQ-EXCALIDRAW-859",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Flipped edges: a source laid out beyond its target",
+      "intent": "Two sources that point at the same targets cannot both sit before them without their arrows crossing. An edge marked `flip` is laid out the other way round, so one source sits before the targets and the other after, while every arrow still runs from source to target and so still says what it said.",
+      "contract": [
+        "`pack()` lays out an edge with `\"flip\": true` as if it ran from its target to its source, so the source sits in a later layer than the target.",
+        "The arrow of a flipped edge is still drawn from its source to its target.",
+        "A node that only flipped edges reach is placed in the layer just before its nearest flipped source, not in the first layer.",
+        "A graph with no flipped edge is laid out exactly as it was before the key existed."
+      ],
+      "verify": [],
+      "notes": [
+        "`flip` is for the `\"straight\"` edge style. A bus draws a trunk beside its source, so a flipped edge is left out of it."
+      ],
+      "current_impl": [
+        "`_laid()` and `_pull_flipped_targets()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
+        "`CasesExcalidrawFlip` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "accept": "CASE-1 — a source beyond its targets\n  Given  two sources pointing at the same two targets, one of them flipped\n  When   `pack()` lays them out\n  Then   the flipped source sits after the targets, the other before, and every arrow stays bound\n\nCASE-2 — the arrow keeps its direction\n  Given  an edge from B to C marked `flip`\n  When   `pack()` draws it\n  Then   the arrow starts at B and ends at C\n\nCASE-3 — a target only flipped edges reach\n  Given  a node that only a flipped edge points at\n  When   `pack()` lays out the graph\n  Then   it sits in the same layer as the other targets, with its arrow bound and straight\n\nCASE-4 — nothing changes without the key\n  Given  one graph with no `flip` key and the same graph with `flip` set to false\n  When   `pack()` lays out each\n  Then   the two scenes are identical",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-034"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:8"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1404"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:171"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4,
       "clarify": []
     },
     {
@@ -2333,8 +2441,16 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-913",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
+    ],
+    [
+      "REQ-EXCALIDRAW-859",
+      "ARCH-EXCALIDRAW-034"
     ]
   ],
   "todos": [],
@@ -2501,7 +2617,7 @@
     },
     {
       "month": "2026-11",
-      "count": 7,
+      "count": 8,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2511,11 +2627,20 @@
         "v2.9.0",
         "v2.12.0",
         "v2.13.0",
-        "v2.14.0"
+        "v2.14.0",
+        "v2.15.0"
       ],
-      "landmark": "v2.14.0",
-      "headline": "Modelled by hand first, then compared: two defects the fixtures hid",
+      "landmark": "v2.15.0",
+      "headline": "Facts that share dimensions no longer cross each other",
       "entries": [
+        {
+          "version": "v2.15.0",
+          "date": "2026-11-07",
+          "headline": "Facts that share dimensions no longer cross each other",
+          "body": "**Facts that share dimensions no longer cross each other.** With two or more fact tables (a bridge\ncounts), `data-model` now lays every second one out on the far side of the dimensions, so each\narrow runs straight into the dimension beside it. Two facts sharing dimensions went from one\ncrossing pair of arrows to none. On a five-fact order process the long routed loops fell from 3 to\n1 but crossing pairs only from 11 to 10: with many facts crossings are a property of the graph, so\nthe layout reduces them and does not remove them. The facts are assigned in schema order, not by\nsearching for the fewest crossings.\n\nIt rests on a new optional `\"flip\": true` on a `graph.json` edge: the edge is laid out as if it ran\ntarget to source, while its arrow still runs source to target. A node that only flipped edges reach\nsits beside the nearest of them. Without the key a graph is laid out exactly as before.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.14.0",
           "date": "2026-11-07",
@@ -2889,7 +3014,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 135,
+        "line": 148,
         "name": "_draw",
         "detail": "columns, name, offline, out_dir, roles_path, svg travel together through 3 functions: _draw, scene_from_dbt, scene_from_ddl"
       },
@@ -2897,7 +3022,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 135,
+        "line": 148,
         "name": "_draw",
         "detail": "`_draw` takes 10 parameters (over 6)"
       },
@@ -2905,7 +3030,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 153,
+        "line": 166,
         "name": "scene_from_ddl",
         "detail": "`scene_from_ddl` takes 7 parameters (over 6)"
       },
@@ -2913,7 +3038,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 173,
+        "line": 186,
         "name": "scene_from_dbt",
         "detail": "`scene_from_dbt` takes 9 parameters (over 6)"
       },
@@ -2967,14 +3092,14 @@
   },
   "health": {
     "score": 100,
-    "total": 36,
-    "scored": 36,
-    "healthy": 36,
+    "total": 38,
+    "scored": 38,
+    "healthy": 38,
     "exempt": 0,
     "deprecated": 0,
-    "confirmed": 36,
-    "implemented": 35,
-    "tested": 35,
+    "confirmed": 38,
+    "implemented": 37,
+    "tested": 37,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,
