@@ -711,7 +711,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:194"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:195"
         }
       ],
       "test_exempt": null,
@@ -1391,7 +1391,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:175"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:201"
         }
       ],
       "test_exempt": null,
@@ -1524,7 +1524,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:156"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:165"
         }
       ],
       "test_exempt": null,
@@ -1758,7 +1758,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:197"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:223"
         },
         {
           "role": "implements",
@@ -1815,7 +1815,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py:185"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py:196"
         }
       ],
       "test_exempt": null,
@@ -1942,7 +1942,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:198"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:224"
         }
       ],
       "test_exempt": null,
@@ -2066,7 +2066,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:199"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:225"
         }
       ],
       "test_exempt": null,
@@ -2617,7 +2617,7 @@
     },
     {
       "month": "2026-11",
-      "count": 8,
+      "count": 9,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2628,11 +2628,20 @@
         "v2.12.0",
         "v2.13.0",
         "v2.14.0",
-        "v2.15.0"
+        "v2.15.0",
+        "v2.15.1"
       ],
       "landmark": "v2.15.0",
       "headline": "Facts that share dimensions no longer cross each other",
       "entries": [
+        {
+          "version": "v2.15.1",
+          "date": "2026-11-07",
+          "headline": "Design review: nine candidates cleared, behaviour unchanged",
+          "body": "**Design review: nine candidates cleared, behaviour unchanged.** The advisory `ask --design`\nreport flagged nine shapes; each is fixed, and the report now says \"No design candidates\".\n\n`scene_from_ddl()` took seven loose arguments and `scene_from_dbt()` nine, passed on to a\nten-parameter helper. They now take `out_dir` and keyword `**options`, built into a `DrawOptions`\n(and a `DbtOptions` for dbt's `mapping_path` and `draw_lineage`), the way `PackOptions` works.\nCalls that pass options by keyword, as the CLI and the tests do, are unchanged; an unknown option,\nor a dbt-only one on a DDL file, is a `TypeError`. The one thing that no longer works is passing\n`name` as the third positional argument. The review rules take one `_Schema` instead of the same\nthree arguments each; `miniyaml.py` nests less deeply; two lines over 120 columns are wrapped, one\nin `viewer.py` that had been a single 131-column line since 3 October.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.15.0",
           "date": "2026-11-07",
@@ -3000,95 +3009,17 @@
   ],
   "design": {
     "files": 31,
-    "clean_files": 26,
-    "score": 84,
+    "clean_files": 31,
+    "score": 100,
     "candidates": {
-      "encapsulation": 5,
-      "abstraction": 2,
+      "encapsulation": 0,
+      "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
-      "standards": 2
+      "standards": 0
     },
-    "findings": [
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 148,
-        "name": "_draw",
-        "detail": "columns, name, offline, out_dir, roles_path, svg travel together through 3 functions: _draw, scene_from_dbt, scene_from_ddl"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 148,
-        "name": "_draw",
-        "detail": "`_draw` takes 10 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 166,
-        "name": "scene_from_ddl",
-        "detail": "`scene_from_ddl` takes 7 parameters (over 6)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "long-parameter-list",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 186,
-        "name": "scene_from_dbt",
-        "detail": "`scene_from_dbt` takes 9 parameters (over 6)"
-      },
-      {
-        "pillar": "abstraction",
-        "kind": "deep-nesting",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py",
-        "line": 55,
-        "name": "_split_flow",
-        "detail": "`_split_flow` nests 6 levels deep (over 4)"
-      },
-      {
-        "pillar": "abstraction",
-        "kind": "deep-nesting",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py",
-        "line": 145,
-        "name": "map",
-        "detail": "`map` nests 5 levels deep (over 4)"
-      },
-      {
-        "pillar": "encapsulation",
-        "kind": "data-clump",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py",
-        "line": 44,
-        "name": "_grain",
-        "detail": "_by_name, roles, tables travel together through 3 functions: _grain, _scd2, _surrogate_key"
-      },
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py",
-        "line": 54,
-        "name": "spec.py",
-        "detail": "1 line(s) wider than 120 columns, first at line 54"
-      },
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py",
-        "line": 186,
-        "name": "viewer.py",
-        "detail": "1 line(s) wider than 120 columns, first at line 186"
-      }
-    ],
-    "advice": {
-      "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
-      "deep-nesting": "nesting this deep hides the main path: return early, or extract the inner block",
-      "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them",
-      "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together"
-    }
+    "findings": [],
+    "advice": {}
   },
   "health": {
     "score": 100,

@@ -183,7 +183,8 @@ def load_scene(scene_path):
     with open(scene_path, encoding="utf-8") as f:
         scene = json.load(f)
     elements = scene.get("elements") if isinstance(scene, dict) else None
-    if not isinstance(scene, dict) or not isinstance(elements, list)             or not all(isinstance(e, dict) for e in elements):
+    if (not isinstance(scene, dict) or not isinstance(elements, list)
+            or not all(isinstance(e, dict) for e in elements)):
         raise ValueError(
             f"{scene_path}: not a valid Excalidraw scene "
             "(expected a JSON object with an 'elements' list of element objects)")

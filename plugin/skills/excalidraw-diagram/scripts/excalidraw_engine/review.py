@@ -37,20 +37,29 @@ class Issue(object):
         self.table, self.rule, self.message = table, rule, message
 
 
-def _of_role(tables, roles, role):
-    return [t for t in tables if roles[t.name].role == role]
+class _Schema(object):
+    """What every review rule reads: the tables, the roles classify_tables() gave them, and
+    the tables by name. One value instead of three arguments every rule takes together."""
+
+    def __init__(self, tables, roles):
+        self.tables, self.roles = tables, roles
+        self.by_name = {t.name: t for t in tables}
+
+    def of_role(self, role):
+        """The tables classified as `role`, in schema order."""
+        return [t for t in self.tables if self.roles[t.name].role == role]
 
 
-def _grain(tables, roles, _by_name):
+def _grain(schema):
     return [Issue(t.name, "grain",
                   "fact has no primary key, so one row's meaning (its grain) is not stated; "
                   "declare the key that makes a row unique")
-            for t in _of_role(tables, roles, "fact") if not t.primary_key]
+            for t in schema.of_role("fact") if not t.primary_key]
 
 
-def _surrogate_key(tables, roles, _by_name):
+def _surrogate_key(schema):
     out = []
-    for t in _of_role(tables, roles, "dimension"):
+    for t in schema.of_role("dimension"):
         pk = t.primary_key
         if len(pk) == 1 and _SURROGATE.search(pk[0]):
             continue
@@ -76,9 +85,9 @@ def _attributes(table):
             if c.name not in keys and not _KEYISH.search(c.name) and c.name.lower() not in own]
 
 
-def _scd2(tables, roles, _by_name):
+def _scd2(schema):
     out = []
-    for t in _of_role(tables, roles, "dimension"):
+    for t in schema.of_role("dimension"):
         names = [c.name for c in t.columns]
         has_from = any(_VALID_FROM.match(n) for n in names)
         has_to = any(_VALID_TO.match(n) for n in names)
@@ -96,11 +105,11 @@ def _scd2(tables, roles, _by_name):
     return out
 
 
-def _orphan_fk(tables, _roles, by_name):
+def _orphan_fk(schema):
     out = []
-    for t in tables:
+    for t in schema.tables:
         for fk in t.foreign_keys:
-            target = by_name.get(fk.ref_table)
+            target = schema.by_name.get(fk.ref_table)
             if target is None:
                 out.append(Issue(t.name, "orphan-fk", "%s references %s, which the schema "
                                  "does not define" % (", ".join(fk.columns), fk.ref_table)))
@@ -112,10 +121,10 @@ def _orphan_fk(tables, _roles, by_name):
     return out
 
 
-def _snowflake(tables, roles, by_name):
-    dims = {t.name for t in _of_role(tables, roles, "dimension")}
+def _snowflake(schema):
+    dims = {t.name for t in schema.of_role("dimension")}
     parents = {}                        # sub-dimension -> {dimension that references it}
-    for t in tables:
+    for t in schema.tables:
         if t.name in dims:
             for fk in t.foreign_keys:
                 if fk.ref_table in dims and fk.ref_table != t.name:
@@ -129,7 +138,7 @@ def _snowflake(tables, roles, by_name):
         return level[name]
 
     out = []
-    for t in tables:
+    for t in schema.tables:
         ups = parents.get(t.name)
         if not ups:
             continue
@@ -154,7 +163,7 @@ RULES = (_grain, _surrogate_key, _scd2, _orphan_fk, _snowflake)
 def review_tables(tables, roles):
     """[Issue] for `tables`, given classify_tables()'s `roles`; table order, then rule order."""
     # implements: REQ-DATAMODEL-903
-    by_name = {t.name: t for t in tables}
-    found = [i for rule in RULES for i in rule(tables, roles, by_name)]
+    schema = _Schema(tables, roles)
+    found = [i for rule in RULES for i in rule(schema)]
     order = {t.name: n for n, t in enumerate(tables)}
     return sorted(found, key=lambda i: order[i.table])

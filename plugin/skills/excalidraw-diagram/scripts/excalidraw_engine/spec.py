@@ -51,8 +51,8 @@ def scene_from_spec(spec, out_dir, name=None, offline=None, svg=False):
 
     `name` overrides the description's own "name", `offline` the viewer's
     renderer (see `html_page`), and `svg=True` also writes the .svg. Saves with every
-    gate at "error" and returns the (.excalidraw, .html) paths, plus the .svg's. Raises ValueError on a malformed description or a
-    failed gate."""
+    gate at "error" and returns the (.excalidraw, .html) paths, plus the .svg's. Raises
+    ValueError on a malformed description or a failed gate."""
     # implements: REQ-EXCALIDRAW-850
     nodes, edges, groups = _checked(spec, "the graph description")
     scene = Scene(seed=spec.get("seed"), roles=spec.get("roles") or {})

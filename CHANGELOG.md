@@ -1,5 +1,19 @@
 # Changelog
 
+## plugin `v2.15.1` — 2026-11-07
+
+**Design review: nine candidates cleared, behaviour unchanged.** The advisory `ask --design`
+report flagged nine shapes; each is fixed, and the report now says "No design candidates".
+
+`scene_from_ddl()` took seven loose arguments and `scene_from_dbt()` nine, passed on to a
+ten-parameter helper. They now take `out_dir` and keyword `**options`, built into a `DrawOptions`
+(and a `DbtOptions` for dbt's `mapping_path` and `draw_lineage`), the way `PackOptions` works.
+Calls that pass options by keyword, as the CLI and the tests do, are unchanged; an unknown option,
+or a dbt-only one on a DDL file, is a `TypeError`. The one thing that no longer works is passing
+`name` as the third positional argument. The review rules take one `_Schema` instead of the same
+three arguments each; `miniyaml.py` nests less deeply; two lines over 120 columns are wrapped, one
+in `viewer.py` that had been a single 131-column line since 3 October.
+
 ## plugin `v2.15.0` — 2026-11-07
 
 **Facts that share dimensions no longer cross each other.** With two or more fact tables (a bridge

@@ -220,7 +220,9 @@ table holding the key to the table it references). It builds the same graph desc
   `parse_yaml(text)`, `mapping_markdown(dir)` in `excalidraw_engine.mapping`, `parse_roles(text)`,
   `classify_tables(tables, overrides=None)`, `review_tables(tables, roles)`,
   `graph_from_tables(tables, columns=False, overrides=None, lineage=())`,
-  `scene_from_ddl(path, out_dir, columns=False, roles_path=None)` and `scene_from_dbt(dir, ...)`. Output is byte-stable: one schema, one pair of
+  `scene_from_ddl(path, out_dir=None, **options)` and `scene_from_dbt(dir, out_dir=None, **options)`:
+  the options are the fields of `DrawOptions` (name, offline, svg, columns, roles_path) and, for dbt,
+  `DbtOptions` (also mapping_path, draw_lineage); an unknown one is a `TypeError`. Output is byte-stable: one schema, one pair of
   files.
 - **Limits:** the roles and the `scd2` rule are heuristics on names and structure, and
   the diagram lays the fact in one column with its dimensions beside it, not around it.

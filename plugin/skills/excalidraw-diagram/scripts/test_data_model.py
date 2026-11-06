@@ -409,6 +409,22 @@ class TestScene(unittest.TestCase):
                     blobs.append(fh.read())
         self.assertEqual(blobs[0], blobs[1])
 
+    def test_a_ddl_drawing_takes_only_its_own_options(self):
+        with tempfile.TemporaryDirectory() as out:
+            path = os.path.join(DATA, "shop_demo.sql")
+            for bad in ({"mapping_path": os.path.join(out, "m.md")}, {"draw_lineage": True},
+                        {"no_such_option": 1}):
+                with self.assertRaises(TypeError):
+                    scene_from_ddl(path, out, **bad)
+            self.assertEqual(os.listdir(out), [])       # a refused call wrote nothing
+
+    def test_a_dbt_drawing_also_takes_lineage_and_a_mapping_path(self):
+        with tempfile.TemporaryDirectory() as out:
+            target = os.path.join(out, "m.md")
+            paths = scene_from_dbt(DBT, out, draw_lineage=True, mapping_path=target, columns=True)
+            self.assertEqual(paths[-1], target)
+            self.assertTrue(all(os.path.getsize(p) > 0 for p in paths))
+
     def test_bad_ddl_error_names_the_file(self):  # verifies: REQ-DATAMODEL-900#CASE-4
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "bad.sql")
