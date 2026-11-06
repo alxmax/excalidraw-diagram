@@ -25,6 +25,8 @@ Every bullet below is binding.
 - Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]
 - A table can list its columns on request. [[REQ-DATAMODEL-905]]
 - A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]
+- The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]
+- dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]
 
 ## Cases
 CASE-1

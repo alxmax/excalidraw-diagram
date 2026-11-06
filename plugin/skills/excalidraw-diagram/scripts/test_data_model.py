@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -20,7 +20,9 @@ from excalidraw_engine import cli  # noqa: E402
 from excalidraw_engine.classify import classify_tables  # noqa: E402
 from excalidraw_engine.data_model import (  # noqa: E402
     graph_from_tables, scene_from_ddl, unresolved_fks)
+from excalidraw_engine.dbt import read_dbt  # noqa: E402
 from excalidraw_engine.ddl import parse_ddl  # noqa: E402
+from excalidraw_engine.miniyaml import parse_yaml  # noqa: E402
 from excalidraw_engine.review import review_tables  # noqa: E402
 from excalidraw_engine.roles import parse_roles  # noqa: E402
 
@@ -454,6 +456,107 @@ class TestFitTextKeepsLines(unittest.TestCase):
         from excalidraw_engine.geometry import fit_text
         text, _, _ = fit_text("one two three four five six", max_chars=10)
         self.assertEqual(text.split("\n"), ["one two", "three four", "five six"])
+
+
+DBT = os.path.join(DATA, "dbt_shop")
+
+
+class TestMiniYaml(unittest.TestCase):
+    """REQ-DATAMODEL-908: the YAML subset a dbt schema.yml uses, and a refusal for the rest."""
+
+    def test_nested_maps_and_lists_of_maps(self):  # verifies: REQ-DATAMODEL-908#CASE-1
+        got = parse_yaml("a:\n  b: 1\n  c:\n    - x\n    - y\nmodels:\n  - name: m\n"
+                         "    columns:\n      - name: c1\n      - name: c2\n  - name: n\n")
+        self.assertEqual(got["a"], {"b": 1, "c": ["x", "y"]})
+        self.assertEqual(got["models"][0]["columns"], [{"name": "c1"}, {"name": "c2"}])
+        self.assertEqual(got["models"][1], {"name": "n"})
+
+    def test_a_list_at_the_same_indent_as_its_key(self):  # verifies: REQ-DATAMODEL-908#CASE-1
+        self.assertEqual(parse_yaml("tests:\n- unique\n- not_null\nnext: 1\n"),
+                         {"tests": ["unique", "not_null"], "next": 1})
+
+    def test_scalars_and_flow_collections(self):  # verifies: REQ-DATAMODEL-908#CASE-2
+        got = parse_yaml("""a: true\nb: ~\nc: 3\nd: 2.5\ne: 'it''s'\nf: "x\\ty"\ng: ref('m')\n"""
+                         "h: [1, 'a, b', {k: v}]\ni: {x: 1, y: [2]}\nj: {{ doc('d') }}\n")
+        self.assertEqual((got["a"], got["b"], got["c"], got["d"]), (True, None, 3, 2.5))
+        self.assertEqual((got["e"], got["f"], got["g"]), ("it's", "x\ty", "ref('m')"))
+        self.assertEqual(got["h"], [1, "a, b", {"k": "v"}])
+        self.assertEqual(got["i"], {"x": 1, "y": [2]})
+        self.assertEqual(got["j"], "{{ doc('d') }}")
+
+    def test_block_scalars_comments_and_leading_marker(self):  # verifies: REQ-DATAMODEL-908#CASE-3
+        got = parse_yaml("---\n# top\nd: >\n  one\n  two\ne: |\n  l1\n  l2\nf: 1  # trailing\n")
+        self.assertEqual(got, {"d": "one two", "e": "l1\nl2", "f": 1})
+
+    def test_anything_outside_the_subset_names_the_line(self):  # verifies: REQ-DATAMODEL-908#CASE-4
+        for text, msg in (("a: &x 1\n", "line 1.*anchors"),
+                          ("a:\n\t- 1\n", "line 2.*tab"),
+                          ("a: 1\na: 2\n", "line 2.*twice"),
+                          ("a: 1\nb\n", "line 2"),
+                          ("a: 1\n---\nb: 2\n", "line 2.*several documents"),
+                          ("a: 'open\n", "line 1.*unterminated")):
+            with self.assertRaisesRegex(ValueError, msg):
+                parse_yaml(text)
+
+
+class TestReadDbt(unittest.TestCase):
+    """REQ-DATAMODEL-907: a dbt project becomes tables, foreign keys and lineage."""
+
+    def test_models_come_from_sql_and_schema_files_sorted(self):  # verifies: REQ-DATAMODEL-907#CASE-1
+        tables, _ = read_dbt(DBT)
+        self.assertEqual([t.name for t in tables],
+                         ["customers", "orders", "stg_customers", "stg_orders", "stg_payments"])
+
+    def test_unique_plus_not_null_is_the_primary_key(self):  # verifies: REQ-DATAMODEL-907#CASE-2
+        t = {t.name: t for t in read_dbt(DBT)[0]}
+        self.assertEqual(t["orders"].primary_key, ["order_id"])
+        self.assertEqual(t["orders"].column("customer_id").nullable, False)
+        self.assertEqual(t["orders"].column("amount").type, "numeric")
+
+    def test_a_relationships_test_is_a_foreign_key(self):  # verifies: REQ-DATAMODEL-907#CASE-3
+        t = {t.name: t for t in read_dbt(DBT)[0]}
+        fk = t["orders"].foreign_keys
+        self.assertEqual([(f.columns, f.ref_table, f.ref_columns) for f in fk],
+                         [(["customer_id"], "customers", ["customer_id"])])
+
+    def test_ref_gives_lineage_and_sources_comments_and_unknowns_do_not(self):  # verifies: REQ-DATAMODEL-907#CASE-4
+        _, lineage = read_dbt(DBT)
+        self.assertIn(("customers", "stg_orders"), lineage)
+        self.assertIn(("orders", "stg_payments"), lineage)
+        self.assertFalse([p for p in lineage if p[1] in ("raw", "customers") and p[0] == "orders"])
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "models"))
+            with open(os.path.join(d, "models", "m.sql"), "w", encoding="utf-8") as fh:
+                fh.write("{# ref('ghost') #}\n-- ref('ghost2')\nselect * from {{ ref('m') }} "
+                         "join {{ ref('pkg', 'ghost3') }} on 1=1")
+            self.assertEqual(read_dbt(d)[1], [])
+
+    def test_lineage_is_drawn_dashed_unless_a_foreign_key_already_joins_the_pair(self):  # verifies: REQ-DATAMODEL-907#CASE-5
+        tables, lineage = read_dbt(DBT)
+        spec = graph_from_tables(tables, lineage=lineage)
+        dashed = {(e["src"], e["dst"]) for e in spec["edges"] if e.get("dashed")}
+        self.assertIn(("customers", "stg_orders"), dashed)
+        both = graph_from_tables(tables, lineage=lineage + [("orders", "customers")])
+        self.assertEqual(len([e for e in both["edges"]
+                              if (e["src"], e["dst"]) == ("orders", "customers")]), 1)
+
+    def test_a_broken_schema_file_and_an_empty_project_are_errors(self):  # verifies: REQ-DATAMODEL-907#CASE-6
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError, "no dbt model"):
+                read_dbt(d)
+            os.makedirs(os.path.join(d, "models"))
+            with open(os.path.join(d, "models", "schema.yml"), "w", encoding="utf-8") as fh:
+                fh.write("models:\n  - name: a\n    columns: &x []\n")
+            with self.assertRaisesRegex(ValueError, "schema.yml.*line 3"):
+                read_dbt(d)
+
+    def test_from_dbt_renders_through_every_gate_and_needs_exactly_one_input(self):  # verifies: REQ-DATAMODEL-907#CASE-7
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "-o", out]), 0)
+            self.assertEqual(sorted(os.listdir(out)), ["dbt_shop.excalidraw", "dbt_shop.html"])
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(cli.main(["data-model"]), 2)
+            self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "--from-ddl", "x.sql"]), 2)
 
 
 class TestCapability(unittest.TestCase):

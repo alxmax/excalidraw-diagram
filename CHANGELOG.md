@@ -1,5 +1,18 @@
 # Changelog
 
+## plugin `v2.10.0` — 2026-11-06
+
+**`data-model --from-dbt <project>` draws a dbt project.** One node per model under
+`models/`. A `relationships` test on a column becomes a foreign key, so the model is
+classified and reviewed like any DDL table; a column with `unique` and `not_null` tests is
+the primary key; `data_type` gives the column type. A `ref()` in a model's SQL is lineage,
+drawn as a dashed line from the model to what it is built from. Without `data_type` a model
+may classify as unknown; `--roles` corrects it.
+
+`schema.yml` is read by a small YAML subset reader written for this (the plugin installs
+nothing from PyPI): maps, lists, scalars, flow collections and `|` / `>` blocks. Anchors,
+tags, tabs, repeated keys and several documents are refused with the line number.
+
 ## plugin `v2.9.0` — 2026-11-06
 
 **`data-model --columns` and `--roles`.** `--columns` lists each table's columns under its

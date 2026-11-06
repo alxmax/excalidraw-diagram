@@ -3,7 +3,7 @@
 import sys
 
 from . import selftest
-from .data_model import scene_from_ddl
+from .data_model import scene_from_dbt, scene_from_ddl
 from .discover import discover_stub
 from .spec import scene_from_json
 from .svg import render_svg
@@ -17,10 +17,12 @@ USAGE = """usage: excalidraw_builder.py [<command>]
   render <scene.excalidraw> [out_dir] [--cdn] [--svg]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
-  data-model --from-ddl <schema.sql> [-o <dir>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]
-                                        draw the tables of a SQL DDL script, one node per
-                                        table and one edge per foreign key; --columns lists
-                                        each table's columns, --roles overrides a role
+  data-model (--from-ddl <schema.sql> | --from-dbt <project>) [-o <dir>] [--columns]
+             [--roles <roles.yml>] [--cdn] [--svg]
+                                        draw the tables of a SQL DDL script or the models of
+                                        a dbt project, one node per table and one edge per
+                                        foreign key; --columns lists each table's columns,
+                                        --roles overrides a role
 
 Two authoring paths. `scene` is the short one: describe nodes, edges and groups in
 JSON with no coordinates, and pack() places everything and runs the gates. Writing a
@@ -95,7 +97,8 @@ def _data_model(args):
     args, svg = _svg_flag(args)
     columns = "--columns" in args
     args = [a for a in args if a != "--columns"]
-    flags = {"--from-ddl": "ddl", "-o": "out", "--out": "out", "--roles": "roles"}
+    flags = {"--from-ddl": "ddl", "--from-dbt": "dbt", "-o": "out", "--out": "out",
+             "--roles": "roles"}
     got = {}
     while args:
         key = flags.get(args[0])
@@ -103,11 +106,12 @@ def _data_model(args):
             got = {}
             break
         got[key], args = args[1], args[2:]
-    if not got.get("ddl"):
-        return _usage_error("data-model --from-ddl <schema.sql> [-o <dir>] [--columns] "
-                            "[--roles <roles.yml>] [--cdn] [--svg]")
-    print("wrote", *scene_from_ddl(got["ddl"], got.get("out"), offline=offline, svg=svg,
-                                   columns=columns, roles_path=got.get("roles")))
+    if bool(got.get("ddl")) == bool(got.get("dbt")):    # exactly one input
+        return _usage_error("data-model (--from-ddl <schema.sql> | --from-dbt <project>) "
+                            "[-o <dir>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]")
+    draw = scene_from_ddl if got.get("ddl") else scene_from_dbt
+    print("wrote", *draw(got.get("ddl") or got["dbt"], got.get("out"), offline=offline,
+                         svg=svg, columns=columns, roles_path=got.get("roles")))
     return 0
 
 
