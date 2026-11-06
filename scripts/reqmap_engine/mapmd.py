@@ -40,13 +40,14 @@ def _node_label(n):
 
 
 def _node_area(n):  # implements: ARCH-MAP-007
-    """Grouping key for a node: an explicit `area:` frontmatter field wins (lets a
-    repo group e.g. several standalone capabilities under one ANALYSIS box without
-    renaming ids); otherwise fall back to the id prefix."""
+    """Grouping key for a node: an explicit `area:` frontmatter field wins (lets
+    a repo group e.g. several standalone capabilities under one ANALYSIS box
+    without renaming ids); otherwise fall back to the id prefix."""
     return (n.get("area") or "").strip() or _area_of(n["id"])
 
 
-def _grouped_areas(nodes):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-876
+def _grouped_areas(nodes):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-876
     """Order nodes into [(area_label, [node,...]), ...]: multi-node areas first
     (sorted), then one 'misc' bucket of every single-node area. Shared by the
     System / Dependency / Risk diagrams so a 40+ node map stays navigable
@@ -60,7 +61,8 @@ def _grouped_areas(nodes):  # implements: ARCH-MAPDIAGRAMS-055  # implements: RE
         # fold the singletons into any pre-existing real "misc" multi-node group
         # rather than appending a second ("misc", …) tuple — two subgraphs with
         # the same _safe_id would break the Mermaid render
-        existing = next((i for i, (a, _) in enumerate(groups) if a == "misc"), None)
+        existing = next(
+            (i for i, (a, _) in enumerate(groups) if a == "misc"), None)
         merged = sorted(singles, key=lambda n: n["id"])
         if existing is not None:
             groups[existing] = ("misc", groups[existing][1] + merged)
@@ -77,8 +79,9 @@ def _emit_area_subgraphs(lines, nodes, label_fn=None):
         base = _safe_id(area)
         k = sg_used.get(base, 0) + 1
         sg_used[base] = k
-        # suffix on collision so two areas that sanitize to the same id (my-area /
-        # my_area) don't emit duplicate `subgraph` ids and break the Mermaid render
+        # suffix on collision so two areas that sanitize to the same id (my-area
+        # / my_area) don't emit duplicate `subgraph` ids and break the Mermaid
+        # render
         sg = base if k == 1 else "{}_{}".format(base, k)
         lines.append('  subgraph sg_{}["{}"]'.format(sg, _mlabel(area)))
         for n in ns:
@@ -91,17 +94,21 @@ def _bus_ids(nodes):
 
 
 def _hub_targets(data, bus_ids):
-    """Bus nodes + any node with fan-in >= SYSTEM_HUB_FANIN (the hub hairball)."""
+    """Bus nodes + any node with fan-in >= SYSTEM_HUB_FANIN (the hub
+    hairball)."""
     fanin = {}
     for _src, tgt in data["edges"]:
         fanin[tgt] = fanin.get(tgt, 0) + 1
-    return set(bus_ids) | {nid for nid, c in fanin.items() if c >= cfg.SYSTEM_HUB_FANIN}
+    return set(bus_ids) | {
+        nid for nid, c in fanin.items() if c >= cfg.SYSTEM_HUB_FANIN}
 
 
-def _mermaid_system(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-876
-    # Per-area subgraphs + hide edges into bus/hubs (the hairball); the full graph
-    # is in the Dependency Map. Bus nodes keep a thick stroke.
-    lines = ["graph LR"]   # left-right fills a wide/landscape area better than top-down
+def _mermaid_system(data):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-876
+    # Per-area subgraphs + hide edges into bus/hubs (the hairball); the full
+    # graph is in the Dependency Map. Bus nodes keep a thick stroke.
+    # left-right fills a wide/landscape area better than top-down
+    lines = ["graph LR"]
     bus_ids = _bus_ids(data["nodes"])
     _emit_area_subgraphs(lines, data["nodes"])
     hubs = _hub_targets(data, bus_ids)
@@ -113,9 +120,10 @@ def _mermaid_system(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: RE
     return "\n".join(lines)
 
 
-def _mermaid_deps(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-877
-    # Area-level coupling overview (C4 'container' zoom-out): one box per area, an
-    # edge A->B when ANY capability in A depends on one in B. Aggregating the
+def _mermaid_deps(data):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-877
+    # Area-level coupling overview (C4 'container' zoom-out): one box per area,
+    # an edge A->B when ANY capability in A depends on one in B. Aggregating the
     # per-capability edges here kills the bus hub hairball; the System Map keeps
     # the per-capability detail and the detail panel lists each node's deps.
     groups = _grouped_areas(data["nodes"])
@@ -134,8 +142,8 @@ def _mermaid_deps(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-
         if la and lb and la != lb:
             edges.add((la, lb))
     # suffix on collision so two areas that sanitize to the same id (my-area /
-    # my_area) don't collapse into one Mermaid node -- mirrors _emit_area_subgraphs,
-    # which already guards its own sg_ ids the same way.
+    # my_area) don't collapse into one Mermaid node -- mirrors
+    # _emit_area_subgraphs, which already guards its own sg_ ids the same way.
     id_used, id_of = {}, {}
     for label in sorted(counts):
         base = _safe_id(label)
@@ -157,24 +165,28 @@ def _mermaid_deps(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-
 def _mermaid_req_to_code(data):
     # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-877
     lines = ["graph LR"]
-    loc_sid, sid_used = {}, {}        # distinct file:line locs must get distinct node ids
+    # distinct file:line locs must get distinct node ids
+    loc_sid, sid_used = {}, {}
     for n in data["nodes"]:
         if n.get("level") == "code":
-            # Counted, never drawn: a corpus with its behaviour
-            # groups split out carries hundreds of code-level nodes and their members
-            # at function granularity — the block passed 83,000 characters, past what
-            # GitHub renders. The viewer has that detail; this diagram is the overview.
+            # Counted, never drawn: a corpus with its behaviour groups split
+            # out carries hundreds of code-level nodes and their members at
+            # function granularity — the block passed 83,000 characters, past
+            # what GitHub renders. The viewer has that detail; this diagram is
+            # the overview.
             continue
         rid = n["id"]
         sid = _safe_id(rid)
         lines.append('  {}["{}"]'.format(sid, _node_label(n)))
         if not n["members"]:
-            # enforced-but-unlinked is a real gap (red); a baseline/draft not yet
-            # tagged is expected, so render it muted grey rather than alarming red
+            # enforced-but-unlinked is a real gap (red); a baseline/draft not
+            # yet tagged is expected, so render it muted grey rather than
+            # alarming red
             if n.get("status") in ENFORCED:
                 lines.append("  style {} fill:#fee,stroke:#c66".format(sid))
             else:
-                lines.append("  style {} fill:#eee,stroke:#bbb,color:#888".format(sid))
+                lines.append(
+                    "  style {} fill:#eee,stroke:#bbb,color:#888".format(sid))
             continue
         # group by role+file, compute min/max line numbers
         groups = {}
@@ -196,8 +208,9 @@ def _mermaid_req_to_code(data):
                 base = "f_" + re.sub(r"[^A-Za-z0-9]", "_", loc)
                 k = sid_used.get(base, 0) + 1
                 sid_used[base] = k
-                # suffix on collision so two different locs that sanitize to the same
-                # id (e.g. a-b.py vs a_b.py) don't merge into one mislabeled node
+                # suffix on collision so two different locs that sanitize to
+                # the same id (e.g. a-b.py vs a_b.py) don't merge into one
+                # mislabeled node
                 file_sid = base if k == 1 else "{}_{}".format(base, k)
                 loc_sid[loc] = file_sid
             lines.append('  {}["{}"]'.format(file_sid, _mlabel(loc)))
@@ -205,7 +218,8 @@ def _mermaid_req_to_code(data):
     return "\n".join(lines)
 
 
-def _mermaid_risk(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-878
+def _mermaid_risk(data):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-878
     risky = [(n, _risk_signals(n)) for n in data["nodes"]]
     risky = [(n, s) for n, s in risky if s]
 
@@ -218,15 +232,19 @@ def _mermaid_risk(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-
     # capabilities need attention", not topology (the Dependency Map has edges).
     sigs_by = {n["id"]: s for n, s in risky}
     _emit_area_subgraphs(lines, [n for n, _ in risky],
-                         label_fn=lambda n: _node_label(n) + "<br>" + ", ".join(sigs_by[n["id"]]))
+                         label_fn=lambda n: _node_label(n) + "<br>" +
+                         ", ".join(sigs_by[n["id"]]))
     for n, sigs in risky:
         sid = _safe_id(n["id"])
         if "unimplemented" in sigs:
-            lines.append("  style {} fill:#fee,stroke:#c00,color:#900".format(sid))
+            lines.append(
+                "  style {} fill:#fee,stroke:#c00,color:#900".format(sid))
         elif "unreviewed" in sigs:
-            lines.append("  style {} fill:#fff3cd,stroke:#a66,color:#630".format(sid))
+            lines.append(
+                "  style {} fill:#fff3cd,stroke:#a66,color:#630".format(sid))
         else:
-            lines.append("  style {} fill:#fff9c4,stroke:#aa0,color:#550".format(sid))
+            lines.append(
+                "  style {} fill:#fff9c4,stroke:#aa0,color:#550".format(sid))
     return "\n".join(lines)
 
 
@@ -234,21 +252,38 @@ def _mermaid_risk(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-
 # order) so each view is self-explanatory. HTML uses colored swatches; markdown
 # uses words.
 _LEGEND_MD = [
-    "Capabilities grouped by area; thick border = bus; arrows = `depends_on`. Edges into the "
-        "bus/hubs are hidden (the Dependency Map shows area-level coupling).",
-    "Each system/architecture requirement → its code; arrow label = role (`implements` / "
-        "`tested-by`). Red = confirmed but no code linked (a gap); grey = baseline/draft, not "
-        "linked yet (expected). Code-level requirements are omitted here (see the viewer).",
-    "Area-level coupling: one box per area (N caps), arrow A->B = some capability in A depends on "
-        "one in B. The System Map has the per-capability detail.",
-    "Requirements needing attention: red = unimplemented (confirmed, no code); orange = "
-        "unreviewed (promote after review); yellow = untested (implemented but no tested-by — set "
-        "`test_exempt` to silence), or unverified-intent (open verify-intent question).",
+    "Capabilities grouped by area; thick border = bus; arrows = `depends_on`. "
+        "Edges into the bus/hubs are hidden (the Dependency Map shows "
+        "area-level coupling).",
+    "Each system/architecture requirement → its code; arrow label = role "
+        "(`implements` / `tested-by`). Red = confirmed but no code linked (a "
+        "gap); grey = baseline/draft, not linked yet (expected). Code-level "
+        "requirements are omitted here (see the viewer).",
+    "Area-level coupling: one box per area (N caps), arrow A->B = some "
+        "capability in A depends on one in B. The System Map has the "
+        "per-capability detail.",
+    "Requirements needing attention: red = unimplemented (confirmed, no code); "
+        "orange = unreviewed (promote after review); yellow = untested "
+        "(implemented but no tested-by — set `test_exempt` to silence), or "
+        "unverified-intent (open verify-intent question).",
 ]
 
 
-def _build_md_text(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-874
+def _design_header(data):  # implements: REQ-DESIGN-954
+    """The one-line design summary for the header, or nothing."""
+    d = data.get("design")
+    if not d:
+        return []
+    return ["design pass-rate: {}% ({}/{} source files without a design "
+            "candidate)".format(d["score"], d["clean_files"], d["files"])]
+
+
+def _build_md_text(data):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-874
     from datetime import datetime
+
+    if cfg.MAP_PROFILE == "compact":
+        return _compact_md(data)
 
     dep_count = {n["id"]: 0 for n in data["nodes"]}
     for _, b in data["edges"]:
@@ -263,17 +298,16 @@ def _build_md_text(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ
 
     lines = [
         "---",
-        # The header is derived from content only. It used to carry a wall-clock
-        # timestamp, which rewrote one line on every regeneration: two branches that
-        # produced an identical graph still conflicted here, and the resolution was
-        # always "regenerate", never "merge". Git already records when.
+        # The header is derived from content only. It used to carry a
+        # wall-clock timestamp, which rewrote one line on every regeneration:
+        # two branches that produced an identical graph still conflicted
+        # here, and the resolution was always "regenerate", never "merge".
+        # Git already records when.
         "generated: {}".format(datetime.now().strftime("%Y-%m-%d")),
         "engine: {}".format(MAP_ENGINE_VERSION),
         "nodes: {}".format(len(data["nodes"])),
         "edges: {}".format(len(data["edges"])),
-    ] + (["design OOP: {}/100 ({}/{} source files without a design candidate)".format(
-        data["design"]["score"], data["design"]["clean_files"], data["design"]["files"])]
-         if data.get("design") else []) + [
+    ] + _design_header(data) + [
         "---",
         "",
         "# Requirement Map",
@@ -289,7 +323,8 @@ def _build_md_text(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ
     for n in data["nodes"]:
         sigs = _risk_signals(n)
         if sigs:
-            rec = " ".join(RISK_ADVICE[s] for s in sigs).replace("|", "/").replace("\n", " ")
+            rec = " ".join(RISK_ADVICE[s] for s in sigs).replace(
+                "|", "/").replace("\n", " ")
             risk_rows.append((n["id"], n["status"],
                               len(n["members"]), dep_count.get(n["id"], 0),
                               ", ".join(sigs), rec))
@@ -308,9 +343,34 @@ def _build_md_text(data):  # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ
 
 def render_md(data, reqs_dir):
     # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-874
-    """Write `_map.md`, the four Mermaid diagrams that render without JavaScript."""
+    """Write `_map.md`, the four Mermaid diagrams that render without
+    JavaScript."""
     out = os.path.join(reqs_dir, "_map.md")
     os.makedirs(reqs_dir, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         f.write(_utf8_safe(_build_md_text(data)))
     return out
+
+
+def _compact_md(data):
+    # implements: ARCH-MAPDIAGRAMS-055  # implements: REQ-MAPDIAGRAMS-874
+    """A bounded overview; complete contracts and links remain in JSON/HTML."""
+    nodes = data["nodes"]
+    lines = ["# Requirement Map", "",
+             "{} requirements · {} dependency links".format(
+                 len(nodes), len(data["edges"])), "",
+             "[Interactive offline map](_map.html) · "
+             "[Complete graph and contracts](_map.json)", "",
+             "| Status | Requirements |", "| --- | ---: |"]
+    for status in sorted({n["status"] for n in nodes}):
+        lines.append("| {} | {} |".format(
+            status, sum(n["status"] == status for n in nodes)))
+    lines += ["", "## System needs", "",
+              "| ID | Title |", "| --- | --- |"]
+    for n in nodes:
+        if n.get("level") == "system":
+            title = n["title"].replace("|", "/").replace("\n", " ")
+            lines.append("| {} | {} |".format(n["id"], title))
+    lines += ["", "Set MAP_PROFILE to full in _config.json and run sync "
+              "to restore all four Markdown diagrams.", ""]
+    return "\n".join(lines)

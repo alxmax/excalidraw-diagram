@@ -1,9 +1,9 @@
 ---
 generated: 2026-11-07
-engine: 2026-09-15.1
+engine: 2026-11-02.2
 nodes: 36
 edges: 6
-design OOP: 71/100 (22/31 source files without a design candidate)
+design pass-rate: 84% (26/31 source files without a design candidate)
 ---
 
 # Requirement Map

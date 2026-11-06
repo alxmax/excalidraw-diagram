@@ -1,30 +1,39 @@
-"""The pyramid's upper rungs and edges, written by the same command that writes the
-rungs (ADR-0038) — in the shape `init` already produces for a fresh repo:
+"""The pyramid's upper rungs and edges, written by the same command that
+writes the rungs (ADR-0038) — in the shape `init` already produces for a
+fresh repo:
 
     SYS-NEEDS-A-NAME-001            one system hole, named by the author
-      └─ ARCH-<FAMILY>-001          one capability placeholder per id-prefix family
-           └─ <the requirements>    the code rung: one behaviour group each
+      └─ ARCH-<FAMILY>-001          one capability placeholder per
+                                     id-prefix family
+           └─ <the requirements>    the code rung: one behaviour group
+                                     each
 
-`clarify --levels --apply` used to write `level:` alone and leave every `satisfies:` edge
-to the author — and RM032 then warned twice per requirement, by construction, on any
-corpus the retrofit had just touched (0 -> 304 warnings on the first real corpus). The
-rungs and the edges are one decision, so they are one write:
+`clarify --levels --apply` used to write `level:` alone and leave every
+`satisfies:` edge to the author — and RM032 then warned twice per
+requirement, by construction, on any corpus the retrofit had just
+touched (0 -> 304 warnings on the first real corpus). The rungs and the
+edges are one decision, so they are one write:
 
-- every **code**-rung requirement (declared or proposed) that declares no `satisfies:`
-  points at `ARCH-<FAMILY>-001`, where `FAMILY` is its own id prefix — `JS-TIMELINE-001`
-  belongs to `JS`. The prefix is a grouping the author typed into every id; it is not
-  `depends_on`, so ADR-0036 still holds: composition is never read as the level axis.
-  A prefix with fewer than `LEVEL_FAMILY_MIN` members shares `ARCH-NEEDS-A-NAME-001`
-  instead of minting a "capability" per stray prefix (the first real corpus had 45 such
-  prefixes, 33 of them with one member);
-- every new `ARCH-*` placeholder, and every **architecture**-rung requirement that declares
-  no `satisfies:`, points at `SYS-NEEDS-A-NAME-001` — `init`'s own named hole, written by
+- every **code**-rung requirement (declared or proposed) that declares
+  no `satisfies:` points at `ARCH-<FAMILY>-001`, where `FAMILY` is its
+  own id prefix — `JS-TIMELINE-001` belongs to `JS`. The prefix is a
+  grouping the author typed into every id; it is not `depends_on`, so
+  ADR-0036 still holds: composition is never read as the level axis.
+  A prefix with fewer than `LEVEL_FAMILY_MIN` members shares
+  `ARCH-NEEDS-A-NAME-001` instead of minting a "capability" per stray
+  prefix (the first real corpus had 45 such prefixes, 33 of them with
+  one member);
+- every new `ARCH-*` placeholder, and every **architecture**-rung
+  requirement that declares no `satisfies:`, points at
+  `SYS-NEEDS-A-NAME-001` — `init`'s own named hole, written by
   `draft._write_sys_placeholder` so the two paths cannot drift;
-- auto-extracted `draft` stubs are skipped: the gate never judges them and `DRAFT` is a
-  status, not a family. A requirement that already points somewhere is left alone.
+- auto-extracted `draft` stubs are skipped: the gate never judges them
+  and `DRAFT` is a status, not a family. A requirement that already
+  points somewhere is left alone.
 
-Everything written is `status: draft`, `level_source: auto`, and reversible: delete the
-`ARCH-*`/`SYS-*` files and the `satisfies:` lines and the corpus reads exactly as before.
+Everything written is `status: draft`, `level_source: auto`, and
+reversible: delete the `ARCH-*`/`SYS-*` files and the `satisfies:`
+lines and the corpus reads exactly as before.
 """
 import os
 from collections import OrderedDict
@@ -39,18 +48,21 @@ ARCH_SHARED_ID = "ARCH-NEEDS-A-NAME-001"
 _RESERVED = (ARCH_PREFIX, "SYS")     # prefixes that name rungs, never a family
 
 
-# ---- frontmatter editing, shared with the rung writer in levels.py -----------------
+# ---- frontmatter editing, shared with the rung writer in levels.py -----------
 
-def _insert_frontmatter_key(text, key, value, after=("level_source", "level", "status")):
+def _insert_frontmatter_key(text, key, value,
+                             after=("level_source", "level", "status")):
     # implements: ARCH-LEVELRETROFIT-066  # implements: REQ-LEVELRETROFIT-986
-    """Add `key: value` to one block's frontmatter, right after the first of `after` that
-    is present (after the opening `---` when none is). Returns (text, n), with n=0 when
-    there is no frontmatter to edit or the key is already declared, so the caller reports
-    a miss instead of writing a duplicate."""
+    """Add `key: value` to one block's frontmatter, right after the first
+    of `after` that is present (after the opening `---` when none is).
+    Returns (text, n), with n=0 when there is no frontmatter to edit or
+    the key is already declared, so the caller reports a miss instead of
+    writing a duplicate."""
     lines = text.split("\n")
     if not lines or lines[0].strip() != "---":
         return text, 0
-    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    end = next((i for i in range(1, len(lines))
+                if lines[i].strip() == "---"), None)
     if end is None:
         return text, 0
     fm = lines[1:end]
@@ -58,7 +70,8 @@ def _insert_frontmatter_key(text, key, value, after=("level_source", "level", "s
         return text, 0
     at = -1
     for anchor in after:
-        at = next((i for i, ln in enumerate(fm) if ln.startswith(anchor + ":")), -1)
+        at = next((i for i, ln in enumerate(fm)
+                   if ln.startswith(anchor + ":")), -1)
         if at >= 0:
             break
     fm[at + 1:at + 1] = ["{}: {}".format(key, value)]
@@ -67,10 +80,11 @@ def _insert_frontmatter_key(text, key, value, after=("level_source", "level", "s
 
 def _apply_frontmatter_edit(r, editor):
     # implements: ARCH-LEVELRETROFIT-066  # implements: REQ-LEVELRETROFIT-986
-    """Run `editor(block_text) -> (text, n)` on one requirement's own block, preserving the
-    file's line endings and every sibling block in a module file. Returns n; 0 means the
-    file was not touched. The mechanics mirror `_apply_status` deliberately: a module file
-    holds several requirements, and a repo's files may be CRLF."""
+    """Run `editor(block_text) -> (text, n)` on one requirement's own
+    block, preserving the file's line endings and every sibling block in
+    a module file. Returns n; 0 means the file was not touched. The
+    mechanics mirror `_apply_status` deliberately: a module file holds
+    several requirements, and a repo's files may be CRLF."""
     with open(r["path"], encoding="utf-8-sig", newline="") as f:
         raw = f.read()
     eol = "\r\n" if "\r\n" in raw else "\n"
@@ -91,10 +105,11 @@ def _apply_frontmatter_edit(r, editor):
     return n
 
 
-# ---- the plan ---------------------------------------------------------------------
+# ---- the plan ----------------------------------------------------------------
 
 def _family_of(rid):  # implements: REQ-LEVELRETROFIT-987
-    """`JS-TIMELINE-001` -> `JS`: the grouping the author already typed into the id."""
+    """`JS-TIMELINE-001` -> `JS`: the grouping the author already typed
+    into the id."""
     return rid.split("-", 1)[0]
 
 
@@ -110,13 +125,15 @@ def _rung_of(rid, r, proposals):  # implements: REQ-LEVELRETROFIT-987
 def plan_edges(reqs, proposals):  # implements: REQ-LEVELRETROFIT-987
     """The upper rungs and edges `--apply` would write.
 
-    Returns `{"arch": OrderedDict(aid -> {family, members, exists}), "sys": {id, members,
-    exists, needed}}`: the code-rung requirements grouped by id prefix into one
-    `ARCH-<FAMILY>-001` per family of at least `LEVEL_FAMILY_MIN` (the rest under
-    `ARCH-NEEDS-A-NAME-001`, biggest families first), and the architecture-rung
-    requirements that will point at `SYS-NEEDS-A-NAME-001`. A requirement that already
-    declares `satisfies:` keeps it and is not listed; a `draft` stub is skipped; an
-    `ARCH-*`/`SYS-*` id names a rung and is never treated as a family."""
+    Returns `{"arch": OrderedDict(aid -> {family, members, exists}),
+    "sys": {id, members, exists, needed}}`: the code-rung requirements
+    grouped by id prefix into one `ARCH-<FAMILY>-001` per family of at
+    least `LEVEL_FAMILY_MIN` (the rest under `ARCH-NEEDS-A-NAME-001`,
+    biggest families first), and the architecture-rung requirements
+    that will point at `SYS-NEEDS-A-NAME-001`. A requirement that
+    already declares `satisfies:` keeps it and is not listed; a `draft`
+    stub is skipped; an `ARCH-*`/`SYS-*` id names a rung and is never
+    treated as a family."""
     by_family, small, arch_members = {}, [], []
     for rid, r in sorted(reqs.items()):
         meta = r["meta"]
@@ -125,14 +142,17 @@ def plan_edges(reqs, proposals):  # implements: REQ-LEVELRETROFIT-987
         rung = _rung_of(rid, r, proposals)
         if rung == "code":
             family = _family_of(rid)
-            (small if family in _RESERVED else by_family.setdefault(family, [])).append(rid)
+            (small if family in _RESERVED
+             else by_family.setdefault(family, [])).append(rid)
         elif rung == "architecture":
             arch_members.append(rid)
     arch = OrderedDict()
-    for family, members in sorted(by_family.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+    for family, members in sorted(by_family.items(),
+                                   key=lambda kv: (-len(kv[1]), kv[0])):
         if len(members) >= cfg.LEVEL_FAMILY_MIN:
             aid = _arch_id(family)
-            arch[aid] = {"family": family, "members": members, "exists": aid in reqs}
+            arch[aid] = {"family": family, "members": members,
+                          "exists": aid in reqs}
         else:
             small.extend(members)
     if small:
@@ -147,40 +167,53 @@ def plan_edges(reqs, proposals):  # implements: REQ-LEVELRETROFIT-987
 
 def plan_is_empty(plan):  # implements: REQ-LEVELRETROFIT-987
     """True when `--apply` would write no file and no edge."""
-    arch_work = any(not e["exists"] or e["members"] for e in plan["arch"].values())
-    sys_work = plan["sys"]["members"] or (plan["sys"]["needed"] and not plan["sys"]["exists"])
+    arch_work = any(not e["exists"] or e["members"]
+                    for e in plan["arch"].values())
+    sys_work = plan["sys"]["members"] or (
+        plan["sys"]["needed"] and not plan["sys"]["exists"])
     return not arch_work and not sys_work
 
 
-# ---- the writes -------------------------------------------------------------------
+# ---- the writes --------------------------------------------------------------
 
 def _arch_text(aid, family, members):  # implements: REQ-LEVELRETROFIT-987
     """One capability placeholder, in the shape `init` writes for a directory
     (`draft._write_arch_drafts`): a proposed grouping that says it is one."""
     n = len(members)
     if family is None:
-        title = ("NAME THIS CAPABILITY — {} behaviour group(s) whose id prefix "
-                 "has fewer than {} members".format(n, cfg.LEVEL_FAMILY_MIN))
-        signal = ("no id prefix shared by {} or more of them, so the engine parked them under "
-                  "one placeholder rather than mint a \"capability\" per stray prefix"
+        title = ("NAME THIS CAPABILITY — {} behaviour group(s) whose id "
+                 "prefix has fewer than {} members"
+                 .format(n, cfg.LEVEL_FAMILY_MIN))
+        signal = ("no id prefix shared by {} or more of them, so the "
+                  "engine parked them under "
+                  "one placeholder rather than mint a \"capability\" "
+                  "per stray prefix"
                   .format(cfg.LEVEL_FAMILY_MIN))
     else:
-        title = "NAME THIS CAPABILITY — {} ({} behaviour groups)".format(family, n)
-        signal = ("the id prefix `{}-` the author typed into each of these "
+        title = "NAME THIS CAPABILITY — {} ({} behaviour groups)".format(
+            family, n)
+        signal = ("the id prefix `{}-` the author typed into each of "
+                  "these "
                   "{} requirements".format(family, n))
     lines = [
-        "---", "id: " + aid, "status: draft", "level: architecture", "layer: feature",
-        "owner: auto", "level_source: auto", "satisfies: [{}]".format(SYS_PLACEHOLDER_ID),
+        "---", "id: " + aid, "status: draft", "level: architecture",
+        "layer: feature",
+        "owner: auto", "level_source: auto",
+        "satisfies: [{}]".format(SYS_PLACEHOLDER_ID),
         "---", "",
         "# " + title, "",
-        "> PROPOSED grouping, not a capability. The engine had one structural signal — {} — "
-        "and a prefix is not a capability. Rename this to the thing these behaviour groups "
-        "together let a user do, merge it with a sibling, or delete it and re-point its "
+        "> PROPOSED grouping, not a capability. The engine had one "
+        "structural signal — {} — "
+        "and a prefix is not a capability. Rename this to the thing "
+        "these behaviour groups "
+        "together let a user do, merge it with a sibling, or delete it "
+        "and re-point its "
         "children's `satisfies:` lines.".format(signal), "",
         "## Description", "Every bullet below is binding.",
         "- TODO: what these {} behaviour groups together let a user do, "
         "as one capability.".format(n), "",
-        "## Cases", "CASE-1", "  Given  TODO", "  When   TODO", "  Then   TODO", "",
+        "## Cases", "CASE-1", "  Given  TODO", "  When   TODO",
+        "  Then   TODO", "",
         "## Context (non-binding)", "**Current implementation**",
         "Grouped here by `clarify --levels --apply`:",
     ]
@@ -188,8 +221,10 @@ def _arch_text(aid, family, members):  # implements: REQ-LEVELRETROFIT-987
     return "\n".join(lines) + "\n"
 
 
-def _write_arch(reqs_dir, aid, family, members):  # implements: REQ-LEVELRETROFIT-987
-    """Write one placeholder; False when the file already exists (never overwritten)."""
+def _write_arch(reqs_dir, aid, family, members):
+    # implements: REQ-LEVELRETROFIT-987
+    """Write one placeholder; False when the file already exists (never
+    overwritten)."""
     dest = os.path.join(reqs_dir, aid + ".md")
     if os.path.exists(dest):
         return False
@@ -198,42 +233,61 @@ def _write_arch(reqs_dir, aid, family, members):  # implements: REQ-LEVELRETROFI
     return True
 
 
-def _apply_satisfies(r, target):  # implements: REQ-LEVELRETROFIT-987
-    """Add `satisfies: [target]` to one requirement; 0 when it already declares the key."""
+def _apply_satisfies(r, target):
+    # implements: REQ-LEVELRETROFIT-987
+    """Add `satisfies: [target]` to one requirement; 0 when it already
+    declares the key."""
     return _apply_frontmatter_edit(
-        r, lambda t: _insert_frontmatter_key(t, "satisfies", "[{}]".format(target)))
+        r, lambda t: _insert_frontmatter_key(
+            t, "satisfies", "[{}]".format(target)))
 
 
-def report_edges(plan):  # implements: REQ-LEVELRETROFIT-987
-    """Print what `--apply` would write above the code rung, in the same read-only pass
-    that prints the rung proposals."""
+def report_edges(plan):
+    # implements: REQ-LEVELRETROFIT-987
+    """Print what `--apply` would write above the code rung, in the same
+    read-only pass that prints the rung proposals."""
     arch, sys_ = plan["arch"], plan["sys"]
     if plan_is_empty(plan):
-        print("\n  Upper rungs: every requirement already satisfies the rung above it —")
+        print("\n  Upper rungs: every requirement already satisfies the "
+              "rung above it —")
         print("  no placeholder and no `satisfies:` edge to write.")
         return
     n_new = sum(1 for e in arch.values() if not e["exists"])
     n_edges = sum(len(e["members"]) for e in arch.values())
-    print("\n  Architecture rung (ADR-0038): {} capability placeholder(s), one per id-prefix "
+    print("\n  Architecture rung (ADR-0038): {} capability "
+          "placeholder(s), one per id-prefix "
           "family of".format(n_new))
-    print("  {}+ members, and a `satisfies:` edge on {} code requirement(s) that declare none:"
+    print("  {}+ members, and a `satisfies:` edge on {} code "
+          "requirement(s) that declare none:"
           .format(cfg.LEVEL_FAMILY_MIN, n_edges))
     for aid, e in arch.items():
         print("    {:<26} {:>4} requirement(s)  {}".format(
-            aid, len(e["members"]), "exists — reused" if e["exists"] else "new, draft"))
+            aid, len(e["members"]),
+            "exists — reused" if e["exists"] else "new, draft"))
     print("  System rung: {} ({}), satisfied by every placeholder above{}."
           .format(sys_["id"],
-                  "exists — reused" if sys_["exists"] else "new, draft — init's own hole",
-                  " and by {} architecture requirement(s) that declare none"
-                  .format(len(sys_["members"])) if sys_["members"] else ""))
-    print("  The family is the id prefix the author typed; `depends_on` is never read for this.")
-    print("  `draft` stubs are skipped — the gate never judges them. Every placeholder "
+                  "exists — reused" if sys_["exists"]
+                  else "new, draft — init's own hole",
+                  " and by {} architecture requirement(s) that declare "
+                  "none"
+                  .format(len(sys_["members"])) if sys_["members"]
+                  else ""))
+    print("  The family is the id prefix the author typed; `depends_on` "
+          "is never read for this.")
+    print("  `draft` stubs are skipped — the gate never judges them. "
+          "Every placeholder "
           "is a named")
-    print("  hole (`NAME THIS …`) for the author to fill, merge or delete.")
+    print("  hole (`NAME THIS …`) for the author to fill, merge or "
+          "delete.")
+    from .levelshape import note_over_band   # only the commands that write rungs
+    note_over_band({a: len(e["members"]) for a, e in arch.items()}, "architecture")
+    note_over_band({sys_["id"]: len(arch) + len(sys_["members"])}, "system")
 
 
-def apply_edges(reqs, reqs_dir, plan):  # implements: REQ-LEVELRETROFIT-987
-    """Write the placeholders and the edges; returns (arch_written, sys_written, edges)."""
+def apply_edges(reqs, reqs_dir, plan):
+    # implements: REQ-LEVELRETROFIT-987
+    """Write the placeholders and the edges; returns (arch_written,
+    sys_written, edges)."""
     arch_written = edges = 0
     for aid, e in plan["arch"].items():
         if _write_arch(reqs_dir, aid, e["family"], e["members"]):
@@ -246,7 +300,8 @@ def apply_edges(reqs, reqs_dir, plan):  # implements: REQ-LEVELRETROFIT-987
     sys_ = plan["sys"]
     sys_written = 0
     if sys_["needed"]:
-        sys_written = _write_sys_placeholder(reqs_dir, list(plan["arch"]) + sys_["members"])
+        sys_written = _write_sys_placeholder(
+            reqs_dir, list(plan["arch"]) + sys_["members"])
         if sys_written:
             print("  wrote  {} (system placeholder, draft)".format(sys_["id"]))
     for rid in sys_["members"]:

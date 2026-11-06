@@ -1,5 +1,5 @@
 {
-  "engine_version": "2026-09-15.1",
+  "engine_version": "2026-11-02.2",
   "repo": "alxmax/excalidraw-diagram",
   "nodes": [
     {
@@ -34,18 +34,10 @@
         "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with `ddl.py`, `classify.py` and `review.py` beside it.",
         "`plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — Given  the demo shop schema with six tables and four planted problems When   `data-model --from-ddl` is run on it Then   a `.excalidraw` scene and an `.html` viewer are written, with four amber notes",
-        "CASE-2 — Given  the same schema with every planted problem fixed When   `data-model --from-ddl` is run on it Then   the diagram shows no amber note and no review-note entry in its legend",
-        "CASE-3 — Given  a DDL script the parser cannot read When   `data-model --from-ddl` is run on it Then   the command exits non-zero and names the file and the statement, writing no output"
-      ],
       "accept": "CASE-1\n  Given  the demo shop schema with six tables and four planted problems\n  When   `data-model --from-ddl` is run on it\n  Then   a `.excalidraw` scene and an `.html` viewer are written, with four amber notes\n\nCASE-2\n  Given  the same schema with every planted problem fixed\n  When   `data-model --from-ddl` is run on it\n  Then   the diagram shows no amber note and no review-note entry in its legend\n\nCASE-3\n  Given  a DDL script the parser cannot read\n  When   `data-model --from-ddl` is run on it\n  Then   the command exits non-zero and names the file and the statement, writing no output",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [
-        "ARCH-EXCALIDRAW-030"
-      ],
       "depends_on": [
         "ARCH-EXCALIDRAW-030"
       ],
@@ -83,7 +75,8 @@
       "priority": "",
       "risks": [],
       "clauses": 3,
-      "covered": 3
+      "covered": 3,
+      "clarify": []
     },
     {
       "id": "ARCH-EXCALIDRAW-030",
@@ -107,18 +100,10 @@
       "current_impl": [
         "`Scene` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`, assembled from one mixin per call family (`shapes.py`, `connectors.py`, `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable import name and the command line."
       ],
-      "acc": [
-        "CASE-1 — Given  a `Scene` with at least one `box` and one `arrow` When   `.save()` is called Then   both `<basename>.excalidraw` and `<basename>.html` are written and the `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`",
-        "CASE-2 — Given  two `box` shapes placed at overlapping coordinates When   `.save()` is called with the default `Gates()` Then   a `ValueError` is raised naming the overlapping shapes",
-        "CASE-3 — Given  `Scene(seed=42)` with identical shape declarations run twice When   both outputs are compared byte-for-byte Then   they are identical",
-        "CASE-4 — Given  `.save()` has already been called once on a `Scene` When   `.save()` is called again Then   a `RuntimeError` is raised",
-        "CASE-5 — Given  a `pipeline([...])` call with step dicts When   `.save()` is called Then   the resulting scene contains connected flowchart nodes with no overlapping shapes"
-      ],
       "accept": "CASE-1\n  Given  a `Scene` with at least one `box` and one `arrow`\n  When   `.save()` is called\n  Then   both `<basename>.excalidraw` and `<basename>.html` are written and the\n         `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`\n\nCASE-2\n  Given  two `box` shapes placed at overlapping coordinates\n  When   `.save()` is called with the default `Gates()`\n  Then   a `ValueError` is raised naming the overlapping shapes\n\nCASE-3\n  Given  `Scene(seed=42)` with identical shape declarations run twice\n  When   both outputs are compared byte-for-byte\n  Then   they are identical\n\nCASE-4\n  Given  `.save()` has already been called once on a `Scene`\n  When   `.save()` is called again\n  Then   a `RuntimeError` is raised\n\nCASE-5\n  Given  a `pipeline([...])` call with step dicts\n  When   `.save()` is called\n  Then   the resulting scene contains connected flowchart nodes with no\n         overlapping shapes",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [
         "ARCH-DATAMODEL-036",
@@ -155,7 +140,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-844",
@@ -175,18 +161,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — Scene() produces an excalidraw.com-importable JSON scene Given  a `Scene` with at least one shape added When   `.save()` writes the `.excalidraw` file Then   it parses as JSON with `type: \"excalidraw\"` and an `elements` list",
-        "CASE-2 — — each shape primitive adds one element of its kind Given  a `Scene` When   `box`, `ellipse`, `diamond` and `frame` are each called once Then   the scene gains one element of each corresponding Excalidraw type",
-        "CASE-3 — — ISO 5807 aliases produce their underlying shapes Given  a `Scene` When   `process`, `terminator`, `decision`, `data`, `predefined_process`, `preparation` and `connector` are each called Then   each adds an element without raising, using its mapped primitive shape",
-        "CASE-4 — — layout helpers place shapes without overlap Given  three boxes When   `row([...])` arranges them Then   the resulting coordinates place them side by side with no overlapping pair",
-        "CASE-5 — — annotation helpers attach text without raising Given  a `Scene` with one shape When   `title`, `label`, `legend`, `glossary` and `role` are each called Then   each adds its text element and `.save()` still succeeds --------------------"
-      ],
       "accept": "CASE-1 — Scene() produces an excalidraw.com-importable JSON scene\n  Given  a `Scene` with at least one shape added\n  When   `.save()` writes the `.excalidraw` file\n  Then   it parses as JSON with `type: \"excalidraw\"` and an `elements` list\n\nCASE-2 — each shape primitive adds one element of its kind\n  Given  a `Scene`\n  When   `box`, `ellipse`, `diamond` and `frame` are each called once\n  Then   the scene gains one element of each corresponding Excalidraw type\n\nCASE-3 — ISO 5807 aliases produce their underlying shapes\n  Given  a `Scene`\n  When   `process`, `terminator`, `decision`, `data`, `predefined_process`, `preparation` and `connector` are each called\n  Then   each adds an element without raising, using its mapped primitive shape\n\nCASE-4 — layout helpers place shapes without overlap\n  Given  three boxes\n  When   `row([...])` arranges them\n  Then   the resulting coordinates place them side by side with no overlapping pair\n\nCASE-5 — annotation helpers attach text without raising\n  Given  a `Scene` with one shape\n  When   `title`, `label`, `legend`, `glossary` and `role` are each called\n  Then   each adds its text element and `.save()` still succeeds\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -232,7 +210,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-845",
@@ -251,17 +230,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — connector helpers link two shapes Given  two boxes already placed in a `Scene` When   `arrow(a, b)` is called Then   the scene gains an arrow element bound to both shapes' ids",
-        "CASE-2 — — one .save() call writes both output files Given  a `Scene` with at least one shape When   `.save(\"demo\", out_dir)` is called Then   both `demo.excalidraw` and `demo.html` exist in `out_dir` after the single call",
-        "CASE-3 — — a fixed seed reproduces byte-identical output Given  the same shape declarations built twice with `Scene(seed=42)` When   each is saved to its own file Then   the two `.excalidraw` files are byte-for-byte identical",
-        "CASE-4 — — the builder imports only the standard library Given  `excalidraw_builder.py` and every module of `excalidraw_engine/` When   their imports are inspected Then   every imported module belongs to the Python standard library or to `excalidraw_engine` itself --------------------"
-      ],
       "accept": "CASE-1 — connector helpers link two shapes\n  Given  two boxes already placed in a `Scene`\n  When   `arrow(a, b)` is called\n  Then   the scene gains an arrow element bound to both shapes' ids\n\nCASE-2 — one .save() call writes both output files\n  Given  a `Scene` with at least one shape\n  When   `.save(\"demo\", out_dir)` is called\n  Then   both `demo.excalidraw` and `demo.html` exist in `out_dir` after the single call\n\nCASE-3 — a fixed seed reproduces byte-identical output\n  Given  the same shape declarations built twice with `Scene(seed=42)`\n  When   each is saved to its own file\n  Then   the two `.excalidraw` files are byte-for-byte identical\n\nCASE-4 — the builder imports only the standard library\n  Given  `excalidraw_builder.py` and every module of `excalidraw_engine/`\n  When   their imports are inspected\n  Then   every imported module belongs to the Python standard library or to\n         `excalidraw_engine` itself\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -295,7 +267,18 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "no-failure-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "What happens on the failure path -- missing input, invalid value, nothing to do?",
+          "suggest": "Add one case for the way this can go wrong; it is the case implementations skip."
+        }
+      ]
     },
     {
       "id": "REQ-EXCALIDRAW-853",
@@ -320,17 +303,10 @@
         "`CasesExcalidrawValues` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — the three forms of `at` place a shape identically Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point `(10, 20)` given to `process()`, whose default size is 170 x 64 When   each places one shape in its own scene Then   the three shape elements carry the same x, y, width and height",
-        "CASE-2 — — a shorthand value means what the full object would Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)` on `label()` When   the elements are built Then   the box has blue's fill and 20px text, and the label keeps its grey colour",
-        "CASE-3 — — a mistyped option is refused, not ignored Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()` When   the row is placed Then   `ValueError` is raised naming `fill` and listing the accepted names",
-        "CASE-4 — — a label on a dark fill stays readable Given  a box filled `#5c2d91`, a box with a palette tint, and a dark box given a colour When   the elements are built Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins"
-      ],
       "accept": "CASE-1 — the three forms of `at` place a shape identically\n  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point\n         `(10, 20)` given to `process()`, whose default size is 170 x 64\n  When   each places one shape in its own scene\n  Then   the three shape elements carry the same x, y, width and height\n\nCASE-2 — a shorthand value means what the full object would\n  Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)`\n         on `label()`\n  When   the elements are built\n  Then   the box has blue's fill and 20px text, and the label keeps its grey colour\n\nCASE-3 — a mistyped option is refused, not ignored\n  Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()`\n  When   the row is placed\n  Then   `ValueError` is raised naming `fill` and listing the accepted names\n\nCASE-4 — a label on a dark fill stays readable\n  Given  a box filled `#5c2d91`, a box with a palette tint, and a dark box given a colour\n  When   the elements are built\n  Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -368,7 +344,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-854",
@@ -395,19 +372,10 @@
         "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
         "`CasesOfflineViewer` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "acc": [
-        "CASE-1 — — the default page loads nothing remote Given  a scene saved with no viewer options When   the written `.html` is inspected Then   no `script` or `link` tag in its markup carries an `http` source, and the fonts are present as `data:` URIs",
-        "CASE-2 — — the CDN page stays available on request Given  the same scene When   it is saved with `offline=False` or rendered with `--cdn` Then   the page links the pinned unpkg build and is an order of magnitude smaller",
-        "CASE-3 — — a missing runtime degrades loudly Given  a vendored runtime whose files are absent When   a viewer page is built with the default options Then   the CDN page is written and a `WARNING [viewer]` line names the fallback",
-        "CASE-4 — — the asset path never falls back to the CDN Given  an offline page When   `window.EXCALIDRAW_ASSET_PATH` is read Then   it is a truthy local path, because the bundle reads it as `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch",
-        "CASE-5 — — the download button returns the edits Given  a viewer page whose scene the reader has changed When   the download button is pressed Then   the file holds the live scene through `serializeAsJSON`, not the embedded one",
-        "CASE-6 — — unsaved edits are not dropped silently Given  a viewer page edited since its last download When   the page is about to unload Then   a `beforeunload` handler asks first. Loading the fonts alone does not count as an edit"
-      ],
       "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch\n\nCASE-5 — the download button returns the edits\n  Given  a viewer page whose scene the reader has changed\n  When   the download button is pressed\n  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one\n\nCASE-6 — unsaved edits are not dropped silently\n  Given  a viewer page edited since its last download\n  When   the page is about to unload\n  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count\n         as an edit",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -433,7 +401,8 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": []
     },
     {
       "id": "ARCH-EXCALIDRAW-031",
@@ -457,22 +426,10 @@
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — Given  a scene where a bound arrow's path passes through an unrelated box When   `save(gates=Gates(crossing=\"error\"))` is called Then   a `ValueError` is raised; with the default `Gates()` a warning is printed and the files are written",
-        "CASE-2 — Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue When   `save(gates=Gates(legend=\"error\"))` is called Then   a `ValueError` is raised naming the unlegended colour",
-        "CASE-3 — Given  a box whose bound text is wider than the box width When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised; `check_text_overflow()` returns the offending shape",
-        "CASE-4 — Given  two `label()` elements placed at overlapping coordinates When   `save(gates=Gates(text_overlap=\"error\"))` is called Then   a `ValueError` is raised naming the overlapping pair",
-        "CASE-5 — Given  each maintained example generator in `examples/` When   `test_excalidraw.py` runs it Then   the generator produces zero violations on every gate (the five advisory gates and both hard gates)",
-        "CASE-6 — Given  two boxes placed close but not overlapping, joined by a bound arrow When   `save()` is called with defaults Then   a `ValueError` is raised (the connector is too short to render); `save(gates=Gates(short_arrows=\"off\"))` writes the files, and `check_short_arrows()` returns the offending pair",
-        "CASE-7 — Given  a bound arrow whose label is wider than the arrow's visible line When   `save(gates=Gates(label_fit=\"error\"))` is called Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the offending label"
-      ],
       "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` is raised; with the default `Gates()` a warning is\n         printed and the files are written\n\nCASE-2\n  Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five\n         advisory gates and both hard gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(gates=Gates(short_arrows=\"off\"))` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [
-        "ARCH-EXCALIDRAW-030"
-      ],
       "depends_on": [
         "ARCH-EXCALIDRAW-030"
       ],
@@ -501,7 +458,8 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-846",
@@ -521,18 +479,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — each named gate accepts warn or error mode Given  a scene with a crossing violation When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")` Then   the warn call prints a warning and returns normally, the error call raises `ValueError`",
-        "CASE-2 — — the crossing gate fires when an arrow's path crosses an unrelated box Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated box When   `save(gates=Gates(crossing=\"error\"))` is called Then   a `ValueError` naming the crossing is raised",
-        "CASE-3 — — the legend gate fires for an unlegended colour, exempt with no legend Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key When   `save(gates=Gates(legend=\"error\"))` is called Then   a `ValueError` naming the unlegended colour is raised; the same scene with no `legend()` call raises nothing",
-        "CASE-4 — — the overflow gate fires when bound text exceeds the shape bounds Given  a box whose bound text is wider than the box When   `save(gates=Gates(overflow=\"error\"))` is called Then   a `ValueError` is raised",
-        "CASE-5 — — the crossing gate sees an arrow through a frame caption Given  an arrow drawn straight through the caption of an `enclose()` frame When   `check_arrow_crossings()` is called Then   it names the arrow's two ends and the caption --------------------"
-      ],
       "accept": "CASE-1 — each named gate accepts warn or error mode\n  Given  a scene with a crossing violation\n  When   it is saved once with the default `Gates()` and once with `Gates(crossing=\"error\")`\n  Then   the warn call prints a warning and returns normally, the error call raises `ValueError`\n\nCASE-2 — the crossing gate fires when an arrow's path crosses an unrelated box\n  Given  a bound arrow whose straight centre-to-centre path passes through a third, unrelated\n         box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` naming the crossing is raised\n\nCASE-3 — the legend gate fires for an unlegended colour, exempt with no legend\n  Given  a shape painted \"blue\" with `legend()` rendered but \"blue\" absent from its key\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` naming the unlegended colour is raised; the same scene with no\n         `legend()` call raises nothing\n\nCASE-4 — the overflow gate fires when bound text exceeds the shape bounds\n  Given  a box whose bound text is wider than the box\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-5 — the crossing gate sees an arrow through a frame caption\n  Given  an arrow drawn straight through the caption of an `enclose()` frame\n  When   `check_arrow_crossings()` is called\n  Then   it names the arrow's two ends and the caption\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -566,7 +516,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-847",
@@ -587,18 +538,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — the text_overlap gate fires when two labels geometrically overlap Given  two `label()` elements placed at overlapping coordinates When   `save(gates=Gates(text_overlap=\"error\"))` is called Then   a `ValueError` naming the overlapping pair is raised",
-        "CASE-2 — — the label_fit gate fires when a label crowds a short arrow Given  a bound arrow whose label leaves less than ~24px of visible line on one side When   `save(gates=Gates(label_fit=\"error\"))` is called Then   a `ValueError` is raised",
-        "CASE-3 — — the two hard gates raise by default and can be switched off Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to render When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` / `Gates(short_arrows=\"off\")` Then   the default calls raise `ValueError`, and the switched calls write the files without raising",
-        "CASE-4 — — an inspection method returns offending items without saving Given  a scene with one crossing-arrow violation and no other defects When   `check_arrow_crossings()` is called before `.save()` Then   it returns a list containing that one item, while an unaffected check like `check_text_overflow()` returns an empty list",
-        "CASE-5 — — the overlap gate sees a box that strayed into a frame Given  a frame drawn around two boxes, and a third box placed inside it When   `check_overlaps()` is called Then   it names the third box and the frame's caption, and not the two members"
-      ],
       "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list\n\nCASE-5 — the overlap gate sees a box that strayed into a frame\n  Given  a frame drawn around two boxes, and a third box placed inside it\n  When   `check_overlaps()` is called\n  Then   it names the third box and the frame's caption, and not the two members",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -640,7 +583,18 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 6 clauses and 5 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "ARCH-EXCALIDRAW-032",
@@ -669,21 +623,10 @@
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class, and `CasesExcalidrawSceneVerb` for the `scene` verb).",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — Given  no arguments When   `python excalidraw_builder.py` is run Then   it exits 0 and stdout contains a success/summary line (not an error)",
-        "CASE-2 — Given  a valid `.excalidraw` file at `<path>` When   `render <path>` is run Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged",
-        "CASE-3 — Given  a directory containing at least one `.py` source file When   `discover <dir>` is run Then   a runnable Python stub is emitted that imports `excalidraw_builder` and calls `.save()`",
-        "CASE-4 — Given  an unknown verb such as `frobnicate` When   `python excalidraw_builder.py frobnicate` Then   the process exits with code 2 and prints usage",
-        "CASE-5 — Given  a `graph.json` describing nodes and edges with no coordinates When   `scene --from-json graph.json -o <dir>` is run Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`",
-        "CASE-6 — Given  an MCP client connected to `mcp_server.py` When   it calls `build_scene` with a graph description Then   both files are written, as they would be by `scene --from-json`"
-      ],
       "accept": "CASE-1\n  Given  no arguments\n  When   `python excalidraw_builder.py` is run\n  Then   it exits 0 and stdout contains a success/summary line (not an error)\n\nCASE-2\n  Given  a valid `.excalidraw` file at `<path>`\n  When   `render <path>` is run\n  Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged\n\nCASE-3\n  Given  a directory containing at least one `.py` source file\n  When   `discover <dir>` is run\n  Then   a runnable Python stub is emitted that imports `excalidraw_builder`\n         and calls `.save()`\n\nCASE-4\n  Given  an unknown verb such as `frobnicate`\n  When   `python excalidraw_builder.py frobnicate`\n  Then   the process exits with code 2 and prints usage\n\nCASE-5\n  Given  a `graph.json` describing nodes and edges with no coordinates\n  When   `scene --from-json graph.json -o <dir>` is run\n  Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`\n\nCASE-6\n  Given  an MCP client connected to `mcp_server.py`\n  When   it calls `build_scene` with a graph description\n  Then   both files are written, as they would be by `scene --from-json`",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [
-        "ARCH-EXCALIDRAW-030"
-      ],
       "depends_on": [
         "ARCH-EXCALIDRAW-030"
       ],
@@ -716,7 +659,8 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-848",
@@ -736,18 +680,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — no-arg invocation runs the smoke test and exits 0 Given  no command-line arguments When   `python excalidraw_builder.py` runs Then   it prints a success summary line and exits 0",
-        "CASE-2 — — render rebuilds the HTML viewer without touching the source Given  an existing `<scene>.excalidraw` file When   `render <scene>.excalidraw` runs Then   a fresh `<scene>.html` is written and the `.excalidraw` file's bytes are unchanged",
-        "CASE-3 — — discover emits a runnable multi-layer stub Given  a repository containing at least one source file When   `discover <repo> out.py` runs Then   `out.py` is written, imports `excalidraw_builder`, and runs without error",
-        "CASE-4 — — an unknown verb exits 2 with usage Given  the verb `frobnicate` When   `python excalidraw_builder.py frobnicate` runs Then   it exits with code 2 and prints a usage message",
-        "CASE-5 — — a stub finds the plugin under a custom config directory Given  the builder installed only in the plugin cache under `CLAUDE_CONFIG_DIR` When   a discover stub runs with no `PYTHONPATH` and an empty home directory Then   it imports that builder, exits 0 and writes a scene --------------------"
-      ],
       "accept": "CASE-1 — no-arg invocation runs the smoke test and exits 0\n  Given  no command-line arguments\n  When   `python excalidraw_builder.py` runs\n  Then   it prints a success summary line and exits 0\n\nCASE-2 — render rebuilds the HTML viewer without touching the source\n  Given  an existing `<scene>.excalidraw` file\n  When   `render <scene>.excalidraw` runs\n  Then   a fresh `<scene>.html` is written and the `.excalidraw` file's bytes are unchanged\n\nCASE-3 — discover emits a runnable multi-layer stub\n  Given  a repository containing at least one source file\n  When   `discover <repo> out.py` runs\n  Then   `out.py` is written, imports `excalidraw_builder`, and runs without error\n\nCASE-4 — an unknown verb exits 2 with usage\n  Given  the verb `frobnicate`\n  When   `python excalidraw_builder.py frobnicate` runs\n  Then   it exits with code 2 and prints a usage message\n\nCASE-5 — a stub finds the plugin under a custom config directory\n  Given  the builder installed only in the plugin cache under `CLAUDE_CONFIG_DIR`\n  When   a discover stub runs with no `PYTHONPATH` and an empty home directory\n  Then   it imports that builder, exits 0 and writes a scene\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -781,7 +717,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-850",
@@ -807,18 +744,10 @@
         "`CasesExcalidrawSceneVerb` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — a coordinate-free description writes both files Given  a `graph.json` naming four nodes, four edges and one group, with no coordinate anywhere in it When   `scene --from-json graph.json -o <dir>` runs Then   both files exist in `<dir>` and the scene parses as JSON with `type: \"excalidraw\"` and a non-empty `elements` list",
-        "CASE-2 — — a seeded description is byte-identical on re-run Given  a description carrying a `seed` When   it is built twice into separate directories Then   the two `.excalidraw` files are byte-for-byte identical",
-        "CASE-3 — — the title, legend and glossary reach the canvas Given  a description with a `title`, declared `roles` and a `glossary` entry When   it is built Then   the scene contains the title text, the legend's heading, and the glossary line for that entry",
-        "CASE-4 — — a malformed description exits 1 with one readable line Given  five broken files. One is not JSON. One holds an array, not an object. One has no nodes. One names an unknown node in an edge. One has an `edges` value that is not a list When   the `scene` verb runs on each Then   the process exits 1 and stderr holds one line starting `error: `, with no traceback",
-        "CASE-5 — — the verb without a description prints usage and exits 2 Given  `scene`, or `scene --from-json` with nothing after it When   the CLI runs Then   it exits 2 and prints a usage line"
-      ],
       "accept": "CASE-1 — a coordinate-free description writes both files\n  Given  a `graph.json` naming four nodes, four edges and one group, with no\n         coordinate anywhere in it\n  When   `scene --from-json graph.json -o <dir>` runs\n  Then   both files exist in `<dir>` and the scene parses as JSON with\n         `type: \"excalidraw\"` and a non-empty `elements` list\n\nCASE-2 — a seeded description is byte-identical on re-run\n  Given  a description carrying a `seed`\n  When   it is built twice into separate directories\n  Then   the two `.excalidraw` files are byte-for-byte identical\n\nCASE-3 — the title, legend and glossary reach the canvas\n  Given  a description with a `title`, declared `roles` and a `glossary` entry\n  When   it is built\n  Then   the scene contains the title text, the legend's heading, and the\n         glossary line for that entry\n\nCASE-4 — a malformed description exits 1 with one readable line\n  Given  five broken files. One is not JSON. One holds an array, not an object.\n         One has no nodes. One names an unknown node in an edge. One has an\n         `edges` value that is not a list\n  When   the `scene` verb runs on each\n  Then   the process exits 1 and stderr holds one line starting `error: `, with\n         no traceback\n\nCASE-5 — the verb without a description prints usage and exits 2\n  Given  `scene`, or `scene --from-json` with nothing after it\n  When   the CLI runs\n  Then   it exits 2 and prints a usage line",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -844,7 +773,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-852",
@@ -872,19 +802,10 @@
         "`plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — the handshake and the tool list Given  a client that sends `initialize`, the `initialized` notification and `tools/list` When   the server handles them Then   it answers the request with its capabilities, sends nothing for the notification, and lists exactly the four tools",
-        "CASE-2 — — build_scene writes both files Given  a three-node graph description and an output directory When   `tools/call` runs `build_scene` Then   both files exist and the result is not an error",
-        "CASE-3 — — a failing build is a tool error, not a crash Given  a description with an edge to a node that does not exist When   `build_scene` runs Then   the result carries `isError: true` and one line, and the server keeps serving",
-        "CASE-4 — — render_html and discover_repo reach the builder Given  a scene the server just built, and a directory holding one `.py` file When   `render_html` and `discover_repo` run on them Then   the viewer page and the generator stub are written",
-        "CASE-5 — — graph_schema comes from the documentation Given  the plugin as shipped When   `graph_schema` runs Then   the text names `nodes` and `edges`; with the reference file missing, the result is an error saying so",
-        "CASE-6 — — stdout carries only protocol Given  the server started as a subprocess When   it receives an initialize, a notification, a tools/list and a malformed line, and then stdin closes Then   every stdout line parses as JSON-RPC and the process exits 0"
-      ],
       "accept": "CASE-1 — the handshake and the tool list\n  Given  a client that sends `initialize`, the `initialized` notification and\n         `tools/list`\n  When   the server handles them\n  Then   it answers the request with its capabilities, sends nothing for the\n         notification, and lists exactly the four tools\n\nCASE-2 — build_scene writes both files\n  Given  a three-node graph description and an output directory\n  When   `tools/call` runs `build_scene`\n  Then   both files exist and the result is not an error\n\nCASE-3 — a failing build is a tool error, not a crash\n  Given  a description with an edge to a node that does not exist\n  When   `build_scene` runs\n  Then   the result carries `isError: true` and one line, and the server keeps\n         serving\n\nCASE-4 — render_html and discover_repo reach the builder\n  Given  a scene the server just built, and a directory holding one `.py` file\n  When   `render_html` and `discover_repo` run on them\n  Then   the viewer page and the generator stub are written\n\nCASE-5 — graph_schema comes from the documentation\n  Given  the plugin as shipped\n  When   `graph_schema` runs\n  Then   the text names `nodes` and `edges`; with the reference file missing, the\n         result is an error saying so\n\nCASE-6 — stdout carries only protocol\n  Given  the server started as a subprocess\n  When   it receives an initialize, a notification, a tools/list and a malformed\n         line, and then stdin closes\n  Then   every stdout line parses as JSON-RPC and the process exits 0",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -906,7 +827,8 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-856",
@@ -933,19 +855,10 @@
         "`save(svg=True)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.",
         "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
       ],
-      "acc": [
-        "CASE-1 — — save writes the SVG only when asked Given  two identical scenes When   one is saved with `svg=True` and the other without Then   the first returns three paths including a `.svg` Then   the second returns two paths and writes no `.svg`",
-        "CASE-2 — — the SVG is well-formed and carries every label Given  a scene whose labels hold `<`, `&` and quotes When   it is saved with `svg=True` Then   the SVG parses as XML, and every label's text appears in it",
-        "CASE-3 — — the same scene gives the same bytes Given  a scene built with a fixed seed When   it is rendered to SVG twice Then   the two documents are identical",
-        "CASE-4 — — render and the scene verb take --svg Given  an existing `.excalidraw` file and a graph description file When   `render <scene> --svg` and `scene --from-json <graph> --svg` run Then   each writes a `.svg` beside its other output",
-        "CASE-5 — — typefaces are embedded only where used Given  one scene in the hand-drawn typeface and one in the default typeface When   both are rendered to SVG Then   the first carries an embedded `@font-face` and the second carries none",
-        "CASE-6 — — the MCP tool takes the option Given  a three-node graph description and an output directory When   `build_scene` runs with `svg: true` Then   the `.svg` exists and its path is in the result"
-      ],
       "accept": "CASE-1 — save writes the SVG only when asked\n  Given  two identical scenes\n  When   one is saved with `svg=True` and the other without\n  Then   the first returns three paths including a `.svg`\n  Then   the second returns two paths and writes no `.svg`\n\nCASE-2 — the SVG is well-formed and carries every label\n  Given  a scene whose labels hold `<`, `&` and quotes\n  When   it is saved with `svg=True`\n  Then   the SVG parses as XML, and every label's text appears in it\n\nCASE-3 — the same scene gives the same bytes\n  Given  a scene built with a fixed seed\n  When   it is rendered to SVG twice\n  Then   the two documents are identical\n\nCASE-4 — render and the scene verb take --svg\n  Given  an existing `.excalidraw` file and a graph description file\n  When   `render <scene> --svg` and `scene --from-json <graph> --svg` run\n  Then   each writes a `.svg` beside its other output\n\nCASE-5 — typefaces are embedded only where used\n  Given  one scene in the hand-drawn typeface and one in the default typeface\n  When   both are rendered to SVG\n  Then   the first carries an embedded `@font-face` and the second carries none\n\nCASE-6 — the MCP tool takes the option\n  Given  a three-node graph description and an output directory\n  When   `build_scene` runs with `svg: true`\n  Then   the `.svg` exists and its path is in the result",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -975,7 +888,8 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": []
     },
     {
       "id": "ARCH-EXCALIDRAW-033",
@@ -1000,18 +914,10 @@
         "`plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
         "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`."
       ],
-      "acc": [
-        "CASE-1 — — a reader with no context can decode every colour and term Given  a scene that uses role colours and at least one project-specific term When   it is saved with `Gates(legend=\"error\")` Then   a `legend()` decodes every fill colour used and a `glossary()` lists the term with its meaning, both on the same canvas",
-        "CASE-2 — — the explainer example stays a clean teaching diagram Given  `examples/make_explainer.py` When   `test_excalidraw.py` runs it Then   the built scene contains a legend and a glossary, opens with a title, and produces zero violations on every gate",
-        "CASE-3 — — the asker who does not know the system gets a picture that teaches it   Given  a request phrased as \"explain how X works\" or \"I don't understand X\", with no mention of a diagram When   the skill runs Then   the delivered diagram opens with a title plus a one-line subtitle naming the reading direction. Its boxes use everyday words rather than file names alone. A legend decodes every colour; a glossary decodes every term. Checked by inspection; the reference shape is `make_explainer.py`"
-      ],
       "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `Gates(legend=\"error\")`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [
-        "ARCH-EXCALIDRAW-030"
-      ],
       "depends_on": [
         "ARCH-EXCALIDRAW-030"
       ],
@@ -1041,7 +947,8 @@
       "priority": "",
       "risks": [],
       "clauses": 2,
-      "covered": 2
+      "covered": 2,
+      "clarify": []
     },
     {
       "id": "ARCH-EXCALIDRAW-034",
@@ -1066,20 +973,10 @@
         "`pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`, `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "acc": [
-        "CASE-1 — — a described graph with groups and a feedback edge lays out cleanly Given  a 13-node graph with two groups, one feedback edge and one edge that skips a layer, none of them carrying coordinates When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once with `\"TB\"` Then   in both orientations all seven inspection checks return empty",
-        "CASE-2 — — a second graph of a different shape lays out cleanly too Given  a differently shaped graph: two feedback edges at different spans, one forward edge that skips a layer, and no groups When   `pack()` runs over it in both orientations Then   all seven inspection checks return empty, because a layout that only works on the graph it was written against is not a layout",
-        "CASE-3 — — the degenerate shapes are laid out, not crashed on Given  a 200-node chain, two disconnected components, an isolated node, and a 12-way fan-out that rejoins When   `pack()` runs over each Then   each is placed with all seven checks empty and none of them exhausts the recursion limit",
-        "CASE-4 — — a graph that cannot be laid out is refused, and says why Given  a description the builder cannot place: no nodes, a repeated id, an empty id, an edge naming a node that does not exist, a self-edge, or a direction it does not know When   `pack()` runs Then   it raises `ValueError` naming what is wrong"
-      ],
       "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once\n         with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [
-        "ARCH-EXCALIDRAW-030",
-        "ARCH-EXCALIDRAW-031"
-      ],
       "depends_on": [
         "ARCH-EXCALIDRAW-030",
         "ARCH-EXCALIDRAW-031"
@@ -1107,7 +1004,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-851",
@@ -1138,20 +1036,10 @@
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — a back edge becomes a routed connector, never a straight arrow Given  a three-node cycle When   `pack()` lays it out Then   the two forward edges are bound arrows and the cycle-closing edge is an unbound routed connector with more than two points",
-        "CASE-2 — — layering a 200-node chain does not recurse Given  200 nodes chained one to the next When   `pack()` lays them out Then   every node is placed, no check reports an offender, and no `RecursionError` is raised",
-        "CASE-3 — — a long edge label widens its gap instead of crowding its arrow Given  two nodes joined by an edge labelled with a phrase wider than the default gap When   `pack()` lays them out Then   `check_arrow_label_fit()` returns empty",
-        "CASE-4 — — a node's declared role and shape reach the element Given  a node declaring `kind: \"decision\"` and a fill naming a declared role When   `pack()` places it Then   the scene contains a diamond element carrying that role's colour",
-        "CASE-5 — — an unlayoutable description raises ValueError Given  six broken descriptions. One has no nodes. One repeats an id. One has an empty id. One names an unknown node in an edge. One carries a self-edge. One asks for a direction that is neither `\"LR\"` nor `\"TB\"` When   `pack()` runs on each Then   `ValueError` is raised every time",
-        "CASE-6 — — a node outside a group stays outside its frame Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one When   `pack()` lays it out Then   `check_overlaps()` returns empty",
-        "CASE-7 — — a frame caption dodges the arrows entering the group Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot When   `pack()` lays it out Then   `check_arrow_crossings()` returns empty"
-      ],
       "accept": "CASE-1 — a back edge becomes a routed connector, never a straight arrow\n  Given  a three-node cycle\n  When   `pack()` lays it out\n  Then   the two forward edges are bound arrows and the cycle-closing edge is an\n         unbound routed connector with more than two points\n\nCASE-2 — layering a 200-node chain does not recurse\n  Given  200 nodes chained one to the next\n  When   `pack()` lays them out\n  Then   every node is placed, no check reports an offender, and no\n         `RecursionError` is raised\n\nCASE-3 — a long edge label widens its gap instead of crowding its arrow\n  Given  two nodes joined by an edge labelled with a phrase wider than the\n         default gap\n  When   `pack()` lays them out\n  Then   `check_arrow_label_fit()` returns empty\n\nCASE-4 — a node's declared role and shape reach the element\n  Given  a node declaring `kind: \"decision\"` and a fill naming a declared role\n  When   `pack()` places it\n  Then   the scene contains a diamond element carrying that role's colour\n\nCASE-5 — an unlayoutable description raises ValueError\n  Given  six broken descriptions. One has no nodes. One repeats an id. One has an\n         empty id. One names an unknown node in an edge. One carries a self-edge.\n         One asks for a direction that is neither `\"LR\"` nor `\"TB\"`\n  When   `pack()` runs on each\n  Then   `ValueError` is raised every time\n\nCASE-6 — a node outside a group stays outside its frame\n  Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one\n  When   `pack()` lays it out\n  Then   `check_overlaps()` returns empty\n\nCASE-7 — a frame caption dodges the arrows entering the group\n  Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot\n  When   `pack()` lays it out\n  Then   `check_arrow_crossings()` returns empty",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1173,7 +1061,18 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 9 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-EXCALIDRAW-858",
@@ -1199,20 +1098,10 @@
         "`diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`, `_PackRun._trunks()` and `_PackRun._bus()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `scene_from_spec()` in `excalidraw_engine/spec.py`.",
         "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "acc": [
-        "CASE-1 — — a node's font reaches its label Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font When   `pack()` lays them out Then   the first label has that size and colour, and the second is white",
-        "CASE-2 — — a two-line question fits its diamond Given  a decision node whose label wraps to two lines When   `pack()` sizes it Then   the text box's width share plus its height share of the rhombus is at most 0.86",
-        "CASE-3 — — a graph description reaches the same font Given  a `graph.json` node carrying a `font` dict, beside a node with none When   `scene_from_spec()` builds it Then   the first label has that size and colour, and the second keeps 13px",
-        "CASE-4 — — a wide fan-out becomes a bus Given  one node fanning out to eight, laid out once `\"LR\"` and once `\"TB\"` When   `pack()` runs with `edge_style=\"orthogonal\"` Then   all seven checks return empty, and every leg is square and cuts no box",
-        "CASE-5 — — a nested bus does not cross the one around it Given  a fan-out whose child c0 spans the targets of a sibling c5 When   `pack()` lays it out orthogonally in both directions Then   no leg of one bus properly crosses a leg of the other",
-        "CASE-6 — — a graph description picks the edge style Given  a `graph.json` whose `edge_style` is `\"orthogonal\"`, then the same with `\"curvy\"` When   `scene_from_spec()` builds each Then   the first draws only unbound bus legs, and the second raises `ValueError`",
-        "CASE-7 — — every placed node carries its id Given  a description with a process, a decision and a data node When   `scene_from_spec()` writes the scene Then   each node's shape carries `customData.id` equal to its id, on the element holding its label"
-      ],
       "accept": "CASE-1 — a node's font reaches its label\n  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font\n  When   `pack()` lays them out\n  Then   the first label has that size and colour, and the second is white\n\nCASE-2 — a two-line question fits its diamond\n  Given  a decision node whose label wraps to two lines\n  When   `pack()` sizes it\n  Then   the text box's width share plus its height share of the rhombus is at most 0.86\n\nCASE-3 — a graph description reaches the same font\n  Given  a `graph.json` node carrying a `font` dict, beside a node with none\n  When   `scene_from_spec()` builds it\n  Then   the first label has that size and colour, and the second keeps 13px\n\nCASE-4 — a wide fan-out becomes a bus\n  Given  one node fanning out to eight, laid out once `\"LR\"` and once `\"TB\"`\n  When   `pack()` runs with `edge_style=\"orthogonal\"`\n  Then   all seven checks return empty, and every leg is square and cuts no box\n\nCASE-5 — a nested bus does not cross the one around it\n  Given  a fan-out whose child c0 spans the targets of a sibling c5\n  When   `pack()` lays it out orthogonally in both directions\n  Then   no leg of one bus properly crosses a leg of the other\n\nCASE-6 — a graph description picks the edge style\n  Given  a `graph.json` whose `edge_style` is `\"orthogonal\"`, then the same with `\"curvy\"`\n  When   `scene_from_spec()` builds each\n  Then   the first draws only unbound bus legs, and the second raises `ValueError`\n\nCASE-7 — every placed node carries its id\n  Given  a description with a process, a decision and a data node\n  When   `scene_from_spec()` writes the scene\n  Then   each node's shape carries `customData.id` equal to its id, on the element holding its label",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1234,7 +1123,8 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": []
     },
     {
       "id": "ARCH-RELEASE-035",
@@ -1259,16 +1149,10 @@
         "The `versions` and `changelog` jobs in `.github/workflows/ci.yml`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — CI runs the version check on every push and pull request  Given  `.github/workflows/ci.yml` When   a commit is pushed or a pull request opened Then   the `versions` job runs `scripts/check_versions.py` and its own tests",
-        "CASE-2 — — a bump without a CHANGELOG heading fails the pull request  Given  a pull request that changes the version in `plugin.json` When   the `changelog` job runs Then   it fails unless `CHANGELOG.md` holds a `` `vX.Y.Z` `` heading for that version",
-        "CASE-3 — — the release check never ships  Given  the directory `/plugin install` hands a consumer When   its contents are listed Then   `scripts/check_versions.py` is absent, because only `plugin/` ships"
-      ],
       "accept": "CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->\n  Given  `.github/workflows/ci.yml`\n  When   a commit is pushed or a pull request opened\n  Then   the `versions` job runs `scripts/check_versions.py` and its own tests\n\nCASE-2 — a bump without a CHANGELOG heading fails the pull request <!-- verifiable by: inspection -->\n  Given  a pull request that changes the version in `plugin.json`\n  When   the `changelog` job runs\n  Then   it fails unless `CHANGELOG.md` holds a `` `vX.Y.Z` `` heading for that version\n\nCASE-3 — the release check never ships <!-- verifiable by: inspection -->\n  Given  the directory `/plugin install` hands a consumer\n  When   its contents are listed\n  Then   `scripts/check_versions.py` is absent, because only `plugin/` ships",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1295,7 +1179,8 @@
       "test_exempt": null,
       "milestone": "v1.1.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clarify": []
     },
     {
       "id": "REQ-RELEASE-855",
@@ -1320,17 +1205,10 @@
         "`TestCheckVersions` in `scripts/test_check_versions.py`.",
         "-------------------"
       ],
-      "acc": [
-        "CASE-1 — — three matching versions pass Given  `plugin.json` at a version and both `marketplace.json` copies at the same one When   `check_versions.py` runs Then   it exits 0 and prints that the version agrees across three locations",
-        "CASE-2 — — a missed copy fails, and says which one Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind When   `check_versions.py` runs Then   it exits 1 and its output names the top-level copy and the value it holds",
-        "CASE-3 — — a missed copy inside plugins[] fails too Given  both top-level versions agreeing while the entry in `plugins[]` lags When   `check_versions.py` runs Then   it exits 1 and its output names that entry",
-        "CASE-4 — — `--fix` makes them agree instead of failing Given  a marketplace manifest whose two copies both disagree with `plugin.json` When   `check_versions.py --fix` runs Then   it exits 0, and a second run with no flag exits 0 because the file now agrees"
-      ],
       "accept": "CASE-1 — three matching versions pass\n  Given  `plugin.json` at a version and both `marketplace.json` copies at the same one\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across three locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  both top-level versions agreeing while the entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  a marketplace manifest whose two copies both disagree with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the file now agrees",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1352,7 +1230,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-RELEASE-857",
@@ -1376,17 +1255,10 @@
         "`_bumped()` and the bump branch of `main()` in `scripts/check_versions.py`.",
         "`TestCheckVersions` in `scripts/test_check_versions.py`."
       ],
-      "acc": [
-        "CASE-1 — — `--bump` raises all three copies together Given  `plugin.json` and both `marketplace.json` copies at `2.4.9` When   `check_versions.py --bump minor` runs Then   it exits 0 and all three copies hold `2.5.0` Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed",
-        "CASE-2 — — `--bump` resets the parts below the one raised Given  all three copies at `2.4.9` When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9` Then   the results are `2.4.10`, `2.5.0` and `3.0.0`",
-        "CASE-3 — — `--bump` refuses a version that is not X.Y.Z Given  all three copies at `2.5` When   `check_versions.py --bump patch` runs Then   it exits 1 and every copy still holds `2.5`",
-        "CASE-4 — — the CHANGELOG reminder appears only when the heading is missing Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md` When   `check_versions.py --bump patch` runs Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise"
-      ],
       "accept": "CASE-1 — `--bump` raises all three copies together\n  Given  `plugin.json` and both `marketplace.json` copies at `2.4.9`\n  When   `check_versions.py --bump minor` runs\n  Then   it exits 0 and all three copies hold `2.5.0`\n  Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed\n\nCASE-2 — `--bump` resets the parts below the one raised\n  Given  all three copies at `2.4.9`\n  When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`\n  Then   the results are `2.4.10`, `2.5.0` and `3.0.0`\n\nCASE-3 — `--bump` refuses a version that is not X.Y.Z\n  Given  all three copies at `2.5`\n  When   `check_versions.py --bump patch` runs\n  Then   it exits 1 and every copy still holds `2.5`\n\nCASE-4 — the CHANGELOG reminder appears only when the heading is missing\n  Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md`\n  When   `check_versions.py --bump patch` runs\n  Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1408,7 +1280,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-900",
@@ -1434,17 +1307,10 @@
         "`parse_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.",
         "`TestParseDdl` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — tables and primary keys Given  the six-table demo schema When   `parse_ddl()` reads it Then   six tables come back in order, each with the primary key it declares",
-        "CASE-2 — — foreign keys in every form Given  foreign keys written inline, as table constraints and through `ALTER TABLE` When   `parse_ddl()` reads them Then   each table lists its foreign keys with the referenced table and columns",
-        "CASE-3 — — names, comments and index keywords Given  a quoted schema-qualified name, comments holding semicolons and a MySQL `KEY` index When   `parse_ddl()` reads the script Then   the table is named without its schema and the index is not taken for a column",
-        "CASE-4 — — an unreadable script is refused Given  `CREATE TABLE t AS SELECT 1`, a duplicate table or an `ALTER TABLE` on an unknown table When   `parse_ddl()` reads it Then   `ValueError` is raised naming the offending statement or table"
-      ],
       "accept": "CASE-1 — tables and primary keys\n  Given  the six-table demo schema\n  When   `parse_ddl()` reads it\n  Then   six tables come back in order, each with the primary key it declares\n\nCASE-2 — foreign keys in every form\n  Given  foreign keys written inline, as table constraints and through `ALTER TABLE`\n  When   `parse_ddl()` reads them\n  Then   each table lists its foreign keys with the referenced table and columns\n\nCASE-3 — names, comments and index keywords\n  Given  a quoted schema-qualified name, comments holding semicolons and a MySQL `KEY` index\n  When   `parse_ddl()` reads the script\n  Then   the table is named without its schema and the index is not taken for a column\n\nCASE-4 — an unreadable script is refused\n  Given  `CREATE TABLE t AS SELECT 1`, a duplicate table or an `ALTER TABLE` on an unknown table\n  When   `parse_ddl()` reads it\n  Then   `ValueError` is raised naming the offending statement or table",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1466,7 +1332,18 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 6 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-901",
@@ -1489,17 +1366,10 @@
         "`graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.",
         "`TestGraph`, `TestScene` and `TestCli` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — one node per table, one edge per relationship Given  the demo schema and a table with two foreign keys to one dimension When   `graph_from_tables()` is called Then   there is one node per table, and the two keys share one edge labelled with both columns",
-        "CASE-2 — — an unresolved foreign key is listed, not drawn Given  a table whose foreign key names a table the script never defines When   `graph_from_tables()` and `unresolved_fks()` are called Then   the graph holds no edge for it, and `unresolved_fks()` returns that key",
-        "CASE-3 — — the scene passes every gate Given  the demo, clean and no-prefix schemas When   `scene_from_ddl()` or the `data-model` command is run Then   both files are written without a failed gate, and a call with no input is a usage error",
-        "CASE-4 — — the output is byte-stable Given  one DDL file When   `scene_from_ddl()` is run twice Then   the two `.excalidraw` files are identical byte for byte"
-      ],
       "accept": "CASE-1 — one node per table, one edge per relationship\n  Given  the demo schema and a table with two foreign keys to one dimension\n  When   `graph_from_tables()` is called\n  Then   there is one node per table, and the two keys share one edge labelled with both columns\n\nCASE-2 — an unresolved foreign key is listed, not drawn\n  Given  a table whose foreign key names a table the script never defines\n  When   `graph_from_tables()` and `unresolved_fks()` are called\n  Then   the graph holds no edge for it, and `unresolved_fks()` returns that key\n\nCASE-3 — the scene passes every gate\n  Given  the demo, clean and no-prefix schemas\n  When   `scene_from_ddl()` or the `data-model` command is run\n  Then   both files are written without a failed gate, and a call with no input is a usage error\n\nCASE-4 — the output is byte-stable\n  Given  one DDL file\n  When   `scene_from_ddl()` is run twice\n  Then   the two `.excalidraw` files are identical byte for byte",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1525,7 +1395,18 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 5 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-902",
@@ -1554,19 +1435,10 @@
         "`classify_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
         "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — accuracy on the test set Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects When   `classify_tables()` is run on each schema Then   at least ninety percent of the tables get the expected role",
-        "CASE-2 — — structure alone is enough Given  a shop schema whose tables carry no `fact_` or `dim_` prefix When   `classify_tables()` is run Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix",
-        "CASE-3 — — every role is explained Given  any classified table When   its classification is read Then   the reason is not empty and the confidence lies between 0 and 1",
-        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores When   `classify_tables()` is run Then   all three are unknown with confidence 0, and the reason says why",
-        "CASE-5 — — colour and legend follow the role Given  a schema holding only facts and dimensions When   `graph_from_tables()` is called Then   nodes are filled fact or dimension, and the legend holds those two roles only",
-        "CASE-6 — — confidence reflects lead and evidence Given  a table with strong evidence and no rival, and one with thin evidence When   `classify_tables()` is run Then   the first has confidence 1, and the second has a lower one"
-      ],
       "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1588,7 +1460,18 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 8 clauses and 6 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-903",
@@ -1615,20 +1498,10 @@
         "`review_tables()` and its five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
         "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — every planted problem is found Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key When   `review_tables()` is run Then   exactly those four issues are returned, each on its table",
-        "CASE-2 — — a clean schema raises no alarm Given  the demo schema with every problem fixed When   `review_tables()` is run Then   no issue is returned",
-        "CASE-3 — — grain Given  a fact with no primary key, and the same fact with one When   `review_tables()` is run on each Then   only the first raises a `grain` issue",
-        "CASE-4 — — surrogate key Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk` When   `review_tables()` is run Then   the first three raise `surrogate-key` and the last does not",
-        "CASE-5 — — SCD type 2 Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes When   `review_tables()` is run Then   the first two raise `scd2` and the others do not",
-        "CASE-6 — — orphan foreign key Given  a foreign key to a missing table, one to a missing column, and one to an existing target When   `review_tables()` is run Then   the first two raise `orphan-fk` and the third does not",
-        "CASE-7 — — snowflake Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions When   `review_tables()` is run Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged"
-      ],
       "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1650,7 +1523,8 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-904",
@@ -1671,16 +1545,10 @@
         "`graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.",
         "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — every issue is explained Given  the issues found in the demo schema When   their messages are read Then   each message is a sentence stating the cause, not a bare label",
-        "CASE-2 — — issues become amber notes Given  the demo schema When   `graph_from_tables()` is called Then   it gains four review notes, each joined to its table by a dashed edge",
-        "CASE-3 — — a clean schema draws no note Given  the demo schema with every problem fixed When   `graph_from_tables()` is called Then   no review note is drawn and the legend has no review-note entry"
-      ],
       "accept": "CASE-1 — every issue is explained\n  Given  the issues found in the demo schema\n  When   their messages are read\n  Then   each message is a sentence stating the cause, not a bare label\n\nCASE-2 — issues become amber notes\n  Given  the demo schema\n  When   `graph_from_tables()` is called\n  Then   it gains four review notes, each joined to its table by a dashed edge\n\nCASE-3 — a clean schema draws no note\n  Given  the demo schema with every problem fixed\n  When   `graph_from_tables()` is called\n  Then   no review note is drawn and the legend has no review-note entry",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1702,7 +1570,8 @@
       "priority": "",
       "risks": [],
       "clauses": 3,
-      "covered": 3
+      "covered": 3,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-905",
@@ -1729,16 +1598,10 @@
         "`graph_from_tables()` and `_label()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
         "`TestColumns` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — off by default Given  the demo schema When   `graph_from_tables()` is called without `columns` Then   each node label is the table name and its role badge, and nothing else",
-        "CASE-2 — — columns in order with key marks Given  a fact table with a primary key, three foreign keys and three measures When   `graph_from_tables(columns=True)` is called Then   its label lists all seven columns in declared order, with an icon and `PK` or `FK` where they apply",
-        "CASE-3 — — the flag reaches the drawing Given  the demo schema When   `data-model --from-ddl` is run with `--columns` Then   the scene passes every gate and holds a text element listing `PK order_line_key`"
-      ],
       "accept": "CASE-1 — off by default\n  Given  the demo schema\n  When   `graph_from_tables()` is called without `columns`\n  Then   each node label is the table name and its role badge, and nothing else\n\nCASE-2 — columns in order with key marks\n  Given  a fact table with a primary key, three foreign keys and three measures\n  When   `graph_from_tables(columns=True)` is called\n  Then   its label lists all seven columns in declared order, with an icon and `PK` or `FK` where they apply\n\nCASE-3 — the flag reaches the drawing\n  Given  the demo schema\n  When   `data-model --from-ddl` is run with `--columns`\n  Then   the scene passes every gate and holds a text element listing `PK order_line_key`",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1760,7 +1623,18 @@
       "priority": "",
       "risks": [],
       "clauses": 3,
-      "covered": 3
+      "covered": 3,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 6 clauses and 3 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-906",
@@ -1786,19 +1660,10 @@
         "`parse_roles()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`; `classify_tables()` in `classify.py`; the flag in `cli.py`.",
         "`TestRoles` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — flat lines are read Given  a roles file with comments, a quoted table name, a trailing comment and mixed-case roles When   `parse_roles()` reads it Then   it returns each table with its lower-case role",
-        "CASE-2 — — anything else is refused Given  a nested mapping, a list item, an unknown role and a table listed twice When   `parse_roles()` reads each Then   `ValueError` is raised naming the line that is wrong",
-        "CASE-3 — — the override wins and the history stays Given  a schema and an override setting `stg_payments` to fact When   `classify_tables()` is called with it Then   that table is a fact at confidence 1, flagged overridden, and its reason says the rules had said unknown",
-        "CASE-4 — — a typo is not ignored Given  an override naming a table the schema does not define When   `classify_tables()` is called with it Then   `ValueError` is raised naming that table",
-        "CASE-5 — — the override reaches the review and the label Given  `dim_product` overridden to unknown When   `graph_from_tables()` is called Then   its surrogate-key note is gone and its label reads `unknown · set by you`",
-        "CASE-6 — — the flag works end to end Given  a roles file, and one with a bad role or a missing table When   `data-model --from-ddl` is run with `--roles` Then   the first renders with the override marked, and the others fail naming the roles file"
-      ],
       "accept": "CASE-1 — flat lines are read\n  Given  a roles file with comments, a quoted table name, a trailing comment and mixed-case roles\n  When   `parse_roles()` reads it\n  Then   it returns each table with its lower-case role\n\nCASE-2 — anything else is refused\n  Given  a nested mapping, a list item, an unknown role and a table listed twice\n  When   `parse_roles()` reads each\n  Then   `ValueError` is raised naming the line that is wrong\n\nCASE-3 — the override wins and the history stays\n  Given  a schema and an override setting `stg_payments` to fact\n  When   `classify_tables()` is called with it\n  Then   that table is a fact at confidence 1, flagged overridden, and its reason says the rules had said unknown\n\nCASE-4 — a typo is not ignored\n  Given  an override naming a table the schema does not define\n  When   `classify_tables()` is called with it\n  Then   `ValueError` is raised naming that table\n\nCASE-5 — the override reaches the review and the label\n  Given  `dim_product` overridden to unknown\n  When   `graph_from_tables()` is called\n  Then   its surrogate-key note is gone and its label reads `unknown · set by you`\n\nCASE-6 — the flag works end to end\n  Given  a roles file, and one with a bad role or a missing table\n  When   `data-model --from-ddl` is run with `--roles`\n  Then   the first renders with the override marked, and the others fail naming the roles file",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1824,7 +1689,8 @@
       "priority": "",
       "risks": [],
       "clauses": 6,
-      "covered": 6
+      "covered": 6,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-907",
@@ -1852,20 +1718,10 @@
         "`read_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py`; `scene_from_dbt()` and `graph_from_tables()` in `data_model.py`; the flag in `cli.py`.",
         "`TestReadDbt` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — models from SQL and schema files Given  a project with five models, three staging and two marts, in `.sql` and `schema.yml` files When   `read_dbt()` reads it Then   five tables come back sorted by name",
-        "CASE-2 — — keys and types from the schema Given  a model whose `order_id` has `unique` and `not_null` tests and whose `amount` has a `data_type` When   `read_dbt()` reads it Then   `order_id` is the primary key, the type is `numeric`, and a column with `not_null` is not nullable",
-        "CASE-3 — — a relationships test is a foreign key Given  a column with a `relationships` test to `ref('customers')` on `customer_id` When   `read_dbt()` reads it Then   the model gains a foreign key from that column to `customers.customer_id`",
-        "CASE-4 — — lineage from ref() only Given  SQL that calls `ref()` on models, on an unknown name, and inside comments When   `read_dbt()` reads it Then   lineage holds only the refs to real models, in sorted pairs, with none from comments or `source()`",
-        "CASE-5 — — lineage is dashed and never doubles a foreign key Given  lineage pairs, one of which a foreign key already joins in the same direction When   `graph_from_tables()` is called with them Then   the others are dashed lines, and the joined pair keeps its single foreign-key edge",
-        "CASE-6 — — unreadable input is refused Given  an empty folder, and a `schema.yml` using a YAML anchor When   `read_dbt()` reads each Then   `ValueError` names the folder for the first and the file and line for the second",
-        "CASE-7 — — the command draws a dbt project Given  the fixture dbt project When   `data-model --from-dbt` runs, and again with no input or with both inputs Then   the first writes both files through every gate, and the others are usage errors"
-      ],
       "accept": "CASE-1 — models from SQL and schema files\n  Given  a project with five models, three staging and two marts, in `.sql` and `schema.yml` files\n  When   `read_dbt()` reads it\n  Then   five tables come back sorted by name\n\nCASE-2 — keys and types from the schema\n  Given  a model whose `order_id` has `unique` and `not_null` tests and whose `amount` has a `data_type`\n  When   `read_dbt()` reads it\n  Then   `order_id` is the primary key, the type is `numeric`, and a column with `not_null` is not nullable\n\nCASE-3 — a relationships test is a foreign key\n  Given  a column with a `relationships` test to `ref('customers')` on `customer_id`\n  When   `read_dbt()` reads it\n  Then   the model gains a foreign key from that column to `customers.customer_id`\n\nCASE-4 — lineage from ref() only\n  Given  SQL that calls `ref()` on models, on an unknown name, and inside comments\n  When   `read_dbt()` reads it\n  Then   lineage holds only the refs to real models, in sorted pairs, with none from comments or `source()`\n\nCASE-5 — lineage is dashed and never doubles a foreign key\n  Given  lineage pairs, one of which a foreign key already joins in the same direction\n  When   `graph_from_tables()` is called with them\n  Then   the others are dashed lines, and the joined pair keeps its single foreign-key edge\n\nCASE-6 — unreadable input is refused\n  Given  an empty folder, and a `schema.yml` using a YAML anchor\n  When   `read_dbt()` reads each\n  Then   `ValueError` names the folder for the first and the file and line for the second\n\nCASE-7 — the command draws a dbt project\n  Given  the fixture dbt project\n  When   `data-model --from-dbt` runs, and again with no input or with both inputs\n  Then   the first writes both files through every gate, and the others are usage errors",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1895,7 +1751,8 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-908",
@@ -1922,17 +1779,10 @@
         "`parse_yaml()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py`.",
         "`TestMiniYaml` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — nested maps and lists Given  maps nested by indentation, a list of maps that open on the dash line, and a list at its key's indent When   `parse_yaml()` reads them Then   it returns the matching nested dictionaries and lists",
-        "CASE-2 — — scalars and flow collections Given  booleans, null, numbers, quoted strings, a `ref('m')` string and flow collections When   `parse_yaml()` reads them Then   each value has its Python type, and `{{ doc('d') }}` stays a string",
-        "CASE-3 — — block scalars and comments Given  a `>` and a `|` block scalar, comments and a leading `---` When   `parse_yaml()` reads the text Then   the folded scalar joins with spaces, the literal one keeps its newlines, and comments are dropped",
-        "CASE-4 — — what is outside the subset Given  an anchor, a tab indent, a repeated key, a second document, an unreadable line and an open quote When   `parse_yaml()` reads each Then   `ValueError` is raised naming the line that is wrong"
-      ],
       "accept": "CASE-1 — nested maps and lists\n  Given  maps nested by indentation, a list of maps that open on the dash line, and a list at its key's indent\n  When   `parse_yaml()` reads them\n  Then   it returns the matching nested dictionaries and lists\n\nCASE-2 — scalars and flow collections\n  Given  booleans, null, numbers, quoted strings, a `ref('m')` string and flow collections\n  When   `parse_yaml()` reads them\n  Then   each value has its Python type, and `{{ doc('d') }}` stays a string\n\nCASE-3 — block scalars and comments\n  Given  a `>` and a `|` block scalar, comments and a leading `---`\n  When   `parse_yaml()` reads the text\n  Then   the folded scalar joins with spaces, the literal one keeps its newlines, and comments are dropped\n\nCASE-4 — what is outside the subset\n  Given  an anchor, a tab indent, a repeated key, a second document, an unreadable line and an open quote\n  When   `parse_yaml()` reads each\n  Then   `ValueError` is raised naming the line that is wrong",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -1954,7 +1804,18 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 7 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-909",
@@ -1983,20 +1844,10 @@
         "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
         "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — plain columns are traced Given  the fixture project, where marts read staging models through CTEs and staging models read source tables When   `mapping_markdown()` is called Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`",
-        "CASE-2 — — an expression keeps its text Given  `min(orders.order_date) as first_order` and `amount / 100 as amount` When   `mapping_markdown()` is called Then   each row shows the expression as written, and lists the one column it reads as its source",
-        "CASE-3 — — rules and order Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models When   `mapping_markdown()` is called Then   the rule cell lists those tests with their targets and values, and staging models come first",
-        "CASE-4 — — select star Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not When   `mapping_markdown()` is called Then   declared columns read `copy (via *)`, and the column missing upstream is flagged",
-        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
-        "CASE-6 — — what is missing is marked Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason",
-        "CASE-7 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical"
-      ],
       "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -2018,7 +1869,18 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 8 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-910",
@@ -2042,17 +1904,10 @@
         "`scene_from_dbt(draw_lineage=...)` and `graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
         "`TestLineageFlag` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — no lineage by default Given  the fixture dbt project When   `data-model --from-dbt` runs without `--lineage` Then   the scene holds no text element reading `ref`",
-        "CASE-2 — — lineage on request Given  the same project When   `data-model --from-dbt` runs with `--lineage` Then   the scene passes every gate and holds one `ref` label for each lineage line",
-        "CASE-3 — — lineage needs dbt Given  a DDL file When   `data-model --from-ddl` runs with `--lineage` Then   the command fails with a usage error",
-        "CASE-4 — — the mapping does not depend on the flag Given  the fixture project and a mapping path When   `data-model --from-dbt --mapping` runs with and without `--lineage` Then   both write the same mapping text"
-      ],
       "accept": "CASE-1 — no lineage by default\n  Given  the fixture dbt project\n  When   `data-model --from-dbt` runs without `--lineage`\n  Then   the scene holds no text element reading `ref`\n\nCASE-2 — lineage on request\n  Given  the same project\n  When   `data-model --from-dbt` runs with `--lineage`\n  Then   the scene passes every gate and holds one `ref` label for each lineage line\n\nCASE-3 — lineage needs dbt\n  Given  a DDL file\n  When   `data-model --from-ddl` runs with `--lineage`\n  Then   the command fails with a usage error\n\nCASE-4 — the mapping does not depend on the flag\n  Given  the fixture project and a mapping path\n  When   `data-model --from-dbt --mapping` runs with and without `--lineage`\n  Then   both write the same mapping text",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -2074,7 +1929,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-DATAMODEL-911",
@@ -2104,20 +1960,10 @@
         "Text and icons in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`; label policy in `data_model.py`; the glossary position in `spec.py`.",
         "`TestExplain` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — legend with icon and meaning Given  a schema with facts, dimensions, unknown tables and review notes When   `graph_from_tables()` is called Then   each role in use has a legend entry starting with its icon and holding its plain meaning",
-        "CASE-2 — — how to read it Given  any schema When   `graph_from_tables()` is called Then   the subtitle says what a box is and what an arrow from A to B means",
-        "CASE-3 — — only the terms in use Given  a schema with notes, a clean one, one with columns listed and one with a role set by hand When   the glossary terms of each are read Then   each defines what it shows, and none defines SCD, PK or the like where the diagram has no use for them",
-        "CASE-4 — — why each table has its role Given  the demo schema of six tables When   the glossary is read Then   it ends with one \"Why\" row per table, each holding the evidence in words",
-        "CASE-5 — — icons on keys and notes Given  a primary key, a foreign key, a plain column and a review note When   their text is built Then   the keys start with an icon, then `PK` or `FK` And    the plain column is bare And    the note starts with its rule's icon",
-        "CASE-6 — — labels only where they cannot collide Given  a one-fact schema, a two-fact schema, and the two-fact schema with columns listed When   `graph_from_tables()` is called Then   only the first labels its arrows, and the second says to add `--columns` in its subtitle",
-        "CASE-7 — — a wide legend Given  schemas whose legend holds long entries When   `scene_from_ddl()` draws them through every gate Then   the files are written because the glossary does not overlap the legend"
-      ],
       "accept": "CASE-1 — legend with icon and meaning\n  Given  a schema with facts, dimensions, unknown tables and review notes\n  When   `graph_from_tables()` is called\n  Then   each role in use has a legend entry starting with its icon and holding its plain meaning\n\nCASE-2 — how to read it\n  Given  any schema\n  When   `graph_from_tables()` is called\n  Then   the subtitle says what a box is and what an arrow from A to B means\n\nCASE-3 — only the terms in use\n  Given  a schema with notes, a clean one, one with columns listed and one with a role set by hand\n  When   the glossary terms of each are read\n  Then   each defines what it shows, and none defines SCD, PK or the like where the diagram has no use for them\n\nCASE-4 — why each table has its role\n  Given  the demo schema of six tables\n  When   the glossary is read\n  Then   it ends with one \"Why\" row per table, each holding the evidence in words\n\nCASE-5 — icons on keys and notes\n  Given  a primary key, a foreign key, a plain column and a review note\n  When   their text is built\n  Then   the keys start with an icon, then `PK` or `FK`\n  And    the plain column is bare\n  And    the note starts with its rule's icon\n\nCASE-6 — labels only where they cannot collide\n  Given  a one-fact schema, a two-fact schema, and the two-fact schema with columns listed\n  When   `graph_from_tables()` is called\n  Then   only the first labels its arrows, and the second says to add `--columns` in its subtitle\n\nCASE-7 — a wide legend\n  Given  schemas whose legend holds long entries\n  When   `scene_from_ddl()` draws them through every gate\n  Then   the files are written because the glossary does not overlap the legend",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -2147,7 +1993,18 @@
       "priority": "",
       "risks": [],
       "clauses": 7,
-      "covered": 7
+      "covered": 7,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 9 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-912",
@@ -2171,17 +2028,10 @@
         "`scene_from_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the `--mapping` flag in `cli.py`.",
         "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "acc": [
-        "CASE-1 — — the file is written beside the scene Given  the fixture dbt project and a mapping path When   `data-model --from-dbt --mapping` runs Then   the file holds exactly the text `mapping_markdown()` returns",
-        "CASE-2 — — a failed gate leaves no file Given  a project whose scene fails a gate When   `scene_from_dbt()` is called with a mapping path Then   it raises `ValueError`, and no mapping file exists",
-        "CASE-3 — — the mapping needs a dbt project Given  a DDL file and a mapping path When   `data-model --from-ddl --mapping` runs Then   the command fails with a usage error",
-        "CASE-4 — — an unreadable project leaves nothing Given  an empty project directory and a mapping path When   `data-model --from-dbt --mapping` runs Then   the command fails, and no mapping file exists"
-      ],
       "accept": "CASE-1 — the file is written beside the scene\n  Given  the fixture dbt project and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the file holds exactly the text `mapping_markdown()` returns\n\nCASE-2 — a failed gate leaves no file\n  Given  a project whose scene fails a gate\n  When   `scene_from_dbt()` is called with a mapping path\n  Then   it raises `ValueError`, and no mapping file exists\n\nCASE-3 — the mapping needs a dbt project\n  Given  a DDL file and a mapping path\n  When   `data-model --from-ddl --mapping` runs\n  Then   the command fails with a usage error\n\nCASE-4 — an unreadable project leaves nothing\n  Given  an empty project directory and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the command fails, and no mapping file exists",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -2203,7 +2053,8 @@
       "priority": "",
       "risks": [],
       "clauses": 4,
-      "covered": 4
+      "covered": 4,
+      "clarify": []
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -2229,18 +2080,10 @@
         "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
         "`TestBuilderUnits` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "acc": [
-        "CASE-1 — — a legend built from declared roles Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries When   `legend()` is called Then   the scene gains a key with one row labelled \"agent\", and the resolved colour of \"violet\" is recorded for legend coverage",
-        "CASE-2 — — an empty legend is refused Given  a `Scene` with no declared roles When   `legend()` is called with no entries Then   `ValueError` is raised",
-        "CASE-3 — — a glossary decodes a term on the canvas Given  a `Scene` When   `glossary([(\"SSOT\", \"single source of truth\")], (0, 0))` is called Then   the scene contains a text element reading `SSOT — single source of truth`",
-        "CASE-4 — — an empty glossary is refused Given  a `Scene` When   `glossary([], (0, 0))` is called Then   `ValueError` is raised",
-        "CASE-5 — — the glossary box is overlap-checked Given  a `Scene` with a glossary drawn at (0, 0) When   a box is placed on top of it and `check_overlaps()` is called Then   the overlap is reported"
-      ],
       "accept": "CASE-1 — a legend built from declared roles\n  Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries\n  When   `legend()` is called\n  Then   the scene gains a key with one row labelled \"agent\", and the resolved\n         colour of \"violet\" is recorded for legend coverage\n\nCASE-2 — an empty legend is refused\n  Given  a `Scene` with no declared roles\n  When   `legend()` is called with no entries\n  Then   `ValueError` is raised\n\nCASE-3 — a glossary decodes a term on the canvas\n  Given  a `Scene`\n  When   `glossary([(\"SSOT\", \"single source of truth\")], (0, 0))` is called\n  Then   the scene contains a text element reading `SSOT — single source of truth`\n\nCASE-4 — an empty glossary is refused\n  Given  a `Scene`\n  When   `glossary([], (0, 0))` is called\n  Then   `ValueError` is raised\n\nCASE-5 — the glossary box is overlap-checked\n  Given  a `Scene` with a glossary drawn at (0, 0)\n  When   a box is placed on top of it and `check_overlaps()` is called\n  Then   the overlap is reported",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [
@@ -2266,7 +2109,8 @@
       "priority": "",
       "risks": [],
       "clauses": 5,
-      "covered": 5
+      "covered": 5,
+      "clarify": []
     },
     {
       "id": "SYS-DIAGRAM-001",
@@ -2284,16 +2128,10 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "acc": [
-        "CASE-1 — — a described system becomes an openable, editable picture Given  a description of a system with its parts and the links between them When   the skill runs Then   both a `.excalidraw` scene and a self-contained `.html` viewer exist, the viewer opens by double-click, and the scene imports into excalidraw.com with every element still selectable and movable",
-        "CASE-2 — — the picture is legible, not merely valid Given  a generated scene When   its layout is checked Then   no two shapes overlap and no connector crosses another, because a scene whose JSON parses and whose boxes sit on top of each other is a failure the format cannot report",
-        "CASE-3 — — no toolchain is required Given  a machine with a Python interpreter and nothing else installed When   the skill runs Then   it produces both outputs without fetching a package, starting a service, or needing an API key"
-      ],
       "accept": "CASE-1 — a described system becomes an openable, editable picture\n  Given  a description of a system with its parts and the links between them\n  When   the skill runs\n  Then   both a `.excalidraw` scene and a self-contained `.html` viewer exist, the viewer\n         opens by double-click, and the scene imports into excalidraw.com with every\n         element still selectable and movable\n\nCASE-2 — the picture is legible, not merely valid\n  Given  a generated scene\n  When   its layout is checked\n  Then   no two shapes overlap and no connector crosses another, because a scene whose JSON\n         parses and whose boxes sit on top of each other is a failure the format cannot\n         report\n\nCASE-3 — no toolchain is required\n  Given  a machine with a Python interpreter and nothing else installed\n  When   the skill runs\n  Then   it produces both outputs without fetching a package, starting a service, or\n         needing an API key",
       "input": "",
       "output": "",
       "desc": "",
-      "deps": [],
       "depends_on": [],
       "used_by": [],
       "satisfies": [],
@@ -2310,7 +2148,8 @@
       "test_exempt": null,
       "milestone": "v1.0.0",
       "priority": "must-have",
-      "risks": []
+      "risks": [],
+      "clarify": []
     }
   ],
   "edges": [
@@ -2501,7 +2340,81 @@
         "v2.4.0"
       ],
       "landmark": "v2.0.0",
-      "headline": "Breaking: the `Scene` API takes values, not argument lists"
+      "headline": "Breaking: the `Scene` API takes values, not argument lists",
+      "entries": [
+        {
+          "version": "v2.4.0",
+          "date": "2026-09-21",
+          "headline": "Three more diagram types, as worked examples",
+          "body": "**Three more diagram types, as worked examples.** No new builder primitive; each\ngenerator asserts what the gates cannot see.\n\n- `make_sequence_diagram.py`: participants, lifelines, requests and dashed replies, a\n  self-call and an `alt` fragment. It asserts every message ends on a lifeline and\n  messages run strictly downwards.\n- `make_state_machine.py`: an order's life cycle through `pack()`, with a group and a\n  back transition. It asserts every state is reachable and only final states are dead\n  ends.\n- `make_er_diagram.py`: tables as a header box over a column box, relationships as\n  headless arrows labelled `1 x : N y`. It asserts foreign keys and relationships agree.\n\nWorked example 8 in `references/worked_examples.md` is the recipe for all three, and\n`mermaid_to_graph.md` now points sequence and ER diagrams at it instead of saying to\nflatten them into a flow.\n\n**Two builder bugs the examples found.**\n\n- `frame(paint=Paint(fill=\"<role>\"))` ignored `Scene(roles=…)`: `box()` resolved a\n  role name, `frame()` did not, so a legended fragment colour never showed.\n- A routed edge between neighbouring layers sent both legs through the same channel.\n  The connector went down and came straight back up one vertical line, a stub instead\n  of a loop. It now leaves through the far side of its source and enters through the\n  near side of its target.",
+          "first_commit": "2026-09-21",
+          "last_commit": "2026-09-21"
+        },
+        {
+          "version": "v2.3.0",
+          "date": "2026-09-21",
+          "headline": "Group frames are no longer invisible to the gates",
+          "body": "**Group frames are no longer invisible to the gates.** `enclose()` now records which\nids a frame was drawn around, and two existing checks read it:\n\n- `check_overlaps()`, the hard `overlap` gate, also names a box that sits inside a frame\n  (or on its caption) without having been enclosed. A frame that claims a box it does\n  not group now fails `save()` by default, like any other overlap.\n- `check_arrow_crossings()`, the `crossing` gate, also names any arrow or routed line\n  that runs through a frame caption.\n\nStill seven gates; no gate changed its name or default.\n\n**`pack()` stops producing both.** A non-member in a layer a group's frame spans is\npushed along its layer out past the frame. The arrows are drawn before the frames, so\n`enclose()` can put the caption where nothing crosses it. It tries the top centre, then\nthe widest clear stretch above or below the frame, wrapped onto two or three lines if\nthat is what fits. Routed lanes keep a frame's width clear of groups.\n\n`layout_corpus/` gains `group_with_outsider_tb` and `caption_under_fan_out_tb`. With\nthe new checks and the old `pack()`, the corpus reads nine hits (three captions crossed,\nsix boxes in frames that do not hold them); with the new `pack()`, none.\n\n**Minor bump because the `overlap` gate is stricter.** A hand-written generator that\nplaced a box inside an `enclose()` frame without enclosing it now raises. Enclose it,\nmove it, or pass `Gates(overlap=\"warn\")`. Every example in this repo stays clean.",
+          "first_commit": "2026-09-21",
+          "last_commit": "2026-09-21"
+        },
+        {
+          "version": "v2.2.1",
+          "date": "2026-09-21",
+          "headline": "A group on the first row no longer fails `scene --from-json`",
+          "body": "**A group on the first row no longer fails `scene --from-json`.** The title and subtitle\nsat at a fixed height above `y = 0`, but a group frame that encloses first-row nodes puts\nits label above `y = 0` too, so any description with a subtitle and such a group was\nrefused by the `text_overlap` gate. They now sit above the highest thing `pack()` drew.\n\n**A layout ratchet.** `TestLayoutRatchet` packs the fourteen graphs in\n`scripts/layout_corpus/`, which were written to stress the layout (a K5, a 12-way fan-out\nand fan-in, skip edges, shared group members, forced tiny boxes, the case above) and not\nto pass. It counts what each of the seven checks finds and compares that with\n`_baseline.json`: a count that rises fails as a regression, and a count that falls must\nbe re-recorded (`EXCALIDRAW_RATCHET_UPDATE=1`) so the gain cannot slip back. The baseline\nis not all zeros, so a change that silences a check shows up too.",
+          "first_commit": "2026-09-21",
+          "last_commit": "2026-09-21"
+        },
+        {
+          "version": "v2.2.0",
+          "date": "2026-09-20",
+          "headline": "Mermaid in, without a parser",
+          "body": "**Mermaid in, without a parser.** `references/mermaid_to_graph.md` says how a Mermaid\nflowchart maps onto `graph.json`, node shape by node shape and edge kind by edge kind,\nwith a worked line-by-line translation and an explicit list of what Mermaid expresses and\nthis builder does not. The model reads it and writes the graph; nothing parses anything,\nso there is no second authoring language to keep working. The output is a real editable\nscene, which is what the official JS bridge gives up on for every diagram type but\nflowcharts.\n\n**The timing generators are examples now.** `make_timing_diagrams.py` and\n`make_autosar_timing.py` moved from `docs/` into\n`plugin/skills/excalidraw-diagram/examples/`, so `TestExampleDiagrams` runs them and\nholds them to the same seven checks as every other example — they were outside the suite\nwhile being cited as proof that timing diagrams need no builder primitive. Worked example\n7 in `references/worked_examples.md` is the recipe: one unbound `path(heads=\"none\")` per\nsignal, one `box()` per bus cell, and your own asserts, because three of the seven gates\nnever see an unbound trace.",
+          "first_commit": "2026-09-20",
+          "last_commit": "2026-09-20"
+        },
+        {
+          "version": "v2.1.0",
+          "date": "2026-09-20",
+          "headline": "The viewer no longer fetches anything",
+          "body": "**The viewer no longer fetches anything.** `<name>.html` used to load Excalidraw, React\nand its fonts from unpkg on first open; now it carries them. The pinned runtime is\nvendored in `excalidraw_engine/runtime/` (1.6 MB) and inlined into the page, so opening a\ndiagram issues **zero network requests** — verified against a Chrome net log with DNS\npointed at nothing. Nothing about the build changed: the builder still imports no HTTP\nclient and downloads nothing, at any point.\n\n```python\ns.save(\"flow\", out_dir)                    # 1.6 MB page, opens offline (the default)\ns.save(\"flow\", out_dir, offline=False)     # ~100 KB page, loads the runtime from unpkg\n```\n\n```bash\npython excalidraw_builder.py scene --from-json graph.json -o out/ --cdn\npython excalidraw_builder.py render flow.excalidraw out/ --cdn\nEXCALIDRAW_DIAGRAM_OFFLINE=0 python docs/make_repo_map.py out/   # the default, flipped\n```\n\n- **Fixed: the CDN page linked a stylesheet that does not exist.**\n  `excalidraw.production.min.css` is not published in `dist/` for 0.17.6, so every viewer\n  page has been 404-ing on it; the styles come from the bundle. The `<link>` is gone.\n- **Fixed: an empty asset path sent the page to unpkg.** The bundle reads\n  `window.EXCALIDRAW_ASSET_PATH || <unpkg>`, so `\"\"` was falsy and the fonts and the lazy\n  chunk were fetched anyway. The offline page sets `\"./\"`.\n- The vendored bundle carries one edit: Excalidraw's `VITE_APP_FIREBASE_CONFIG` — the\n  config for *their* collaboration backend, which this viewer never starts — is replaced\n  by `'{}'`. Its `apiKey` is a Google API key by format, and a public repository is the\n  wrong place to store another project's, however public it already is upstream.\n- The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately **not** vendored: a\n  scene renders identically without it. The Mermaid-to-Excalidraw dialog is the one\n  feature that needs it, and `--cdn` still serves it.\n- A scene that spells `__RUNTIME__` in a label can no longer forge part of the page: the\n  template is filled in a single pass.\n- New `REQ-EXCALIDRAW-854` with `CasesOfflineViewer`; `README.md` gains\n  \"Everything happens on your machine\".",
+          "first_commit": "2026-09-20",
+          "last_commit": "2026-09-20"
+        },
+        {
+          "version": "v2.0.0",
+          "date": "2026-09-16",
+          "headline": "Breaking: the `Scene` API takes values, not argument lists",
+          "body": "**Breaking: the `Scene` API takes values, not argument lists.** A 1.x generator\npassed `x, y, w=, h=, fill=, stroke=, dashed=, font_size=, color=, align=` to\nnearly every call, and the same few names travelled through forty signatures.\nEach call now takes one `at`, one `paint` and one `font`:\n\n```python\ns.box(\"API\", (320, 60), paint=\"blue\", font=14)          # was box(\"API\", 320, 60, fill=\"blue\", font_size=14)\ns.label(\"note\", (40, 90), font=Font(12, align=\"left\"))  # was label(\"note\", 40, 90, size=12, align=\"left\")\ns.save(\"flow\", out_dir, gates=Gates.strict())           # was five *_check=\"error\" arguments\n```\n\n`at` is `(x, y)`, `(x, y, w, h)` or a `Rect`. `paint` and `font` accept a plain\ncolour or size. A mistyped 1.x key raises instead of being silently dropped.\n`row`/`column`/`grid` are now forms of one `arrange()`. `save()` takes one `Gates`\nvalue in place of seven keyword arguments. `Gates.strict()` is the ship setting,\nand `\"off\"` replaces `allow_overlap=` / `allow_short_arrows=`. `references/builder_api.md`\nends with a 1.x → 2.x migration table. **The graph JSON did not change.**\n\n**Output did not change either.** Every example and `docs/repo_graph.json` was\nrendered before and after, and the `.excalidraw` files match value for value.\n\n**The 2,298-line file is now a package.** `excalidraw_builder.py` keeps the import\nname and the CLI. The code lives in `excalidraw_engine/`, one module per\nresponsibility, none over 500 lines. `Scene` is assembled from focused mixins over\na shared `Canvas`. `pack()` is a run object with one method per step. The\nrequirement engine's design review goes from 48 candidates to none.\n\n**An MCP server.** `scripts/mcp_server.py`, registered by `plugin/.mcp.json`, gives\nan MCP client `build_scene`, `render_html`, `discover_repo` and `graph_schema`. It is\nstdlib only, and new `REQ-EXCALIDRAW-852` covers it with 16 tests.\n\n- Gate warnings print to stderr, not stdout.\n- `Scene(font=…)` is `Scene(typeface=…)`; the `hand_drawn=` alias is gone.\n- `s.rect(node)` replaces reaching into `s._geom`.\n- `fit_text()` is a module function taking `size=` and `min_size=(w, h)`.\n- `pipeline()` and `arrange()` refuse an unknown step kind or item key.\n- `ARCH-EXCALIDRAW-031` CASE-2 described a legend check that fires with no legend\n  drawn; it now matches the behaviour its child requirement always stated.\n- `test_excalidraw.py` called `unittest.main()` mid-file, so running it as a\n  script skipped the last three test classes. The call is now at the end.",
+          "first_commit": "2026-09-16",
+          "last_commit": "2026-09-16"
+        },
+        {
+          "version": "v1.1.0",
+          "date": "2026-09-07",
+          "headline": "A diagram without writing Python",
+          "body": "**A diagram without writing Python.** Until now the only way in was to write a\ngenerator script and choose every coordinate — right when the layout carries\nmeaning, and a poor trade when you just want a picture of a fifteen-node flow.\n\n```\npython scripts/excalidraw_builder.py scene --from-json graph.json -o out/\n```\n\n`graph.json` names nodes, edges, groups and a direction. No coordinates anywhere.\n`Scene.pack()` layers the graph by depth, orders each layer to keep connected\nnodes together, places everything, and runs the same seven gates a hand-written\ngenerator answers to. `pack()` is also callable from a generator, for a diagram\nthat is auto-laid-out in one region and hand-placed in another.\n\n**The routing is the part that matters.** Barycenter ordering — the classic\nsecond pass — minimises crossings between *edges*; this builder's gate measures\nan edge cutting through a *box*. So ordering narrows the problem and never closes\nit: an edge whose straight line would cut a third box is routed instead, out\nthrough the gap between rows, across the empty strip between two layers, and\nalong a lane of its own past the diagram. Feedback edges are always routed, so a\ncycle never cuts back across the flow.\n\nFifteen tests cover it (65 → 80), including two independently authored\nfeedback-edge graphs — a layout that only works on the graph it was written\nagainst is not a layout — plus both orientations, a 200-node chain, disconnected\ncomponents, a 12-way fan-out, and every malformed description.\n\n**`SKILL.md` is 196 lines, down from 731.** Every binding rule still states\nitself in the file. What moved out is the material that *illustrates* them:\n`references/builder_api.md` (every call, how to import the builder, the\n`graph.json` schema) and `references/worked_examples.md` (the repo-poster recipe\nand the ❌ → ✅ variants). `SKILL.universal.md` is 200 lines and back in step.\n\n- New `ARCH-EXCALIDRAW-034` (auto-layout) with `REQ-EXCALIDRAW-851` (`pack()`),\n  and `REQ-EXCALIDRAW-850` (the `scene` verb) under the CLI capability.\n  `ARCH-EXCALIDRAW-032` / `REQ-EXCALIDRAW-848` now say four verbs, not three.\n- `check_arrow_crossings()` and `pack()` read one geometry helper, so the layout\n  cannot disagree with the check that judges it.\n- `ARCH-EXCALIDRAW-033` cited a quality rule by its number; it now cites the rule\n  by name, because renumbering the list would have broken the link silently.\n\n**The skill no longer explains someone else's tool.** Three of the four worked\ngenerators drew requirement-manager — the repo this skill was split out of. They\ndraw *this* one now: `make_explainer.py` teaches what the skill is,\n`make_full_architecture.py` is the layered poster of this plugin, and\n`make_iso5807_flowchart.py` is the builder's own path from a description to two\nfiles. The ❌ → ✅ variants and the quality rules stopped citing `reqmap.py` as\ntheir example of a real identifier.\n\nThat pass found one real defect: the stub `discover` writes into an external repo\nstill resolved the builder from the **old** plugin's cache path, so every\nscaffold it generated would have failed to import. Fixed.\n\n**The no-arg smoke test, `render` and `discover` are untouched.**",
+          "first_commit": "2026-09-07",
+          "last_commit": "2026-09-07"
+        },
+        {
+          "version": "v1.0.1",
+          "date": "2026-09-06",
+          "headline": "The skill now says out loud that it is for people who do not understand the thing",
+          "body": "**The skill now says out loud that it is for people who do not understand the thing.**\nMost of the time this skill is reached for by someone who wants a picture *because*\nthe prose did not land. The contract only implied that: the readability rules were\nthere, `examples/make_explainer.py` was there, but nothing in the trigger phrases or\nthe worked examples named the case, and no requirement held the obligation.\n\n- `SKILL.md` / `SKILL.universal.md` — \"explain how X works\" / \"I don't understand X\"\n  (and the Romanian forms) are now triggers; a **When to use** bullet and worked\n  example **6** show the teaching-diagram shape, with `make_explainer.py` as the\n  template.\n- `ARCH-EXCALIDRAW-033` (explanatory output) and `REQ-EXCALIDRAW-849` (the `legend()`\n  and `glossary()` keys) are the requirement-side of that promise, tagged into the\n  builder and covered by five new tests (60 → 65).\n\n**Fixed: the import resolver pointed at the old plugin.** Both contracts told an\nexternal generator to look in `~/.claude/plugins/cache/requirement-manager/...` and,\non failure, to `/plugin install requirement-manager`. That was where the skill lived\nbefore the split; installing *this* plugin put the builder somewhere the resolver\nnever looked. Now `excalidraw-diagram/excalidraw-diagram`.\n\n**Fixed: `SKILL.universal.md` had drifted.** It was missing the minimal example, the\nfull quality rules, the tips and all the worked examples — none of which are Claude\nCode-specific. Re-synced; the two files differ only in the tool-specific parts again.\n\n**Housekeeping in `requirements/`.** `ARCH-EXCALIDRAW-030/031/032` still carried\n`milestone: v2.4` and `skills/...` paths from the repository they came from; now\n`v1.0.0` and `plugin/skills/...`.",
+          "first_commit": "2026-09-06",
+          "last_commit": "2026-09-06"
+        },
+        {
+          "version": "v1.0.0",
+          "date": "2026-09-06",
+          "headline": "First release as its own plugin. The skill was developed inside",
+          "body": "First release as its own plugin. The skill was developed inside\n[requirement-manager](https://github.com/alxmax/requirement-manager) and shipped there\nthrough plugin `v6.0.0`; this is the same code, split into a repository of its own.\n\n**Why split.** It shared a repository with the requirement engine and nothing else — no\nimports in either direction, no shared runtime, no shared configuration. The only mentions\nof `reqmap.py` inside the skill are strings drawn *inside* example diagrams. A consumer who\nwanted diagrams had to install a requirements engine to get them, and a change to either\none took the other's CI with it.\n\n**What came across.** Every file, and the history: `git log` reaches the original 43\ncommits through a `git subtree split`, so `git blame` still answers.\n\n**What is new here.**\n\n- `scripts/check_versions.py` — `plugin.json` is the source of truth and\n  `marketplace.json` repeats the version twice; a bump that misses either place ships a\n  release nobody receives, silently. Now checked, with `--fix` to sync.\n- CI runs the builder smoke on **six** platform/version combinations (3.9, 3.12, 3.13 ×\n  ubuntu, windows) rather than the two it had as a guest job, plus a job that runs every\n  example generator — a worked example that raises is a documentation defect.\n- A CHANGELOG-entry check on the version bump.\n\n**Nothing about the skill's behaviour changed.** Same builder, same 60 tests, same output.",
+          "first_commit": "2026-09-06",
+          "last_commit": "2026-09-06"
+        }
+      ]
     },
     {
       "month": "2026-10",
@@ -2517,7 +2430,57 @@
         "v2.7.0"
       ],
       "landmark": "v2.7.0",
-      "headline": "The viewer's download button saves your edits"
+      "headline": "The viewer's download button saves your edits",
+      "entries": [
+        {
+          "version": "v2.7.0",
+          "date": "2026-10-21",
+          "headline": "The viewer's download button saves your edits",
+          "body": "**The viewer's download button saves your edits.** The page is a full editor, but the\nbutton serialised the scene embedded when it was built, so a reader who edited the\npage got back the file they were sent. It now saves the scene as it stands in the\npage. A refresh or a closed tab with unsaved edits asks first.\n\n**A fan-out can be drawn as a bus.** `PackOptions(edge_style=\"orthogonal\")`, or\n`\"edge_style\": \"orthogonal\"` in `graph.json`, draws every edge between neighbouring\nlayers as a trunk beside its source with a square branch into each target. A\none-to-eight fan-out lays out clean in both directions, with no leg cutting a box and\nno detour round the diagram. A bus nested inside a wider one never crosses it.\n\n**Labels stay readable on dark fills.** A shape's label with no colour of its own is\nnow white wherever black would fall short of WCAG's 4.5:1 against the fill. A colour\nyou give still wins.\n\n**`pack()` nodes take a `font`**: a `Font`, a size, or a `{size, color, align}` dict in\n`graph.json`. The box is sized at that size.\n\n**Decision diamonds fit their question.** A `diamond` or `decision` node is sized so\nits wrapped label sits inside the rhombus rather than inside its bounding box.\n\n**Every `pack()` shape carries its node id** in `customData`, which survives an edit in\nthe viewer, so an edited scene can be matched back to the description that drew it.\n\n**The plugin-cache resolver honours `CLAUDE_CONFIG_DIR`.** The import snippet in\n`builder_api.md` and the fallback in every `discover` stub looked only under\n`~/.claude`, and failed for a non-default config directory.\n\n`REQ-EXCALIDRAW-858` holds the per-node contract with seven cases; `REQ-EXCALIDRAW-848`,\n`-853` and `-854` gained one or two cases each.",
+          "first_commit": "2026-10-21",
+          "last_commit": "2026-10-21"
+        },
+        {
+          "version": "v2.6.0",
+          "date": "2026-10-13",
+          "headline": "The licence is Apache 2.0",
+          "body": "**The licence is Apache 2.0.** `LICENSE` holds the Apache License 2.0 and `plugin.json` says\n`Apache-2.0`, the same licence as the other plugins by the same author. Releases up to v2.5.0\nstay under MIT. The bundled Excalidraw, React and React DOM builds keep their own MIT licences.\nNo code change.",
+          "first_commit": "2026-10-13",
+          "last_commit": "2026-10-13"
+        },
+        {
+          "version": "v2.5.0",
+          "date": "2026-10-03",
+          "headline": "SVG export, on request",
+          "body": "**SVG export, on request.** A scene can now also be written as a standalone `<name>.svg`,\nto go into a document or a slide: `save(svg=True)`, `scene --from-json ... --svg`,\n`render <scene> --svg`, and `build_scene` with `svg: true`. It is opt-in, so the two-file\noutput existing callers rely on does not change, and `save()` returns a third path only\nwhen asked.\n\nThe SVG is drawn from the scene's elements alone, so it also works on a scene edited on\nexcalidraw.com, and the same scene gives the same text. Lines come out clean, not\nhand-drawn: the rough outlines are Excalidraw's own renderer. The hand-drawn and code\ntypefaces are embedded from the vendored fonts, so a browser shows them. There is no PNG;\nrasterising that text needs a font rasteriser the standard library does not have.\n\n`REQ-EXCALIDRAW-856` holds the contract, with six cases.",
+          "first_commit": "2026-10-03",
+          "last_commit": "2026-10-03"
+        },
+        {
+          "version": "v2.4.3",
+          "date": "2026-10-03",
+          "headline": "Tool annotations on the MCP server",
+          "body": "**Tool annotations on the MCP server.** The directory policy asks an MCP server to give\nevery tool all of its applicable annotations, and the four tools had none. All four now\ndeclare `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`.\n`build_scene`, `render_html` and `discover_repo` write files and replace a same-named\none, so they are destructive and not read-only; `graph_schema` is read-only. All four\nare idempotent, since the same input writes the same bytes, and none is open-world.\n\n**A privacy section in the README**, which the policy asks to be reachable from a link.",
+          "first_commit": "2026-10-03",
+          "last_commit": "2026-10-03"
+        },
+        {
+          "version": "v2.4.2",
+          "date": "2026-10-03",
+          "headline": "A listing icon",
+          "body": "**A listing icon.** The directory asks for a square PNG, and the icon can be set only\nwhen the plugin is first saved or submitted, so it goes in before the first submission:\n`.claude-plugin/icon.png`, 512 by 512.\n\n**README corrections found while reading the directory policy.** `discover_repo` always\nwrites a starter script, to `make_diagram.py` in the server's working directory unless\ngiven a path, and overwrites a file of that name; the README had said it wrote only when\ngiven a path. It now also says where the local MCP server runs, and that a generated\nstarter script falls back to the plugin cache to find the builder. No code changed.",
+          "first_commit": "2026-10-03",
+          "last_commit": "2026-10-03"
+        },
+        {
+          "version": "v2.4.1",
+          "date": "2026-10-03",
+          "headline": "A README inside the plugin folder",
+          "body": "**A README inside the plugin folder.** The directory listing shows the README that sits\nbeside `.claude-plugin/plugin.json`, and until now only the repository root had one. It\nsays what the plugin runs, what it writes and that it makes no network call, and it\nrecords where the vendored renderer comes from and how to reproduce its one edit.\n\n**macOS and Linux without `python`.** The MCP server starts with `python`, which a system\nthat ships only `python3` does not have. No single command works on every system, so\n`.mcp.json` is unchanged and both skill contracts now say to run the builder with\n`python3` where there is no `python`. The README explains how to get the MCP tools too.\n\n**Independence from Excalidraw.** The README now says the plugin is not affiliated with\nExcalidraw, writes its open file format and bundles its MIT-licensed library.\n\n**A way to send feedback.** `homepage` in the manifest, a Feedback section in the README,\nand two issue forms: something went wrong, and a diagram type you wish it had.",
+          "first_commit": "2026-10-03",
+          "last_commit": "2026-10-03"
+        }
+      ]
     },
     {
       "month": "2026-11",
@@ -2532,14 +2495,56 @@
         "v2.12.0"
       ],
       "landmark": "v2.12.0",
-      "headline": "Changed: dbt lineage is drawn only with `--lineage`"
+      "headline": "Changed: dbt lineage is drawn only with `--lineage`",
+      "entries": [
+        {
+          "version": "v2.12.0",
+          "date": "2026-11-07",
+          "headline": "Changed: dbt lineage is drawn only with `--lineage`",
+          "body": "**Changed: dbt lineage is drawn only with `--lineage`.** Rendered, a real dbt project's\n`ref()` lines outnumbered its foreign keys and ran round the whole diagram, and a dashed\nlineage line looked exactly like the dashed line to a review note. Without the flag the\ndiagram now shows models, foreign keys, roles and review notes; with it, each `ref()` is a\ndashed line labelled `ref`. v2.10.0 drew lineage by default. The mapping file is unchanged\nand always says what each model is built from.\n\n**Confidence now means something.** It was the winner's share of the top two scores, so it\nread 100% whenever no other role scored. It is now the winner's lead over the runner-up\ntimes how much evidence it has, and reaches 100% only with a clear lead and eight points\nor more: a well-evidenced table still reads 100%, a table that rests on little or has a\nclose rival reads lower, and a table that is only keys reads low.\n\n**A data-model diagram a stranger can read.** The subtitle says how to read it (a box is a\ntable, an arrow from A to B means A holds a key that points at B). The legend gives every\ncolour an icon and a plain meaning; the glossary defines only the terms the picture uses (fact,\ndimension, PK, SCD type 2 ...) in everyday words and says why each table has its role; key\ncolumns and review notes carry icons beside the words. Arrows name their key column only where\nlabels cannot collide: with two facts sharing dimensions they used to stack on top of each\nother, so the diagram now says to add `--columns` instead.\n\n**A wide legend no longer overlaps the glossary.** `graph.json`'s glossary starts to the right\nof the legend whatever its width, not at a fixed position.\n\n**Review notes wrap wide.** A node in a `graph.json` takes an optional `max_chars` (the\nwrap width of its label, default 22, so nothing existing changes). `data-model` sets 40 on\nits review notes, which were 12-line towers.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
+        {
+          "version": "v2.9.0",
+          "date": "2026-11-06",
+          "headline": "`data-model --columns` and `--roles`",
+          "body": "**`data-model --columns` and `--roles`.** `--columns` lists each table's columns under its\nname, `PK` / `FK` marked. `--roles roles.yml` corrects the classifier with flat\n`table: role` lines; the table is drawn `set by you`, the review rules use the new role,\nand a table the schema does not define is an error. The file is a small YAML subset, since\nthe plugin carries no YAML parser; anything richer is refused with the line number.\n\n**A label's line breaks are kept.** `fit_text()`, and so every `pack()` and `pipeline()`\nnode, joined a label's lines into one run and re-wrapped it, so a label written as\nseveral lines came out as one jumbled paragraph. Each line is now wrapped on its own;\na label without a newline is wrapped exactly as before.",
+          "first_commit": "2026-11-06",
+          "last_commit": "2026-11-06"
+        },
+        {
+          "version": "v2.8.0",
+          "date": "2026-11-06",
+          "headline": "Draw and review a data model from its SQL",
+          "body": "**Draw and review a data model from its SQL.** `data-model --from-ddl schema.sql -o out/`\nreads `CREATE TABLE` and `ALTER TABLE ... ADD ... FOREIGN KEY` (PostgreSQL and generic\nSQL, standard library only) and draws one node per table and one arrow per foreign key\nthrough the same layout and gates as every other diagram.\n\nEach table is classified as a fact, dimension, bridge or unknown, coloured by role, and\nlabelled with a confidence; the glossary gives the reason for every call. Five review\nrules (`grain`, `surrogate-key`, `scd2`, `orphan-fk`, `snowflake`) draw their findings as\namber notes joined to the table they concern. The roles and the `scd2` rule are\nheuristics on names and structure. The fact sits in one column with its dimensions\nbeside it rather than at the centre of a star. Not an MCP tool yet.",
+          "first_commit": "2026-11-06",
+          "last_commit": "2026-11-06"
+        },
+        {
+          "version": "v2.11.0",
+          "date": "2026-11-06",
+          "headline": "`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping",
+          "body": "**`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping.** One\nsection per model, upstream models first; one row per target column with its source\n(`model.column`, or `source.table.column` for a dbt source), the transformation (`copy`,\n`rename`, or the expression as written) and the rule (the column's schema.yml tests,\nincluding the target of a `relationships` test and the values of `accepted_values`).\n\nThe source is traced through aliases, joins and CTEs that only pass a table through. What\nthe reader cannot follow is not guessed: a union, Jinja control flow, a subquery in `FROM`,\na CTE that reshapes its input, an unaliased expression, a bare column over several\nrelations, or a model with no SQL file is marked **needs review** with the reason. The file\nis written only after the diagram has passed its gates.",
+          "first_commit": "2026-11-06",
+          "last_commit": "2026-11-06"
+        },
+        {
+          "version": "v2.10.0",
+          "date": "2026-11-06",
+          "headline": "`data-model --from-dbt <project>` draws a dbt project",
+          "body": "**`data-model --from-dbt <project>` draws a dbt project.** One node per model under\n`models/`. A `relationships` test on a column becomes a foreign key, so the model is\nclassified and reviewed like any DDL table; a column with `unique` and `not_null` tests is\nthe primary key; `data_type` gives the column type. A `ref()` in a model's SQL is lineage,\ndrawn as a dashed line from the model to what it is built from. Without `data_type` a model\nmay classify as unknown; `--roles` corrects it.\n\n`schema.yml` is read by a small YAML subset reader written for this (the plugin installs\nnothing from PyPI): maps, lists, scalars, flow collections and `|` / `>` blocks. Anchors,\ntags, tabs, repeated keys and several documents are refused with the line number.",
+          "first_commit": "2026-11-06",
+          "last_commit": "2026-11-06"
+        }
+      ]
     }
   ],
   "commands": [
     {
       "name": "init",
       "group": "author",
-      "summary": "First-use bootstrap: scaffold requirements/ and .reqmapignore if missing, draft requirements from existing code and prose, build the lock and map, and print guided next steps. Idempotent — safe to re-run; never clobbers an existing .reqmapignore. --plan emits the extraction plan as JSON and writes no requirement files, for looking before authoring.",
+      "summary": "First-use bootstrap: scaffold requirements/ and .reqmapignore if missing, draft requirements from existing code and prose, build the lock and map, and print guided next steps. Idempotent — safe to re-run; never clobbers an existing .reqmapignore. --plan emits the extraction plan as JSON and writes no requirement files, for looking before authoring. --watch REF prints draft suggestions for code files changed since REF, and the commit subjects in between, and writes nothing. --propose TEXT prints one requirement draft for a person to confirm, and writes nothing.",
       "arg": null,
       "flags": [
         {
@@ -2559,40 +2564,36 @@
           "help": "Hard-reset: delete all non-generated requirements and strip membership tags from source files before re-extracting."
         },
         {
+          "flag": "--minimal",
+          "help": "Skip planning, release, MCP and site scaffolding."
+        },
+        {
           "flag": "--no-site",
           "help": "Skip the final site step (scaffolding docs/architecture.html)."
-        }
-      ]
-    },
-    {
-      "name": "new",
-      "group": "author",
-      "summary": "Scaffold a new blank requirement from the built-in template. Use --from-todo and --id together to pre-fill from a TODO.md item instead.",
-      "arg": "AREA-NAME-NNN",
-      "flags": [
-        {
-          "flag": "--id",
-          "help": "Requirement ID in AREA-NAME-NNN format (e.g. AUTH-LOGIN-001). Required when using --from-todo."
         },
         {
-          "flag": "--from-todo",
-          "help": "Scaffold the requirement from a TODO.md item matched by this name (use with --id; add --mark-done to flip the item to [x])."
+          "flag": "--watch",
+          "help": "Print draft suggestions for code files changed since this git ref, and the commit subjects in between. Writes nothing and exits 0."
         },
         {
-          "flag": "--mark-done",
-          "help": "Also flip the matched TODO.md item to [x] (off by default). Only used with --from-todo."
+          "flag": "--propose",
+          "help": "Print one requirement draft from this description. status stays draft. Writes nothing."
+        },
+        {
+          "flag": "--propose-files",
+          "help": "With --propose: comma-separated paths the draft is about."
         }
       ]
     },
     {
       "name": "gate",
       "group": "read",
-      "summary": "The commit/CI verdict, and every read-only question you can ask the corpus. Bare, it verifies that every code tag resolves to a real requirement, that every confirmed requirement has at least one implements: member, and that drift has not been introduced since the last sync, then checks requirement readability and map freshness. Exits non-zero on link-sync errors only. Never writes anything. The mode flags answer one question each instead of running the verdict: --audit for the whole problem report, --risk for what to do next, --show for one requirement's dossier, --search to rank by relevance, --dupes for overlapping contracts, --design for the code review, --review for the machine-readable review plan.",
+      "summary": "The commit/CI verdict. Bare, it verifies that every code tag resolves to a real requirement, that every confirmed requirement has at least one implements: member, and that drift has not been introduced since the last sync, then checks requirement readability and map freshness. Exits non-zero on link-sync errors only. Never writes anything. Three mode flags report on the verdict's own subject instead of running it: --audit for the whole problem report, --risk for what to do next, --show for one requirement's dossier. Every other question is `ask`.",
       "arg": null,
       "flags": [
         {
           "flag": "--audit",
-          "help": "Print every pass that discovers a problem as one report: the gate, corpus risk, duplicate contracts, design signals and tag coverage. The exit code still comes from the gate alone."
+          "help": "Print every pass that discovers a problem as one report: the gate, corpus risk, duplicate contracts and tag coverage. The exit code still comes from the gate alone."
         },
         {
           "flag": "--risk",
@@ -2603,28 +2604,8 @@
           "help": "Print one requirement's dossier: intent, contract, dependencies both ways, code members with file:line, open questions and risk signals."
         },
         {
-          "flag": "--search",
-          "help": "Rank requirements by lexical relevance to a free-text query."
-        },
-        {
-          "flag": "--dupes",
-          "help": "Rank requirement pairs whose contracts overlap, most similar first."
-        },
-        {
-          "flag": "--design",
-          "help": "Print the advisory design review of the code. Never part of the verdict."
-        },
-        {
-          "flag": "--review",
-          "help": "Emit the deterministic review plan for one requirement, as JSON."
-        },
-        {
           "flag": "--all",
           "help": "With --risk: expand every bucket instead of the top few."
-        },
-        {
-          "flag": "--i18n",
-          "help": "List the translations the configured LANGUAGE (en | ro | both, in requirements/_config.json) expects and does not have, missing or stale. --json emits each entry's source fields and cache key for whoever translates."
         },
         {
           "flag": "--untagged",
@@ -2633,14 +2614,6 @@
         {
           "flag": "--badge",
           "help": "With --risk: print the coherence score as a badge string."
-        },
-        {
-          "flag": "--threshold",
-          "help": "With --dupes: override the similarity threshold."
-        },
-        {
-          "flag": "--top",
-          "help": "With --search or --dupes: how many results to print."
         },
         {
           "flag": "--strict",
@@ -2653,6 +2626,70 @@
         {
           "flag": "--since",
           "help": "Scope the gate to requirements whose member files changed since this git ref (e.g. 'main', 'HEAD~1')."
+        },
+        {
+          "flag": "--no-lint",
+          "help": "Skip the requirement readability check."
+        },
+        {
+          "flag": "--no-map-check",
+          "help": "Skip the committed-map freshness check."
+        },
+        {
+          "flag": "--full",
+          "help": "Run every gate rule and print every readability warning. Bare, the gate runs only the rules that say a link, the drift baseline or the committed map is broken, and prints readability errors only."
+        }
+      ]
+    },
+    {
+      "name": "ask",
+      "group": "read",
+      "summary": "Ask the corpus a question without running the verdict. Read-only, never writes, and its exit code is the question's, never the gate's: --search ranks requirements by relevance, --dupes ranks overlapping contracts, --design reviews the code against the OOP pillars, --review emits the machine-readable review plan, --bugs lists the known bugs by module. Exactly one mode per call. Since v8.0.0, `gate` refuses these flags and names `ask`.",
+      "arg": null,
+      "flags": [
+        {
+          "flag": "--search",
+          "help": "Rank requirements by lexical relevance to a free-text query."
+        },
+        {
+          "flag": "--dupes",
+          "help": "Rank requirement pairs whose contracts overlap, most similar first."
+        },
+        {
+          "flag": "--design",
+          "help": "Advisory design review of the code: encapsulation, abstraction, inheritance and polymorphism candidates plus file length and line width, grouped by pillar. Read-only, exit 0, never the gate."
+        },
+        {
+          "flag": "--review",
+          "help": "Emit the deterministic review plan as JSON: for one requirement, or with no id for the whole corpus."
+        },
+        {
+          "flag": "--bugs",
+          "help": "List the known bugs by module, highest priority first: `requirements/bugs/*.md` and any file `BUG_SOURCES` names. Takes --module and --prio."
+        },
+        {
+          "flag": "--module",
+          "help": "With --bugs: only modules whose name contains this, ignoring case, diacritics and punctuation."
+        },
+        {
+          "flag": "--prio",
+          "help": "With --bugs: only these priorities, as P1 or P0,P1."
+        },
+        {
+          "flag": "--i18n",
+          "help": "Removed in v8.2.0 (ADR-0047): accepted and ignored, refused from v9.0.0."
+        },
+        {
+          "flag": "--top",
+          "help": "With --search or --dupes: how many results to print."
+        },
+        {
+          "flag": "--threshold",
+          "help": "With --dupes: override the similarity threshold."
+        },
+        {
+          "flag": "--json",
+          "help": "Emit structured JSON output instead of human-readable text."
         }
       ]
     },
@@ -2667,12 +2704,16 @@
           "help": "Take these requirements out of service instead of confirming them. Accepts one id or many; a batch retires in an order computed from the graph, under one working-tree check. Prints the blast radius; writes nothing without --apply."
         },
         {
+          "flag": "--release",
+          "help": "Cut a release instead of syncing: the next version planned in _planning.json above what is already declared, or the vX.Y.Z named here. Prints the plan - version files to bump, the CHANGELOG entry, the milestone the plan drops - and writes nothing without --apply. With --json it also reports the declared version, whether its tag exists and its notes, which is what a release workflow reads."
+        },
+        {
           "flag": "--delete",
           "help": "With --retire: also remove the block, its lock entries and its membership tags. Never a function body."
         },
         {
           "flag": "--apply",
-          "help": "With --retire: actually write the change. Without it, the run is a dry report."
+          "help": "With --retire or --release: actually write the change. Without it, the run is a dry report."
         },
         {
           "flag": "--force",
@@ -2683,24 +2724,92 @@
           "help": "Also regenerate the aggregated open-questions file."
         },
         {
+          "flag": "--attach",
+          "help": "HTML page to refresh the site's engine-owned regions in (scaffolds it if absent). Without it, `sync` refreshes docs/architecture.html when that exists."
+        },
+        {
           "flag": "--accept-drift",
           "help": "Explicitly advance the baseline when a confirmed or implemented contract changed. Required when those contracts differ from the lock; sync exits non-zero without it. Takes an optional reason, recorded in requirements/_driftlog.json so the waiver and its justification land in the diff."
         },
         {
           "flag": "--strict",
           "help": "Promote drift and test-link integrity from warn to error."
+        },
+        {
+          "flag": "--json",
+          "help": "With --retire or --release: emit the plan as JSON."
+        },
+        {
+          "flag": "--audit-plan",
+          "help": "Write an audit plan to requirements/_audit.json instead of syncing: a ranked set and a seeded random set of confirmed requirements, and the decision bands. Written once; an existing file is never replaced (ADR-0076)."
+        },
+        {
+          "flag": "--ranked",
+          "help": "With --audit-plan: how many requirements to rank by risk (default 25)."
+        },
+        {
+          "flag": "--random",
+          "help": "With --audit-plan: how many to draw at random from the rest (default 25)."
+        },
+        {
+          "flag": "--seed",
+          "help": "With --audit-plan: the seed of the random draw (default: today as YYYYMMDD)."
+        },
+        {
+          "flag": "--bug",
+          "help": "Add one bug to the module's file under `requirements/bugs/` instead of syncing, creating the file if needed. Needs --module; a title the module already holds needs --force. Run `sync` after it to show the bug on the map."
+        },
+        {
+          "flag": "--module",
+          "help": "With --bug: the module the bug belongs to, which names its file."
+        },
+        {
+          "flag": "--prio",
+          "help": "With --bug: P0 critical, P1 high, P2 medium (the default), P3 low or P4 minor; `*` after it marks an estimate no person has confirmed."
+        },
+        {
+          "flag": "--date",
+          "help": "With --bug: the day it was found, YYYY-MM-DD (default: today)."
+        },
+        {
+          "flag": "--where",
+          "help": "With --bug: where it is, usually `file:line`."
+        },
+        {
+          "flag": "--why",
+          "help": "With --bug: why it matters."
+        },
+        {
+          "flag": "--source",
+          "help": "With --bug: where the report came from."
+        },
+        {
+          "flag": "--fix",
+          "help": "Close one bug instead of syncing: move its row to the register, `requirements/bugs/_fixed.md`, as `FILE:REF` or `FILE REF`. A plain `sync` does the same for every `Fixes-bug: ID` trailer in the commit history."
+        },
+        {
+          "flag": "--commit",
+          "help": "With --fix: the commit that fixed it (default: HEAD)."
+        },
+        {
+          "flag": "--version",
+          "help": "With --fix: the version that fixed it (default: the repository's version file, when it has one)."
+        },
+        {
+          "flag": "--note",
+          "help": "With --fix: close without a fix, and say why."
         }
       ]
     },
     {
       "name": "clarify",
       "group": "author",
-      "summary": "Ask what a requirement has not answered yet: vague terms with no threshold, numbers with no unit, unbounded quantities, clauses with no case, a missing failure path. Read-only, always exit 0, never a gate rule. --decompose is the write half of the same question: it splits a requirement into code-rung children along the bold group labels in its Description (--apply writes), or scaffolds one draft per over-long clause when it has none. Run it before implementing, so the ambiguity is resolved in the requirement instead of guessed in code.",
+      "summary": "Ask what a requirement has not answered yet: vague terms with no threshold, numbers with no unit, clauses with no case, a missing failure path. Read-only, always exit 0, never a gate rule. --decompose is the write half of the same question: it splits a requirement into code-rung children along the bold group labels in its Description (--apply writes), or scaffolds one draft per over-long clause when it has none. Run it before implementing, so the ambiguity is resolved in the requirement instead of guessed in code.",
       "arg": "AREA-NAME-NNN",
       "flags": [
         {
           "flag": "--decompose",
-          "help": "Split a requirement into code-rung children along the bold group labels its author wrote in the Description; --apply writes them and rewrites the parent. With no id, every requirement carrying groups. A requirement with no groups falls back to one draft per over-long clause."
+          "help": "Split a requirement into code-rung children along the bold group labels its author wrote in the Description; --apply writes them and never edits the parent. With no id, every requirement carrying groups. A requirement with no groups falls back to one draft per over-long clause."
         },
         {
           "flag": "--levels",
@@ -2709,39 +2818,38 @@
         {
           "flag": "--json",
           "help": "Emit the questions as JSON for an agent to answer."
+        },
+        {
+          "flag": "--apply",
+          "help": "With --decompose or --levels: write the proposal instead of printing it."
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "group": "read",
+      "summary": "Serve this repository's requirements to an AI assistant over the Model Context Protocol (stdio). Each tool is one reqmap invocation in a fresh process. Read-only unless --allow-writes.",
+      "arg": null,
+      "flags": [
+        {
+          "flag": "--allow-writes",
+          "help": "Also offer the tools that write: sync and release."
         }
       ]
     }
   ],
   "design": {
     "files": 31,
-    "clean_files": 22,
-    "score": 71,
+    "clean_files": 26,
+    "score": 84,
     "candidates": {
       "encapsulation": 5,
       "abstraction": 2,
       "inheritance": 0,
       "polymorphism": 0,
-      "metrics": 2,
-      "standards": 5
+      "standards": 2
     },
     "findings": [
-      {
-        "pillar": "metrics",
-        "kind": "high-response",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py",
-        "line": 58,
-        "name": "ArrangeMixin",
-        "detail": "`ArrangeMixin` reaches 53 methods (over 50): 12 of its own plus 41 it calls"
-      },
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py",
-        "line": 136,
-        "name": "cli.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 136"
-      },
       {
         "pillar": "encapsulation",
         "kind": "data-clump",
@@ -2775,22 +2883,6 @@
         "detail": "`scene_from_dbt` takes 9 parameters (over 6)"
       },
       {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py",
-        "line": 20,
-        "name": "mapping.py",
-        "detail": "9 line(s) wider than 100 columns, first at line 20"
-      },
-      {
-        "pillar": "standards",
-        "kind": "line-too-long",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py",
-        "line": 20,
-        "name": "miniyaml.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 20"
-      },
-      {
         "pillar": "abstraction",
         "kind": "deep-nesting",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py",
@@ -2807,14 +2899,6 @@
         "detail": "`map` nests 5 levels deep (over 4)"
       },
       {
-        "pillar": "metrics",
-        "kind": "high-response",
-        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py",
-        "line": 166,
-        "name": "_PackRun",
-        "detail": "`_PackRun` reaches 57 methods (over 50): 13 of its own plus 44 it calls"
-      },
-      {
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py",
@@ -2828,7 +2912,7 @@
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py",
         "line": 54,
         "name": "spec.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 54"
+        "detail": "1 line(s) wider than 120 columns, first at line 54"
       },
       {
         "pillar": "standards",
@@ -2836,13 +2920,12 @@
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py",
         "line": 186,
         "name": "viewer.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 186"
+        "detail": "1 line(s) wider than 120 columns, first at line 186"
       }
     ],
     "advice": {
       "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
       "deep-nesting": "nesting this deep hides the main path: return early, or extract the inner block",
-      "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them",
       "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them",
       "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together"
     }
@@ -2850,7 +2933,10 @@
   "health": {
     "score": 100,
     "total": 36,
+    "scored": 36,
     "healthy": 36,
+    "exempt": 0,
+    "deprecated": 0,
     "confirmed": 36,
     "implemented": 35,
     "tested": 35,
@@ -2860,6 +2946,8 @@
     "open_intent": 0,
     "drift": 0,
     "gate_errors": 0,
-    "gate_link_sync_clean": true
+    "gate_link_sync_clean": true,
+    "unhealthy": [],
+    "exempt_ids": []
   }
 }
