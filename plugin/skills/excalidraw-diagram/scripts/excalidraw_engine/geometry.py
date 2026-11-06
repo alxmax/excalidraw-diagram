@@ -92,16 +92,20 @@ def fit_text(text, *, size=14, max_chars=20, min_size=(120, 48)):
     """Word-wrap `text` to <=max_chars per line and return (wrapped, w, h) sized
     so the text never overflows its box. Use it for a box whose label length is
     not known in advance. The width margin is wider than text_extent's factor,
-    so a box sized here always clears check_text_overflow()."""
-    words, lines, cur = text.split(), [], ""
-    for w in words:
-        if not cur or len(cur) + 1 + len(w) <= max_chars:
-            cur = (cur + " " + w).strip()
-        else:
+    so a box sized here always clears check_text_overflow(). A newline in `text` is a
+    line break the caller chose: each line is wrapped on its own and never joined to
+    the next."""
+    lines = []
+    for paragraph in text.split("\n"):
+        cur = ""
+        for w in paragraph.split():
+            if not cur or len(cur) + 1 + len(w) <= max_chars:
+                cur = (cur + " " + w).strip()
+            else:
+                lines.append(cur)
+                cur = w
+        if cur:
             lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
     longest = max((len(ln) for ln in lines), default=1)
     width = max(min_size[0], int(longest * size * 0.6) + 24)
     height = max(min_size[1], int(len(lines) * size * 1.6) + 18)

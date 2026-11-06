@@ -168,9 +168,18 @@ table holding the key to the table it references). It builds the same graph desc
   `grain` (a fact without a primary key), `surrogate-key` (a dimension keyed by a source
   id), `scd2` (changing attributes with no `valid_from` / `valid_to`), `orphan-fk` (a key
   to a missing table or column), `snowflake` (a dimension normalised into sub-dimensions).
-- **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `classify_tables(tables)`,
-  `review_tables(tables, roles)`, `graph_from_tables(tables)` and `scene_from_ddl(path,
-  out_dir)`. Output is byte-stable: one schema, one pair of files.
+- **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
+  order the DDL declares them. Off by default; it makes every node taller.
+- **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
+  dimension, bridge, unknown), `#` comments and optional quotes; the plugin carries no
+  YAML parser, so anything richer is an error naming the line. The table gets the role at
+  confidence 1, labelled `set by you`, and the glossary keeps what the rules had said. The
+  review rules use the new role. A table the schema does not define is an error.
+- **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `parse_roles(text)`,
+  `classify_tables(tables, overrides=None)`, `review_tables(tables, roles)`,
+  `graph_from_tables(tables, columns=False, overrides=None)` and `scene_from_ddl(path,
+  out_dir, columns=False, roles_path=None)`. Output is byte-stable: one schema, one pair of
+  files.
 - **Limits:** the roles and the `scd2` rule are heuristics on names and structure, and
   the diagram lays the fact in one column with its dimensions beside it, not around it.
 
@@ -209,7 +218,7 @@ table holding the key to the table it references). It builds the same graph desc
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
 | `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption |
 | `s.save(basename, out_dir=".", gates=None, offline=None, svg=False) → (excalidraw, html[, svg])` | runs the gates and writes both files, once; `svg=True` also writes `<basename>.svg` and returns it third |
-| `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow |
+| `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow; a `\n` in `text` is kept as a line break |
 
 **Gates.** `Gates(advisory="warn", hard="error", **per_gate)` sets each gate to
 `"error"` (raise), `"warn"` (print to stderr) or `"off"`. The hard gates are

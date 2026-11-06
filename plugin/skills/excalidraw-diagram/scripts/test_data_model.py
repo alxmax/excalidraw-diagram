@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -22,6 +22,7 @@ from excalidraw_engine.data_model import (  # noqa: E402
     graph_from_tables, scene_from_ddl, unresolved_fks)
 from excalidraw_engine.ddl import parse_ddl  # noqa: E402
 from excalidraw_engine.review import review_tables  # noqa: E402
+from excalidraw_engine.roles import parse_roles  # noqa: E402
 
 
 def _read(name):
@@ -345,6 +346,114 @@ class TestCli(unittest.TestCase):
     def test_data_model_without_input_is_a_usage_error(self):  # verifies: REQ-DATAMODEL-901#CASE-3
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cli.main(["data-model"]), 2)
+
+
+ROLES_FILE = os.path.join(DATA, "shop_demo.roles.yml")
+
+
+def _node(spec, table):
+    return next(n for n in spec["nodes"] if n["id"] == table)
+
+
+class TestColumns(unittest.TestCase):
+    """REQ-DATAMODEL-905: --columns lists each table's columns, off by default."""
+
+    def test_columns_are_off_by_default(self):  # verifies: REQ-DATAMODEL-905#CASE-1
+        spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
+        self.assertEqual(_node(spec, "dim_date")["label"].split("\n"),
+                         ["dim_date", "dimension · 100%"])
+
+    def test_columns_listed_in_order_with_key_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
+        spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")), columns=True)
+        self.assertEqual(_node(spec, "fact_order_line")["label"].split("\n")[2:],
+                         ["PK order_line_key", "FK date_key", "FK customer_key",
+                          "FK product_id", "quantity", "unit_price", "line_amount"])
+
+    def test_a_key_that_is_both_primary_and_foreign_carries_both_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
+        spec = graph_from_tables(parse_ddl(
+            "CREATE TABLE p (k int PRIMARY KEY);"
+            "CREATE TABLE c (k int PRIMARY KEY REFERENCES p (k), v text);"), columns=True)
+        self.assertIn("PK FK k", _node(spec, "c")["label"].split("\n"))
+
+    def test_columns_flag_renders_through_every_gate(self):  # verifies: REQ-DATAMODEL-905#CASE-3
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            code = cli.main(["data-model", "--from-ddl", os.path.join(DATA, "shop_demo.sql"),
+                             "--columns", "-o", out])
+            self.assertEqual(code, 0)
+            with open(os.path.join(out, "shop_demo.excalidraw"), encoding="utf-8") as fh:
+                texts = [e["text"] for e in json.load(fh)["elements"] if e["type"] == "text"]
+        self.assertTrue(any("PK order_line_key" in t.split("\n") for t in texts))
+
+
+class TestRoles(unittest.TestCase):
+    """REQ-DATAMODEL-906: a roles file overrides the classifier, and says so."""
+
+    def test_flat_lines_comments_and_quotes_are_read(self):  # verifies: REQ-DATAMODEL-906#CASE-1
+        got = parse_roles('# note\na: fact\n"b c": Dimension   # trailing\n\n\'d\': bridge\n')
+        self.assertEqual(got, {"a": "fact", "b c": "dimension", "d": "bridge"})
+
+    def test_anything_richer_or_wrong_names_the_line(self):  # verifies: REQ-DATAMODEL-906#CASE-2
+        for text, msg in (("a: fact\nb:\n  c: dimension\n", "line 2"),
+                          ("a: fact\n- b\n", "line 2"),
+                          ("a: hub\n", "line 1.*not a role"),
+                          ("a: fact\na: dimension\n", "line 2.*twice")):
+            with self.assertRaisesRegex(ValueError, msg):
+                parse_roles(text)
+
+    def test_override_replaces_the_role_and_keeps_what_the_rules_said(self):  # verifies: REQ-DATAMODEL-906#CASE-3
+        got = classify_tables(parse_ddl(_read("shop_demo.sql")),
+                              {"stg_payments": "fact"})["stg_payments"]
+        self.assertEqual((got.role, got.confidence, got.overridden), ("fact", 1.0, True))
+        self.assertIn("rules had said unknown", got.reason)
+
+    def test_tables_not_named_keep_the_rules_answer(self):  # verifies: REQ-DATAMODEL-906#CASE-3
+        got = classify_tables(parse_ddl(_read("shop_demo.sql")), {"stg_payments": "fact"})
+        self.assertFalse(got["dim_date"].overridden)
+        self.assertEqual(got["dim_date"].role, "dimension")
+
+    def test_a_table_the_schema_lacks_is_an_error(self):  # verifies: REQ-DATAMODEL-906#CASE-4
+        with self.assertRaisesRegex(ValueError, "ghost.*does not define"):
+            classify_tables(parse_ddl(_read("shop_demo.sql")), {"ghost": "fact"})
+
+    def test_the_override_feeds_the_review_and_the_label(self):  # verifies: REQ-DATAMODEL-906#CASE-5
+        tables = parse_ddl(_read("shop_demo.sql"))
+        before = [(i.table, i.rule) for i in review_tables(tables, classify_tables(tables))]
+        self.assertIn(("dim_product", "surrogate-key"), before)
+        spec = graph_from_tables(tables, overrides={"dim_product": "unknown"})
+        self.assertNotIn("surrogate-key", " ".join(n["label"] for n in spec["nodes"]))
+        self.assertIn("unknown · set by you", _node(spec, "dim_product")["label"])
+
+    def test_roles_file_errors_name_the_roles_file(self):  # verifies: REQ-DATAMODEL-906#CASE-6
+        with tempfile.TemporaryDirectory() as d:
+            for text, msg in (("a: hub\n", "line 1"), ("ghost: fact\n", "ghost")):
+                path = os.path.join(d, "r.yml")
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(text)
+                with self.assertRaisesRegex(ValueError, "r.yml.*" + msg):
+                    scene_from_ddl(os.path.join(DATA, "shop_demo.sql"), d, roles_path=path)
+
+    def test_roles_flag_renders_and_marks_the_override(self):  # verifies: REQ-DATAMODEL-906#CASE-6
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            code = cli.main(["data-model", "--from-ddl", os.path.join(DATA, "shop_demo.sql"),
+                             "--roles", ROLES_FILE, "-o", out])
+            self.assertEqual(code, 0)
+            with open(os.path.join(out, "shop_demo.excalidraw"), encoding="utf-8") as fh:
+                texts = [e["text"] for e in json.load(fh)["elements"] if e["type"] == "text"]
+        self.assertTrue(any("fact · set by you" in t for t in texts))
+
+
+class TestFitTextKeepsLines(unittest.TestCase):
+    """A newline in a label is a line break the author chose, not a space."""
+
+    def test_each_line_is_wrapped_on_its_own(self):
+        from excalidraw_engine.geometry import fit_text
+        text, _, _ = fit_text("name\nrole · 100%\nPK key\nFK other_key", max_chars=40)
+        self.assertEqual(text.split("\n"), ["name", "role · 100%", "PK key", "FK other_key"])
+
+    def test_text_without_newlines_wraps_as_before(self):
+        from excalidraw_engine.geometry import fit_text
+        text, _, _ = fit_text("one two three four five six", max_chars=10)
+        self.assertEqual(text.split("\n"), ["one two", "three four", "five six"])
 
 
 class TestCapability(unittest.TestCase):

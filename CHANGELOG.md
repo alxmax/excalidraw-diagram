@@ -1,5 +1,18 @@
 # Changelog
 
+## plugin `v2.9.0` — 2026-11-06
+
+**`data-model --columns` and `--roles`.** `--columns` lists each table's columns under its
+name, `PK` / `FK` marked. `--roles roles.yml` corrects the classifier with flat
+`table: role` lines; the table is drawn `set by you`, the review rules use the new role,
+and a table the schema does not define is an error. The file is a small YAML subset, since
+the plugin carries no YAML parser; anything richer is refused with the line number.
+
+**A label's line breaks are kept.** `fit_text()`, and so every `pack()` and `pipeline()`
+node, joined a label's lines into one run and re-wrapped it, so a label written as
+several lines came out as one jumbled paragraph. Each line is now wrapped on its own;
+a label without a newline is wrapped exactly as before.
+
 ## plugin `v2.8.0` — 2026-11-06
 
 **Draw and review a data model from its SQL.** `data-model --from-ddl schema.sql -o out/`

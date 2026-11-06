@@ -15,7 +15,9 @@
         "The graph builder turns those records into the graph description that `scene --from-json` takes, so layout and gates stay unchanged. [[REQ-DATAMODEL-901]]",
         "The classifier gives each table a role, a confidence and a written reason from names and structure alone. [[REQ-DATAMODEL-902]]",
         "The review runs five rules over the classified tables. [[REQ-DATAMODEL-903]]",
-        "Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]"
+        "Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]",
+        "A table can list its columns on request. [[REQ-DATAMODEL-905]]",
+        "A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]"
       ],
       "verify": [],
       "notes": [
@@ -50,7 +52,9 @@
         "REQ-DATAMODEL-901",
         "REQ-DATAMODEL-902",
         "REQ-DATAMODEL-903",
-        "REQ-DATAMODEL-904"
+        "REQ-DATAMODEL-904",
+        "REQ-DATAMODEL-905",
+        "REQ-DATAMODEL-906"
       ],
       "members": [
         {
@@ -741,7 +745,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:126"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:131"
         },
         {
           "role": "implements",
@@ -1493,11 +1497,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:39"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:43"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:101"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:124"
         }
       ],
       "test_exempt": null,
@@ -1557,7 +1561,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:103"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:109"
         }
       ],
       "test_exempt": null,
@@ -1671,7 +1675,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:40"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:44"
         }
       ],
       "test_exempt": null,
@@ -1680,6 +1684,126 @@
       "risks": [],
       "clauses": 3,
       "covered": 3
+    },
+    {
+      "id": "REQ-DATAMODEL-905",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Columns inside the table nodes, on request",
+      "intent": "A table drawn as a name hides what a modeller most wants to check: which column is the key, which ones point elsewhere, which ones are measures. Listing the columns answers that, but it makes every node taller, so it is off until asked for.",
+      "contract": [
+        "`graph_from_tables(tables, columns=True)` lists every column of a table under its name and role badge, in the order the DDL declares them.",
+        "A primary-key column is prefixed `PK`, a foreign-key column `FK`, and a column that is both is prefixed `PK FK`.",
+        "Without `columns`, a node holds only the table name and its role badge.",
+        "The `data-model` command takes `--columns` and passes it through to the same graph builder."
+      ],
+      "verify": [],
+      "notes": [
+        "A column line is the name only, not its type: types would widen every node for a fact the modeller can read in the DDL.",
+        "Node text keeps the line breaks it is given; `fit_text()` wraps each line on its own."
+      ],
+      "current_impl": [
+        "`graph_from_tables()` and `_label()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
+        "`TestColumns` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — off by default Given  the demo schema When   `graph_from_tables()` is called without `columns` Then   each node label is the table name and its role badge, and nothing else",
+        "CASE-2 — — columns in order with key marks Given  a fact table with a primary key, three foreign keys and three measures When   `graph_from_tables(columns=True)` is called Then   its label lists all seven columns in declared order, with `PK` and `FK` where they apply",
+        "CASE-3 — — the flag reaches the drawing Given  the demo schema When   `data-model --from-ddl` is run with `--columns` Then   the scene passes every gate and holds a text element listing `PK order_line_key`"
+      ],
+      "accept": "CASE-1 — off by default\n  Given  the demo schema\n  When   `graph_from_tables()` is called without `columns`\n  Then   each node label is the table name and its role badge, and nothing else\n\nCASE-2 — columns in order with key marks\n  Given  a fact table with a primary key, three foreign keys and three measures\n  When   `graph_from_tables(columns=True)` is called\n  Then   its label lists all seven columns in declared order, with `PK` and `FK` where they apply\n\nCASE-3 — the flag reaches the drawing\n  Given  the demo schema\n  When   `data-model --from-ddl` is run with `--columns`\n  Then   the scene passes every gate and holds a text element listing `PK order_line_key`",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:45"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 3,
+      "covered": 3
+    },
+    {
+      "id": "REQ-DATAMODEL-906",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "A roles file that corrects the classifier",
+      "intent": "The classifier is a heuristic, and on a real schema it will be wrong somewhere. A modeller who knows better needs to say so without editing rules, and the diagram must show that the role was chosen by a person, not found by the rules.",
+      "contract": [
+        "`parse_roles(text)` reads flat `table: role` lines, with `#` comments, blank lines and optional quotes, into a `{table: role}` map.",
+        "`parse_roles()` raises `ValueError` naming the line for anything richer, a role other than fact, dimension, bridge or unknown, or a table listed twice.",
+        "`classify_tables(tables, overrides)` gives each named table the role from the map, confidence 1 and an `overridden` flag, and keeps what the rules had said in the reason.",
+        "`classify_tables()` raises `ValueError` for an override naming a table the schema does not define.",
+        "The review rules and the node badge use the overridden role, and the badge reads `set by you`.",
+        "The `data-model` command takes `--roles <file>`, and an error in that file names the file."
+      ],
+      "verify": [],
+      "notes": [
+        "The file is a YAML subset on purpose: the plugin is stdlib only and carries no YAML parser. Richer YAML is an error, never a guess, because a half-understood config changes a diagram without saying so."
+      ],
+      "current_impl": [
+        "`parse_roles()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`; `classify_tables()` in `classify.py`; the flag in `cli.py`.",
+        "`TestRoles` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — flat lines are read Given  a roles file with comments, a quoted table name, a trailing comment and mixed-case roles When   `parse_roles()` reads it Then   it returns each table with its lower-case role",
+        "CASE-2 — — anything else is refused Given  a nested mapping, a list item, an unknown role and a table listed twice When   `parse_roles()` reads each Then   `ValueError` is raised naming the line that is wrong",
+        "CASE-3 — — the override wins and the history stays Given  a schema and an override setting `stg_payments` to fact When   `classify_tables()` is called with it Then   that table is a fact at confidence 1, flagged overridden, and its reason says the rules had said unknown",
+        "CASE-4 — — a typo is not ignored Given  an override naming a table the schema does not define When   `classify_tables()` is called with it Then   `ValueError` is raised naming that table",
+        "CASE-5 — — the override reaches the review and the label Given  `dim_product` overridden to unknown When   `graph_from_tables()` is called Then   its surrogate-key note is gone and its label reads `unknown · set by you`",
+        "CASE-6 — — the flag works end to end Given  a roles file, and one with a bad role or a missing table When   `data-model --from-ddl` is run with `--roles` Then   the first renders with the override marked, and the others fail naming the roles file"
+      ],
+      "accept": "CASE-1 — flat lines are read\n  Given  a roles file with comments, a quoted table name, a trailing comment and mixed-case roles\n  When   `parse_roles()` reads it\n  Then   it returns each table with its lower-case role\n\nCASE-2 — anything else is refused\n  Given  a nested mapping, a list item, an unknown role and a table listed twice\n  When   `parse_roles()` reads each\n  Then   `ValueError` is raised naming the line that is wrong\n\nCASE-3 — the override wins and the history stays\n  Given  a schema and an override setting `stg_payments` to fact\n  When   `classify_tables()` is called with it\n  Then   that table is a fact at confidence 1, flagged overridden, and its reason says the rules had said unknown\n\nCASE-4 — a typo is not ignored\n  Given  an override naming a table the schema does not define\n  When   `classify_tables()` is called with it\n  Then   `ValueError` is raised naming that table\n\nCASE-5 — the override reaches the review and the label\n  Given  `dim_product` overridden to unknown\n  When   `graph_from_tables()` is called\n  Then   its surrogate-key note is gone and its label reads `unknown · set by you`\n\nCASE-6 — the flag works end to end\n  Given  a roles file, and one with a bad role or a missing table\n  When   `data-model --from-ddl` is run with `--roles`\n  Then   the first renders with the override marked, and the others fail naming the roles file",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:110"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py:33"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -1921,6 +2045,14 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-905",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-906",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ]
@@ -1965,14 +2097,15 @@
     },
     {
       "month": "2026-11",
-      "count": 1,
+      "count": 2,
       "first": "2026-11-06",
       "last": "2026-11-06",
       "versions": [
-        "v2.8.0"
+        "v2.8.0",
+        "v2.9.0"
       ],
-      "landmark": "v2.8.0",
-      "headline": "Draw and review a data model from its SQL"
+      "landmark": "v2.9.0",
+      "headline": "`data-model --columns` and `--roles`"
     }
   ],
   "commands": [
@@ -2154,11 +2287,11 @@
     }
   ],
   "design": {
-    "files": 26,
+    "files": 27,
     "clean_files": 20,
-    "score": 77,
+    "score": 74,
     "candidates": {
-      "encapsulation": 1,
+      "encapsulation": 2,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
@@ -2178,9 +2311,17 @@
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py",
-        "line": 120,
+        "line": 125,
         "name": "cli.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 120"
+        "detail": "1 line(s) wider than 100 columns, first at line 125"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "long-parameter-list",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
+        "line": 115,
+        "name": "scene_from_ddl",
+        "detail": "`scene_from_ddl` takes 7 parameters (over 6)"
       },
       {
         "pillar": "metrics",
@@ -2218,16 +2359,17 @@
     "advice": {
       "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
       "high-response": "a class that reaches this many distinct methods is hard to test alone, because its collaborators are part of its interface: narrow them",
-      "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them"
+      "line-too-long": "lines wider than the limit hide their tail in every diff and side-by-side view: wrap them",
+      "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together"
     }
   },
   "health": {
     "score": 100,
-    "total": 28,
-    "healthy": 28,
-    "confirmed": 28,
-    "implemented": 27,
-    "tested": 27,
+    "total": 30,
+    "healthy": 30,
+    "confirmed": 30,
+    "implemented": 29,
+    "tested": 29,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

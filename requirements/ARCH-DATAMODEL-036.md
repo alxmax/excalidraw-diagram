@@ -23,6 +23,8 @@ Every bullet below is binding.
 - The classifier gives each table a role, a confidence and a written reason from names and structure alone. [[REQ-DATAMODEL-902]]
 - The review runs five rules over the classified tables. [[REQ-DATAMODEL-903]]
 - Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]
+- A table can list its columns on request. [[REQ-DATAMODEL-905]]
+- A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]
 
 ## Cases
 CASE-1

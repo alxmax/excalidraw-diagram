@@ -2,7 +2,7 @@
   "_schema": 2,
   "members": {
     "ARCH-DATAMODEL-036": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "bc5abcac7ed95b58b3bee47221b08096b984769eeb6e628cb50bdd3298072941"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "d342f74e0dc8e95b23bc62c0e8767d62e2a29454f88239db2838889b53fec226"
     },
     "ARCH-EXCALIDRAW-030": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
@@ -14,13 +14,13 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py#parse_ddl": "3d0456a69c7b135cac1f3f12bbba7693a7befb259ecdca5cb0e4a12224a3809f"
     },
     "REQ-DATAMODEL-901": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "091f64e36ce1b581e10a979f19d540d6fd30c49d89145e82f844d588c3c99f80"
-    },
-    "REQ-DATAMODEL-902": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py#classify_tables": "787dd61cd972c2df52829b7d502b9bacce2e6cd2a89f2bba6afacf096c4ef13a"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "7806b1f6c328f80ec893ffecb74c5d4fa5817c03db9ec564c65fa0851e833ca7"
     },
     "REQ-DATAMODEL-903": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#review_tables": "a08fd08a0a0a9e87d7d314a353e2f3b34e935f661fb4ef6cb729f61f460b9bb2"
+    },
+    "REQ-DATAMODEL-906": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py#parse_roles": "78767f4d89d0c3dba61bff34b02b99786823561b66cba82105bdc0a543fbe1db"
     },
     "REQ-EXCALIDRAW-844": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",
