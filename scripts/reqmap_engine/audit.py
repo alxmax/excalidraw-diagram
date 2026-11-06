@@ -1,216 +1,84 @@
 """`gate --audit`: the corpus-shape report."""
-import contextlib, io, json
+import contextlib, io, json, os
 
 from . import MAP_ENGINE_VERSION, config as cfg
-from .design_report import _design_summary, cmd_design
+from .audittail import _roadmap_lag_lines, _version_lines
 from .gate import cmd_check, run_gate_rules
-from .groups import _contract_groups
-from .health import _health_record, cmd_coverage
-from .i18n import _translation_gaps
-from .lint import lint_requirement
-from .lintrules import LINT_STATUSES, LINT_STRICT_PROMOTE
-from .mapdata import (
-    _read_roadmap, _roadmap_behind, _roadmap_plan_problems, _roadmap_signals
-)
-from .plandrift import plan_drift, plan_drift_lines
-from .model import _as_list
+from .health import _exempt_note, _health_record, cmd_coverage
+from .mapdata import _read_roadmap
+from .plandrift import plan_drift, plan_drift_lines, version_bar_lines
 from .orphans import _scan_untagged
-from .relevel import relevel_residue_lines
 from .risk import cmd_next
-from .similar import _corpus_shape, _exemptions_in_force, _redundant_groups, cmd_similar
+from .similar import (
+    _corpus_shape, _exemptions_in_force, _redundant_groups, cmd_similar
+)
+from .targets import load_targets
 from .workspace import GateContext
+
+
+def _session(reqs_dir):
+    # implements: REQ-AUDITRUN-1107
+    """The audit session's report, or None when no session is open. Loaded
+    only when `_audit.json` exists."""
+    if not reqs_dir or not os.path.isfile(os.path.join(reqs_dir, "_audit.json")):
+        return None
+    from .auditrun import session_report
+    return session_report(reqs_dir)
 
 
 # ---------- health (corpus coherence snapshot) ----------
 def _audit_section(title, remedy, fn, fail_rc=0):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
-    """Run one discovery pass with its output captured, so the summary can be printed
-    before the detail it summarises. Returns (title, remedy, text, rc).
-
-    A crashing section is swallowed because advice must not fail a build — but the Gate
-    section is not advice, it IS the exit code, and swallowing its crash to rc 0 printed
-    `Gate  clean` for a run that never reached a verdict. `fail_rc` is how a section says
-    what its own failure means; only the gate passes 1."""
+    """Run one discovery pass with its output captured, so the summary can be
+    printed before the detail it summarises. Returns (title, remedy, text, rc).
+    
+    A crashing section is swallowed because advice must not fail a build — but
+    the Gate section is not advice, it IS the exit code, and swallowing its
+    crash to rc 0 printed `Gate  clean` for a run that never reached a verdict.
+    `fail_rc` is how a section says what its own failure means; only the gate
+    passes 1."""
     buf = io.StringIO()
     try:
         with contextlib.redirect_stdout(buf):
             rc = fn()
-    except Exception as e:                      # a section is advice, never a crash
+    except Exception as e:            # a section is advice, never a crash
         return (title, remedy, "  (section failed: {})".format(e), fail_rc)
     return (title, remedy, buf.getvalue().rstrip(), rc or 0)
 
 
-def _exemption_line(reqs):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming exemptions with no reason recorded, or None."""
-    exemptions = _exemptions_in_force(reqs)
-    unexplained = [e for e in exemptions if not e["reason"]]
-    if not unexplained:
-        return None
-    return "{} exemption(s) silence a check with no reason recorded".format(len(unexplained))
-
-
-def _lint_error_line(reqs, members):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming lint ERRORs across the non-draft corpus, or None.
-
-    Readability, reported where it is cheapest to act on. `gate` is what ENFORCES it
-    (and the pre-commit hook runs `gate`), so this changes no exit code — it moves the
-    moment a finding is seen to the one where the author still has the clause in mind.
-
-    Errors only. A style warning is not a reason to break this summary's silence on an
-    otherwise-clean corpus: this repo carries two long-standing ones, so a line keyed on
-    warnings would fire on every sync forever, which is the habit ADR-0016 rejected. An
-    ERROR is a confirmed requirement missing a load-bearing section — worth the line."""
-    lint_errors = lint_warns = 0
-    for rid, r in reqs.items():
-        if r["meta"].get("status") not in LINT_STATUSES:
-            continue
-        for f in lint_requirement(rid, r, members.get(rid)):
-            if f["severity"] == "error" or f["check"] in LINT_STRICT_PROMOTE:
-                lint_errors += 1     # the same promotion `gate` applies (it lints strict)
-            else:
-                lint_warns += 1
-    if not lint_errors:
-        return None
-    return ("readability: {} error(s) across the non-draft corpus ({} warning(s) "
-           "too) - run `reqmap.py gate` for the lines".format(lint_errors, lint_warns))
-
-
-def _level_gap_line(shape):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming requirements with no declared `level:`, or None.
-
-    Reported at ANY ratio, not only under `flat`. `flat` is `levelled * 10 < total`,
-    so a corpus 85% of the way through a retrofit said nothing at all — and a
-    partly-levelled corpus is precisely what a retrofit leaves behind, so the one
-    state this tail could not see was the one it exists to report. The remedy is
-    named here rather than left in `audit`: a signal whose command the reader has to
-    go and find is a signal most readers will not act on."""
-    unlevelled = shape["total"] - shape["levelled"]
-    if not unlevelled:
-        return None
-    return ("{} of {} requirements declare no `level:`{} - "
-           "`reqmap.py clarify --levels` proposes a rung for each and writes "
-           "nothing without --apply".format(
-               unlevelled, shape["total"],
-               " - the corpus is flat" if shape["flat"] else ""))
-
-
-def _decompose_candidates_line(reqs):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming requirements with contract groups and no code children, or None.
-
-    The code rung a tagged corpus could not reach (REQ-DECOMPOSE-994): requirements whose
-    Description already draws the seams — bold group labels — and that have no child
-    satisfying them. Reported here, never written here: `sync` runs inside the consumer's
-    pre-commit hook, and a write that creates files the commit does not contain and
-    drifts confirmed parents is what ADR-0031's "Why not on sync" refuses. The command is
-    named so the fix is one step away from the place the signal appears."""
-    kids = set()
-    for _r in reqs.values():
-        kids.update(_as_list(_r["meta"].get("satisfies")))
-    splittable = [rid for rid, _r in reqs.items()
-                  if rid not in kids and len(_contract_groups(_r["body"])) >= 2]
-    if not splittable:
-        return None
-    return ("{} requirement(s) carry contract groups and no code children - "
-           "`reqmap.py clarify --decompose` plans the split along those groups, "
-           "--apply writes it".format(len(splittable)))
-
-
-def _i18n_gap_line(reqs, reqs_dir):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming requirements with no fresh translation, or None.
-
-    Translation coverage, only when the repo asked for a second language. Under `en`
-    nothing is expected and nothing is said; under `ro`/`both` a requirement with no
-    fresh Romanian entry is a gap, named with the command that hands over the text."""
-    gaps = _translation_gaps(reqs, reqs_dir)
-    if not gaps:
-        return None
-    missing = sum(1 for g in gaps if g["reason"] == "missing")
-    return ("{} requirement(s) have no fresh translation for LANGUAGE `{}` ({} missing, "
-           "{} stale) - `reqmap.py gate --i18n --json` emits the entries to fill"
-           .format(len(gaps), cfg.LANGUAGE, missing, len(gaps) - missing))
-
-
-def _auto_level_line(shape):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming requirements still carrying the engine's proposed level, or None.
-
-    A corpus can be fully levelled and still be nothing but the engine's guesses,
-    in which case every other number here reads as healthy. ADR-0030's revisit
-    trigger is exactly this ratio. Reported beside the line above rather than
-    instead of it: "some rungs are missing" and "some rungs are guesses" are two
-    facts, and a corpus mid-retrofit is usually both."""
-    if not shape.get("auto"):
-        return None
-    return ("{} of {} levelled requirement(s) still carry the rung the engine "
-           "proposed (`level_source: auto`) - rename, merge or accept them"
-           .format(shape["auto"], shape["levelled"]))
-
-
-def _design_candidate_line(code_root, reqs_dir):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming source files that carry a design candidate, or None."""
-    design = _design_summary(code_root, reqs_dir) if code_root else None
-    if design is None or design["clean_files"] >= design["files"]:
-        return None
-    return "design {}/100 - {} of {} source files carry a candidate".format(
-        design["score"], design["files"] - design["clean_files"], design["files"])
-
-
-def _untagged_files_line(code_root, reqs_dir):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """One line naming code files traced to no requirement, or None."""
-    untagged = _scan_untagged(code_root, reqs_dir) if code_root else None
-    if not untagged:
-        return None
-    return "{} code file(s) traced to no requirement".format(len(untagged))
-
-
-def _roadmap_lag_lines(reqs, code_root):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """Zero or more lines describing how TODO.md's roadmap and the requirements
-    disagree about how far along the work is."""
-    lines = _roadmap_plan_problems(code_root, reqs) if code_root else []
-    roadmap = _roadmap_signals(code_root) if code_root else None
-    if not roadmap:
-        return lines
-    behind, newest_req, unmapped = _roadmap_behind(reqs, roadmap)
-    if behind:
-        lines.append("TODO.md stops at {} while the requirements reach {} - the roadmap "
-                     "is behind".format(roadmap["newest_milestone"], newest_req))
-    if unmapped:
-        lines.append("the requirements stop at {} while TODO.md marks work shipped "
-                     "through {} - the roadmap chart ends before the product does"
-                     .format(newest_req, roadmap["newest_shipped"]))
-    if roadmap["unversioned_headings"]:
-        lines.append("{} TODO.md heading(s) are not milestones, so their items never "
-                     "reach the roadmap".format(len(roadmap["unversioned_headings"])))
-    return lines
+def _version_bars(reqs_dir):
+    # implements: ARCH-AUDIT-065  # implements: REQ-PLANVERSIONBAR-1091
+    """The plan's bars that are a version, not work; [] with no plan."""
+    if not reqs_dir:
+        return []
+    return version_bar_lines(load_targets(reqs_dir).get("bars", []))
 
 
 def _print_audit_roadmap(reqs, code_root, reqs_dir=None):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
-    """Print the roadmap-lag block, the audit's third section with no verb of its own.
+    """Print the roadmap-lag block, the audit's third section with no verb
+    of its own.
 
-    These lines existed since REQ-AUDIT-973 but were reachable only from `sync`'s tail,
-    so the report actually NAMED "audit" was structurally blind to them. That matters
-    most for the unversioned-headings line, which does not describe a defect in the
-    corpus: it says the roadmap feature is INERT for this repo, because its headings are
-    not milestones. A consumer reported reading the engine's source to find that out.
+    These lines existed since REQ-AUDIT-973 but were reachable only from
+    `sync`'s tail, so the report actually NAMED "audit" was structurally
+    blind to them. That matters most for the unversioned-headings line,
+    which does not describe a defect in the corpus: it says the roadmap
+    feature is INERT for this repo, because its headings are not
+    milestones. A consumer reported reading the engine's source to find
+    that out.
 
-    Deliberately here and not in the bare `gate`: the commit hook runs `gate` on every
-    commit and ADR-0020 draws that line for corpus-shape signals. `--audit` is a question
-    a reader asks on purpose."""
-    lines = _roadmap_lag_lines(reqs, code_root)
-    # Only here, never in `sync`'s tail: this one walks the tree a second time and shells
-    # to git once per cited file. `--audit` is asked for on purpose; `sync` runs on every
-    # edit and must not grow a second walk.
-    drift = plan_drift(_read_roadmap(code_root) or [], code_root, reqs_dir) if code_root else None
+    Deliberately here and not in the bare `gate`: the commit hook runs
+    `gate` on every commit and ADR-0020 draws that line for corpus-shape
+    signals. `--audit` is a question a reader asks on purpose."""
+    lines = _version_lines(code_root, reqs_dir)
+    lines += _roadmap_lag_lines(reqs, code_root)
+    # Only here, never in `sync`'s tail: this one walks the tree a second time
+    # and shells to git once per cited file. `--audit` is asked for on purpose;
+    # `sync` runs on every edit and must not grow a second walk.
+    drift = (plan_drift(_read_roadmap(code_root) or [], code_root, reqs_dir)
+             if code_root else None)
     lines = lines + (plan_drift_lines(drift) if drift else [])
+    lines += _version_bars(reqs_dir)
     if not lines:
         return
     print("-" * 72)
@@ -224,57 +92,48 @@ def _print_audit_roadmap(reqs, code_root, reqs_dir=None):
             print("    gone: {}  <- {}".format(what, rec["name"][:60]))
         for rec in drift["rederive"][:5]:
             print("    since {}: {}  <- {}".format(
-                rec["since"], ", ".join(f["path"] for f in rec["files"][:2]), rec["name"][:60]))
+                rec["since"],
+                ", ".join(f["path"] for f in rec["files"][:2]),
+                rec["name"][:60]))
     print("")
 
-
-def _audit_summary(reqs, members, reqs_dir, code_root):
-    # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-973
-    """The one-line-per-signal tail `sync` prints: what `audit` would report, without
-    running the passes that cost a second walk of the tree. Silent about anything that
-    is clean, so a healthy repo sees nothing and the lines that do appear are news."""
-    shape = _corpus_shape(reqs)
-    lines = [text for text in (
-        _exemption_line(reqs),
-        _lint_error_line(reqs, members),
-        _level_gap_line(shape),
-        _decompose_candidates_line(reqs),
-        _i18n_gap_line(reqs, reqs_dir),
-        _auto_level_line(shape),
-        _design_candidate_line(code_root, reqs_dir),
-        _untagged_files_line(code_root, reqs_dir),
-    ) if text]
-    lines.extend(_roadmap_lag_lines(reqs, code_root))
-    lines.extend(relevel_residue_lines(reqs))
-    if not lines:
-        return
-    print("")
-    for ln in lines:
-        print("info  {}".format(ln))
-    print("info  run `reqmap.py gate --audit` for the full report")
 
 
 def _json_audit_report(ws, signals, strict):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
     """Build and print the `--json` audit report; return the gate's exit code.
 
-    `signals` bundles the already-computed shape/health/design/untagged/exemptions
-    (and their unexplained subset) `cmd_audit` gathers once for both report forms —
-    an object in place of the parameter list those five separate values would be."""
+    `signals` bundles the already-computed shape/health/design/untagged/
+    exemptions (and their unexplained subset) `cmd_audit` gathers once for
+    both report forms — an object in place of the parameter list those
+    separate values would be."""
     reqs, members = ws.reqs, ws.members
     health, shape = signals["health"], signals["shape"]
     design, untagged = signals["design"], signals["untagged"]
-    out = {"health": health, "shape": shape, "exemptions": signals["exemptions"],
+    out = {"health": health, "shape": shape,
+           "exemptions": signals["exemptions"],
            "redundant_groups": [sorted(g) for g in _redundant_groups(reqs)]}
     if design is not None:
         out["design"] = design
     if untagged is not None:
         out["untagged"] = len(untagged)
-    # Same lines the console report prints under "Roadmap" — a JSON consumer that could
-    # not see them would be back in the position REQ-AUDIT-973's reporter was in.
-    roadmap = _roadmap_lag_lines(reqs, ws.code_root)
+    # Same lines the console report prints under "Roadmap" — a JSON consumer
+    # that could not see them would be back in the position REQ-AUDIT-973's
+    # reporter was in.
+    roadmap = _version_lines(ws.code_root, ws.reqs_dir)
+    roadmap += _roadmap_lag_lines(reqs, ws.code_root)
+    # The text report appends plan-drift lines under the same "Roadmap"
+    # heading. Leaving them out of `--json` made a clean JSON audit hide
+    # a plan that cites code which is no longer there.
+    if ws.code_root:
+        roadmap += plan_drift_lines(plan_drift(
+            _read_roadmap(ws.code_root) or [], ws.code_root, ws.reqs_dir))
+    roadmap += _version_bars(ws.reqs_dir)
     if roadmap:
         out["roadmap"] = roadmap
+    session = _session(ws.reqs_dir)
+    if session is not None:
+        out["audit_session"] = session
     errs, warns = run_gate_rules(
         GateContext(ws, full_members=members, update_lock=False),
         strict=strict)
@@ -288,27 +147,41 @@ def _summary_table_rows(gate_rc, signals, dups):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
     """The audit's summary table: one row per signal, in report order.
 
-    `signals` is the same bundle `_json_audit_report` reads — see its docstring."""
-    health, design, untagged = signals["health"], signals["design"], signals["untagged"]
-    exemptions, unexplained, shape = (signals["exemptions"], signals["unexplained"],
+    `signals` is the same bundle `_json_audit_report` reads — see its
+    docstring."""
+    health, untagged = signals["health"], signals["untagged"]
+    design = signals["design"]
+    exemptions, unexplained, shape = (signals["exemptions"],
+                                      signals["unexplained"],
                                       signals["shape"])
     verdict = "FAIL" if gate_rc else "clean"
     rows = [("Gate", verdict, "reqmap.py gate"),
-            ("Health", "{}/100 ({}/{} green on every axis)".format(
-                health["score"], health["healthy"], health["total"]), "reqmap.py gate --risk")]
+            ("Health", "{}/100 ({}/{} green on every axis{})".format(
+                health["score"], health["healthy"],
+                health.get("scored", health["total"]),
+                _exempt_note(health)),
+             "reqmap.py gate --risk")]
     if design is not None:
-        rows.append(("Design OOP", "{}/100 ({}/{} files with no candidate)".format(
-            design["score"], design["clean_files"], design["files"]), "reqmap.py gate --design"))
+        rows.append(("Design pass-rate",
+                     "{}% ({}/{} files with no candidate)".format(
+                         design["score"], design["clean_files"],
+                         design["files"]),
+                     "reqmap.py ask --design"))
     if untagged is not None:
-        rows.append(("Untagged code", "{} file(s) traced to no requirement".format(len(untagged)),
+        rows.append(("Untagged code",
+                     "{} file(s) traced to no requirement".format(
+                         len(untagged)),
                      "reqmap.py gate --risk --untagged"))
     if dups:
-        rows.append(("Redundancy", "{} group(s) share an identical contract".format(len(dups)),
-                     "reqmap.py gate --dupes"))
+        rows.append(("Redundancy",
+                     "{} group(s) share an identical contract".format(
+                         len(dups)),
+                     "reqmap.py ask --dupes"))
     rows.append(("Exemptions", "{} in force, {} with no recorded reason".format(
         len(exemptions), len(unexplained)), "see below"))
     rows.append(("Corpus shape", "{}/{} carry a `level:`{}".format(
-        shape["levelled"], shape["total"], " - the corpus is flat" if shape["flat"] else ""),
+        shape["levelled"], shape["total"],
+        " - the corpus is flat" if shape["flat"] else ""),
         "see below"))
     return rows
 
@@ -326,8 +199,8 @@ def _print_audit_sections(sections):
 
 def _print_audit_exemptions(exemptions):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
-    """Print the exemptions-in-force block, one of the audit's two sections with no
-    verb of its own."""
+    """Print the exemptions-in-force block, one of the audit's two sections
+    with no verb of its own."""
     print("-" * 72)
     print("Exemptions in force")
     print("-" * 72)
@@ -340,16 +213,21 @@ def _print_audit_exemptions(exemptions):
                 mark, e["id"], e["field"], e["check"],
                 "" if e["reason"] else "   <- no reason recorded"))
         print("")
-        print("  An exemption is a finding somebody decided not to see. It is legitimate")
-        print("  when the shape is deliberate and the reason is written down; it is not a")
-        print("  way to make a run green. For an over-scoped requirement the fix is")
-        print("  `reqmap.py clarify <ID> --decompose`, which scaffolds the extra clause out.")
+        print("  An exemption is a finding somebody decided not to see. "
+              "It is legitimate")
+        print("  when the shape is deliberate and the reason is written "
+              "down; it is not a")
+        print("  way to make a run green. For an over-scoped requirement "
+              "the fix is")
+        print("  `reqmap.py clarify <ID> --decompose`, which scaffolds "
+              "the extra clause out.")
     print("")
 
 
 def _print_audit_corpus_shape(shape):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
-    """Print the corpus-shape block, the audit's other section with no verb of its own."""
+    """Print the corpus-shape block, the audit's other section with no verb
+    of its own."""
     print("-" * 72)
     print("Corpus shape - the V-model's left arm")
     print("-" * 72)
@@ -357,24 +235,58 @@ def _print_audit_corpus_shape(shape):
         for lv in ("system", "architecture", "code"):
             if lv in shape["levels"]:
                 print("  {:<14} {}".format(lv, shape["levels"][lv]))
-        for lv in sorted(k for k in shape["levels"] if k not in ("system", "architecture", "code")):
-            print("  {:<14} {}   (not one of the three rungs)".format(lv, shape["levels"][lv]))
+        for lv in sorted(k for k in shape["levels"]
+                        if k not in ("system", "architecture", "code")):
+            print("  {:<14} {}   (not one of the three rungs)".format(
+                lv, shape["levels"][lv]))
         print("  satisfies:     {} edge(s)".format(shape["satisfies_edges"]))
     if shape["flat"]:
-        print("  {} of {} requirements declare no `level:`, so every one of them reads as".format(
-            shape["total"] - shape["levelled"], shape["total"]))
-        print("  the same rung. `level:` is opt-in - the template ships it commented out - so")
+        print("  {} of {} requirements declare no `level:`, so every one "
+              "of them reads as".format(
+                  shape["total"] - shape["levelled"], shape["total"]))
+        print("  the same rung. `level:` is opt-in - the template ships "
+              "it commented out - so")
         print("  a corpus never gains the axis by itself. The three rungs are:")
-        print("    system        a stakeholder need, satisfied by architecture, not by code")
-        print("    architecture  one capability: a command, or a shared engine facility")
-        print("    code          one behaviour group, 3-7 labelled cases, tested per case")
-        print("  The edge that builds the pyramid is `satisfies:` (the level axis), not")
-        print("  `depends_on:` (the composition axis). Adopting it is a decision, not a")
+        print("    system        a stakeholder need, satisfied by "
+              "architecture, not by code")
+        print("    architecture  one capability: a command, or a shared "
+              "engine facility")
+        print("    code          one behaviour group, 3-7 labelled cases, "
+              "tested per case")
+        print("  The edge that builds the pyramid is `satisfies:` (the "
+              "level axis), not")
+        print("  `depends_on:` (the composition axis). Adopting it is a "
+              "decision, not a")
         print("  defect: nothing here fails because a corpus is flat.")
-        # A detection that names no next step leaves a reader knowing they are flat
-        # and not knowing what to do about it. Now that a retrofit exists, say so.
-        print("  If you decide to adopt it: `reqmap.py clarify --levels` proposes a rung")
+        # A detection that names no next step leaves a reader knowing they are
+        # flat and not knowing what to do about it. Now that a retrofit exists,
+        # say so.
+        print("  If you decide to adopt it: `reqmap.py clarify --levels` "
+              "proposes a rung")
         print("  for each requirement and writes nothing without --apply.")
+    print("")
+
+
+def _print_audit_session(reqs_dir):
+    # implements: REQ-AUDITRUN-1107
+    """Print the audit session block when one is open."""
+    session = _session(reqs_dir)
+    if session is None:
+        return
+    from .auditrun import report_lines
+    print("-" * 72)
+    if "plan" not in session:
+        print("Audit session - the file cannot be used")
+        print("-" * 72)
+        for m in session["problems"]:
+            print("  ! INPUT:audit " + m)
+        print("")
+        return
+    lines = report_lines(session)
+    print(lines[0])
+    print("-" * 72)
+    for text in lines[1:]:
+        print(text)
     print("")
 
 
@@ -382,16 +294,22 @@ def cmd_audit(ws, strict=False, as_json=False):
     # implements: ARCH-AUDIT-065  # implements: REQ-AUDIT-970
     """Run every pass that discovers a problem, and print one report.
 
-    The engine grew one verb per question — is it linked, is it drifted, is it
-    duplicated, is it tagged, is the design rotting — and answering "how is this repo
-    doing" meant remembering all of them. This runs them together and prints a summary
-    of what each found, then each section's own output underneath.
+    The engine grew one verb per question — is it linked, is it drifted, is
+    it duplicated, is it tagged, is the design rotting — and answering "how
+    is this repo doing" meant remembering all of them. This runs them
+    together and prints a summary of what each found, then each section's
+    own output underneath.
 
-    Read-only. The exit code comes from the gate alone: everything else here is advice,
-    and advice must not be able to fail a build. Two sections have no verb of their own
-    because they only make sense in this report: the exemptions in force, and the shape
-    of the corpus on the V-model's left arm."""
-    reqs, members, reqs_dir, code_root = ws.reqs, ws.members, ws.reqs_dir, ws.code_root
+    Read-only. The exit code comes from the gate alone: everything else
+    here is advice, and advice must not be able to fail a build. Two
+    sections have no verb of their own because they only make sense in
+    this report: the exemptions in force, and the shape of the corpus on
+    the V-model's left arm."""
+    reqs = ws.reqs
+    members, reqs_dir, code_root = ws.members, ws.reqs_dir, ws.code_root
+    # Imported here, not at module top: the gate never loads the design
+    # review, and `gate` imports this module.
+    from .design_report import _design_summary, cmd_design
     exemptions = _exemptions_in_force(reqs)
     unexplained = [e for e in exemptions if not e["reason"]]
     shape = _corpus_shape(reqs)
@@ -400,7 +318,8 @@ def cmd_audit(ws, strict=False, as_json=False):
     untagged = _scan_untagged(code_root, reqs_dir) if code_root else None
     # Bundled once, in place of the long parameter list this report's two shapes
     # (`--json` and the console table) would otherwise both need repeated.
-    signals = {"shape": shape, "health": health, "design": design, "untagged": untagged,
+    signals = {"shape": shape, "health": health, "design": design,
+               "untagged": untagged,
                "exemptions": exemptions, "unexplained": unexplained}
 
     if as_json:
@@ -409,10 +328,12 @@ def cmd_audit(ws, strict=False, as_json=False):
     sections = [
         _audit_section("Gate", "reqmap.py gate",
                        lambda: cmd_check(ws, False, strict=strict), fail_rc=1),
-        _audit_section("Risk", "reqmap.py gate --risk", lambda: cmd_next(ws, False)),
-        _audit_section("Duplicates", "reqmap.py gate --dupes",
-                       lambda: cmd_similar(reqs, cfg.SIMILAR_THRESHOLD, members)),
-        _audit_section("Design", "reqmap.py gate --design",
+        _audit_section("Risk", "reqmap.py gate --risk",
+                       lambda: cmd_next(ws, False)),
+        _audit_section("Duplicates", "reqmap.py ask --dupes",
+                       lambda: cmd_similar(reqs, cfg.SIMILAR_THRESHOLD,
+                                           members)),
+        _audit_section("Design", "reqmap.py ask --design",
                        lambda: cmd_design(code_root, reqs_dir)),
         _audit_section("Tag coverage", "reqmap.py gate --risk --untagged",
                        lambda: cmd_coverage(ws, False)),
@@ -420,17 +341,20 @@ def cmd_audit(ws, strict=False, as_json=False):
     gate_rc = sections[0][3]
     dups = _redundant_groups(reqs)
 
-    print("AUDIT  {} requirement(s) - engine {}".format(len(reqs), MAP_ENGINE_VERSION))
+    print("AUDIT  {} requirement(s) - engine {}".format(
+        len(reqs), MAP_ENGINE_VERSION))
     print("")
     rows = _summary_table_rows(gate_rc, signals, dups)
     width = max(len(r[0]) for r in rows)
     vwidth = max(len(r[1]) for r in rows)
     for name, value, remedy in rows:
-        print("  {}  {}  {}".format(name.ljust(width), value.ljust(vwidth), remedy))
+        print("  {}  {}  {}".format(
+            name.ljust(width), value.ljust(vwidth), remedy))
     print("")
 
     _print_audit_sections(sections)
     _print_audit_exemptions(exemptions)
     _print_audit_corpus_shape(shape)
     _print_audit_roadmap(reqs, code_root, reqs_dir)
+    _print_audit_session(reqs_dir)
     return gate_rc

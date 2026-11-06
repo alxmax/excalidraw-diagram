@@ -1,5 +1,5 @@
-"""reqmap engine package. Holds the engine version and the on-disk anchor; imports nothing from the
-package so any module may import it first.
+"""reqmap engine package. Holds the engine version and the on-disk anchor;
+imports nothing from the package so any module may import it first.
 """
 import os
 
@@ -9,7 +9,7 @@ import os
 # `.N` same-day revision suffix (YYYY-MM-DD[.N]): lexicographic order ==
 # chronological order, so a plain string compare is enough.
 # .5 carried RM034 (dangling verifies) and the plan's draft_id.
-MAP_ENGINE_VERSION = "2026-09-15.1"  # implements: ARCH-CHECK-006
+MAP_ENGINE_VERSION = "2026-11-02.2"  # implements: ARCH-CHECK-006
 
 # The directory that holds reqmap.py and this package — the anchor every
 # on-disk neighbour (the viewer template, the plugin manifest) is found from.
