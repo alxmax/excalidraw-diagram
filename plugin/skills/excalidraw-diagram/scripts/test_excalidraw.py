@@ -5,6 +5,7 @@
 # tested-by: ARCH-EXCALIDRAW-034
 # tested-by: ARCH-EXCALIDRAW-033
 # tested-by: REQ-EXCALIDRAW-856
+# tested-by: REQ-EXCALIDRAW-859
 """Regression gate for the excalidraw-diagram skill.
 
 This is the operational definition of "professional / understandable" for a
@@ -1398,6 +1399,49 @@ class CasesExcalidrawSceneVerb(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-
             capture_output=True, text=True)
         self.assertEqual(unknown.returncode, 2, unknown.stderr)
         self.assertIn("scene", unknown.stderr)   # the new verb is offered
+
+
+class CasesExcalidrawFlip(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-859
+    """An edge marked flip puts its source on the far side of its target."""
+
+    NODES = [{"id": i, "label": i} for i in "ABCD"]
+
+    def _pack(self, edges, nodes=None):
+        s = eb.Scene(seed=1)
+        s.pack(nodes or self.NODES, edges)
+        by_id = {e["customData"]["id"]: e for e in s.elements if e.get("customData")}
+        return s, by_id
+
+    def test_a_flipped_source_sits_on_the_far_side_of_its_targets(self):  # verifies: REQ-EXCALIDRAW-859#CASE-1
+        s, n = self._pack([{"src": "A", "dst": "C"}, {"src": "A", "dst": "D"},
+                           {"src": "B", "dst": "C", "flip": True},
+                           {"src": "B", "dst": "D", "flip": True}])
+        self.assertLess(n["A"]["x"], n["C"]["x"])
+        self.assertEqual(n["C"]["x"], n["D"]["x"])
+        self.assertLess(n["C"]["x"], n["B"]["x"])
+        arrows = [e for e in s.elements if e["type"] == "arrow"]
+        self.assertEqual(len(arrows), 4)                        # none was routed round
+        self.assertTrue(all(a.get("startBinding") and a.get("endBinding") for a in arrows))
+
+    def test_a_flipped_arrow_still_runs_from_source_to_target(self):  # verifies: REQ-EXCALIDRAW-859#CASE-2
+        s, n = self._pack([{"src": "A", "dst": "C"}, {"src": "B", "dst": "C", "flip": True}])
+        arrow = next(e for e in s.elements if e["type"] == "arrow"
+                     and e["startBinding"]["elementId"] == n["B"]["id"])
+        self.assertEqual(arrow["endBinding"]["elementId"], n["C"]["id"])
+
+    def test_a_target_only_flipped_edges_reach_sits_beside_its_source(self):  # verifies: REQ-EXCALIDRAW-859#CASE-3
+        nodes = self.NODES + [{"id": "E", "label": "E"}]
+        s, n = self._pack([{"src": "A", "dst": "C"}, {"src": "B", "dst": "C", "flip": True},
+                           {"src": "B", "dst": "E", "flip": True}], nodes)
+        self.assertEqual(n["E"]["x"], n["C"]["x"])              # not left behind in layer 0
+        self.assertEqual(len([e for e in s.elements if e["type"] == "arrow"]), 3)
+
+    def test_a_graph_with_no_flipped_edge_is_laid_out_exactly_as_before(self):  # verifies: REQ-EXCALIDRAW-859#CASE-4
+        edges = [{"src": "A", "dst": "C"}, {"src": "B", "dst": "C"}, {"src": "C", "dst": "D"}]
+        plain, _ = self._pack(edges)
+        explicit, _ = self._pack([dict(e, flip=False) for e in edges])
+        self.assertEqual(json.dumps(plain.elements, sort_keys=True),
+                         json.dumps(explicit.elements, sort_keys=True))
 
 
 class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854

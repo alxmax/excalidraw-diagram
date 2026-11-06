@@ -26,6 +26,8 @@ Every bullet below is binding.
   [[REQ-EXCALIDRAW-851]] details the behaviour.
 - A node can say how its label is set, and `pack()` sizes and connects it for
   that. [[REQ-EXCALIDRAW-858]] details the behaviour.
+- An edge can be flipped, laying its source out beyond its target, so two sources that share targets
+  do not cross. [[REQ-EXCALIDRAW-859]] details the behaviour.
 - A layout `pack()` produces passes the same gates a hand-written generator's does.
   Passing is the definition of a finished layout: a run that places every node and
   leaves a shape sitting on another one has failed.

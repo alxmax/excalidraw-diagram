@@ -1,5 +1,83 @@
 # Changelog
 
+## plugin `v2.16.0` — 2026-11-07
+
+**The data-model pictograms are gone.** v2.12.0 gave every role, key column and review rule an
+emoji. Rendered, they drew small and uneven beside the text and added no meaning the words did not
+already carry, so they were removed. The words stay: the legend still gives each colour a plain
+sentence (`fact — events and measurements: what happened and how much`), key columns still start
+with `PK` or `FK`, and a review note still starts with its rule's name. A node reads `fact · 75%`
+under its name, with no symbol in front.
+
+## plugin `v2.15.1` — 2026-11-07
+
+**Design review: nine candidates cleared, behaviour unchanged.** The advisory `ask --design`
+report flagged nine shapes; each is fixed, and the report now says "No design candidates".
+
+`scene_from_ddl()` took seven loose arguments and `scene_from_dbt()` nine, passed on to a
+ten-parameter helper. They now take `out_dir` and keyword `**options`, built into a `DrawOptions`
+(and a `DbtOptions` for dbt's `mapping_path` and `draw_lineage`), the way `PackOptions` works.
+Calls that pass options by keyword, as the CLI and the tests do, are unchanged; an unknown option,
+or a dbt-only one on a DDL file, is a `TypeError`. The one thing that no longer works is passing
+`name` as the third positional argument. The review rules take one `_Schema` instead of the same
+three arguments each; `miniyaml.py` nests less deeply; two lines over 120 columns are wrapped, one
+in `viewer.py` that had been a single 131-column line since 3 October.
+
+## plugin `v2.15.0` — 2026-11-07
+
+**Facts that share dimensions no longer cross each other.** With two or more fact tables (a bridge
+counts), `data-model` now lays every second one out on the far side of the dimensions, so each
+arrow runs straight into the dimension beside it. Two facts sharing dimensions went from one
+crossing pair of arrows to none. On a five-fact order process the long routed loops fell from 3 to
+1 but crossing pairs only from 11 to 10: with many facts crossings are a property of the graph, so
+the layout reduces them and does not remove them. The facts are assigned in schema order, not by
+searching for the fewest crossings.
+
+It rests on a new optional `"flip": true` on a `graph.json` edge: the edge is laid out as if it ran
+target to source, while its arrow still runs source to target. A node that only flipped edges reach
+sits beside the nearest of them. Without the key a graph is laid out exactly as before.
+
+## plugin `v2.14.0` — 2026-11-07
+
+**Modelled by hand first, then compared: two defects the fixtures hid.** An order process
+(customer with history, a three-level snowflake, an accumulating snapshot, a periodic
+snapshot, a many-to-many link and a factless table) was written from a business description
+and its expected roles and findings recorded before the tool ran. 12 of 13 roles matched; the
+review found all three planted problems and added four false ones.
+
+The `scd2` rule listened to words inside key columns and entity names: `department_key`,
+`segment_name` in a `segment` table, `country` on a warehouse. Key columns and an entity's own
+name column are no longer attributes, and a place name (city, country, region) now needs a
+second one to count, since places move for a person and not for a depot. One strong name (an
+address, email, status, segment ...) is still enough.
+
+A table of only keys that joins three or more tables is now a **factless fact** (an event with
+nothing to measure), not a bridge; two tables is still a bridge. `promotion_coverage` was the
+one role the tool got wrong.
+
+## plugin `v2.13.0` — 2026-11-07
+
+**Run on a real dbt project, the mapping was wrong in a way it did not admit.** On the public
+dbt-labs `jaffle_shop` (Apache-2.0) the usual shape, `with source as (...), renamed as (...)
+select * from renamed`, gave sources like `renamed.customer_id`: the name of a CTE, not marked
+for review. A column is now traced through every CTE's own SELECT to the models and source
+tables underneath, so `customer_id` reads `raw_customers.id`, `rename`, and an expression done
+inside a CTE (`amount / 100`) is shown rather than hidden behind `copy`.
+
+A model's rows are now the columns its SQL produces, followed through `*`, not only those its
+schema.yml lists. That adds columns the schema omits, drops a false "does not declare" warning
+(schema.yml usually names only the columns it tests), and finds a real inconsistency in the
+public project: its schema documents `total_order_amount` and the SQL produces
+`customer_lifetime_value`. A bare name over several relations (`sum(amount)` over a join) goes to
+the one relation known to hold it. Jinja control flow (a `{% for %}` loop, as in `orders`) is
+still marked "needs review", never guessed.
+
+**A model with no declared types is no longer always "unknown".** dbt schema files usually
+declare none, so the measures-and-descriptions rule had nothing to read: `jaffle_shop`'s `orders`,
+with five `*_amount` columns, came out unknown. A column with no type is now read from its name
+(`amount`, `*_amount`, `number_of_*` as measures; `status`, `*_name` as descriptive), and the
+reason says "guessed from the names". A declared type is never overridden by a name.
+
 ## plugin `v2.12.0` — 2026-11-07
 
 **Changed: dbt lineage is drawn only with `--lineage`.** Rendered, a real dbt project's

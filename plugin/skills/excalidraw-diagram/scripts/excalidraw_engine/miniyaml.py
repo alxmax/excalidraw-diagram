@@ -52,22 +52,28 @@ def _lines(text):
     return out
 
 
-def _split_flow(text):
-    """`text` cut at top-level commas, outside quotes and brackets."""
-    parts, depth, start, quote = [], 0, 0, None
+_BRACKET = {"[": 1, "{": 1, "]": -1, "}": -1}
+
+
+def _top_level_commas(text):
+    """The index of every comma in `text` that sits outside quotes and brackets."""
+    depth, quote = 0, None
     for i, ch in enumerate(text):
         if quote:
             quote = None if ch == quote else quote
-        elif ch in "\"'":
+            continue
+        if ch in "\"'":
             quote = ch
-        elif ch in "[{":
-            depth += 1
-        elif ch in "]}":
-            depth -= 1
-        elif ch == "," and depth == 0:
-            parts.append(text[start:i])
-            start = i + 1
-    parts.append(text[start:])
+            continue
+        depth += _BRACKET.get(ch, 0)
+        if ch == "," and depth == 0:
+            yield i
+
+
+def _split_flow(text):
+    """`text` cut at top-level commas, outside quotes and brackets."""
+    cuts = [-1] + list(_top_level_commas(text)) + [len(text)]
+    parts = [text[a + 1:b] for a, b in zip(cuts, cuts[1:])]
     return [p.strip() for p in parts if p.strip()]
 
 
@@ -153,21 +159,26 @@ class _Reader(object):
             if key in out:
                 raise ValueError("yaml line %d: key %r appears twice" % (number, key))
             self.i += 1
-            nxt = self.peek()
-            if rest and _BLOCK.match(rest):
-                out[key] = self.block_scalar(indent, rest)
-            elif rest:
-                out[key] = _scalar(rest, number)
-            elif nxt and nxt[0] > indent:
-                out[key] = self.block(nxt[0])
-            elif nxt and nxt[0] == indent and (nxt[1] == "-" or nxt[1].startswith("- ")):
-                out[key] = self.list(indent)
-            else:
-                out[key] = None
+            out[key] = self._map_value(indent, rest, number)
         nxt = self.peek()
         if nxt and nxt[0] > indent:
             raise ValueError("yaml line %d: unexpected indentation" % nxt[2])
         return out
+
+    def _map_value(self, indent, rest, number):
+        """The value of a map key whose line held `rest` after the colon, the line itself
+        already consumed: a block scalar, a scalar, a nested block, a list at the key's own
+        indent, or nothing."""
+        nxt = self.peek()
+        if rest and _BLOCK.match(rest):
+            return self.block_scalar(indent, rest)
+        if rest:
+            return _scalar(rest, number)
+        if nxt and nxt[0] > indent:
+            return self.block(nxt[0])
+        if nxt and nxt[0] == indent and (nxt[1] == "-" or nxt[1].startswith("- ")):
+            return self.list(indent)
+        return None
 
     def block_scalar(self, indent, style):
         rows = []

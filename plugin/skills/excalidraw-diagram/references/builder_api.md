@@ -121,7 +121,7 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
   ],                                   // kind: any box() shape name; font: size/color/align;
                                        // max_chars: wrap width of the label (default 22)
   "edges": [
-    {"src": "api", "dst": "auth", "label": "verify", "dashed": false}
+    {"src": "api", "dst": "auth", "label": "verify", "dashed": false, "flip": false}
   ],
   "groups": [{"label": "the service", "members": ["api", "auth"]}],
   "legend": true,                      // -> legend() from `roles`
@@ -133,6 +133,12 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
 connected nodes near each other, and then decides per edge: a straight arrow when its
 line clears every other box, a routed connector otherwise. Feedback edges are always
 routed, so a cycle never cuts back across the flow.
+
+`"flip": true` on an edge lays it out as if it ran from its target to its source, so its source
+sits in the layer after the target. The arrow is still drawn source to target. Two sources that
+point at the same targets, one flipped, then sit one before and one after them and their arrows
+do not cross; a node that only flipped edges reach sits beside the nearest of them. Use it with
+the `"straight"` edge style. Without the key nothing changes.
 
 `"edge_style": "orthogonal"` draws every edge between neighbouring layers as a bus
 instead: a trunk in the gap beside its source and a square branch into each target,
@@ -162,13 +168,17 @@ table holding the key to the table it references). It builds the same graph desc
   are ignored. A `CREATE TABLE` it cannot read (`AS SELECT`, a duplicate, an `ALTER` on an
   unknown table) is an error naming the file and the statement, and nothing is written.
 - **Roles:** each table is a fact (blue), dimension (green), bridge (violet) or unknown
-  (grey), shown under its name with an icon and a confidence, e.g. `fact · 100%`. The glossary holds
+  (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
   the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
   evidence; the rest is foreign keys, numeric measures and descriptive columns.
+- **Facts on both sides:** with two or more fact-like tables (facts and bridges) every second one is
+  laid out on the far side of the dimensions, so facts sharing dimensions do not cross each other.
+  With many facts crossings remain: measured on a five-fact schema, 11 crossing pairs became 10 and
+  routed loops 3 became 1; with two facts, 1 became 0.
 - **Explains itself:** a stranger needs nothing else. The subtitle says how to read the picture;
-  the legend gives each colour an icon and a plain meaning; the glossary defines only the terms
+  the legend gives each colour a plain meaning; the glossary defines only the terms
   that appear (fact, dimension, PK, SCD type 2 ...) in everyday words, then says "Why X is a
-  dimension" for every table. Icons are Unicode emoji, always beside words. An arrow names its
+  dimension" for every table. An arrow names its
   key column only for a one-fact schema without `--columns`; otherwise the subtitle says to add
   `--columns`, because crossing arrows would stack their labels.
 - **Review:** amber notes joined by a dashed line to the table they concern. Rules:
@@ -189,13 +199,16 @@ table holding the key to the table it references). It builds the same graph desc
 - **`--lineage`** (with `--from-dbt` only): see above. The mapping always states what each
   model is built from, with or without it.
 - **`--mapping <file.md>`** (with `--from-dbt` only): also writes a source-to-target mapping.
-  One section per model, upstream first; one row per target column with its source
+  One section per model, upstream first; one row per column the model's SELECT produces
+  (then any column schema.yml declares that the SQL does not), with its source
   (`model.column` or `source.table.column`), the transformation (`copy`, `rename`, or the
-  expression as written) and the rule (its schema.yml tests). It follows a plain `select`,
-  aliases, joins and CTEs that only pass a table through. A union, Jinja control flow, a
-  subquery in FROM, a CTE that reshapes its input, an unaliased expression or a bare column
-  over several relations is marked **needs review** with the reason, never guessed. The file
-  is written only after the scene has passed its gates.
+  expression as written) and the rule (its schema.yml tests). A column is traced through
+  aliases, joins and every CTE to the models and source tables underneath, never to a CTE's
+  name; a bare name over several relations goes to the one relation known to hold it. A
+  union, Jinja control flow such as a `{% for %}` loop, a subquery in FROM, a CTE it cannot
+  read, an unaliased expression or a column no single relation is known to hold is marked
+  **needs review** with the reason, never guessed. The file is written only after the scene
+  has passed its gates.
 - **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
   order the DDL declares them. Off by default; it makes every node taller.
 - **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
@@ -207,7 +220,9 @@ table holding the key to the table it references). It builds the same graph desc
   `parse_yaml(text)`, `mapping_markdown(dir)` in `excalidraw_engine.mapping`, `parse_roles(text)`,
   `classify_tables(tables, overrides=None)`, `review_tables(tables, roles)`,
   `graph_from_tables(tables, columns=False, overrides=None, lineage=())`,
-  `scene_from_ddl(path, out_dir, columns=False, roles_path=None)` and `scene_from_dbt(dir, ...)`. Output is byte-stable: one schema, one pair of
+  `scene_from_ddl(path, out_dir=None, **options)` and `scene_from_dbt(dir, out_dir=None, **options)`:
+  the options are the fields of `DrawOptions` (name, offline, svg, columns, roles_path) and, for dbt,
+  `DbtOptions` (also mapping_path, draw_lineage); an unknown one is a `TypeError`. Output is byte-stable: one schema, one pair of
   files.
 - **Limits:** the roles and the `scd2` rule are heuristics on names and structure, and
   the diagram lays the fact in one column with its dimensions beside it, not around it.

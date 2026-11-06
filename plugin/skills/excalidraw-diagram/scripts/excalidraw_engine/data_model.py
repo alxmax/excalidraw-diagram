@@ -57,6 +57,7 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
     # facts sharing dimensions the arrows cross and their labels pile up, and with columns
     # listed in the boxes the FK lines already name the key.
     named = not columns and sum(c.role == "fact" for c in roles.values()) <= 1
+    right = _right_side(tables, roles)
     edges, seen = [], {}
     for table in tables:
         for fk in table.foreign_keys:
@@ -69,6 +70,8 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
                     seen[key]["label"] += ", " + label
             else:
                 seen[key] = {"src": table.name, "dst": fk.ref_table}
+                if table.name in right:
+                    seen[key]["flip"] = True
                 if named:
                     seen[key]["label"] = label
                 edges.append(seen[key])
@@ -97,6 +100,16 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
     return spec
 
 
+def _right_side(tables, roles):
+    """The names of every second fact-like table (a fact or a bridge), which pack() lays out on
+    the far side of the dimensions they share. Alternating puts two facts one on each side of
+    their dimensions, so their arrows do not cross; fewer than two fact-like tables change
+    nothing."""
+    # implements: REQ-DATAMODEL-913
+    fact_like = [t.name for t in tables if roles[t.name].role in ("fact", "bridge")]
+    return set(fact_like[1::2]) if len(fact_like) >= 2 else set()
+
+
 def _free_id(wanted, taken):
     """`wanted`, lengthened until no table is already called that."""
     while wanted in taken:
@@ -105,10 +118,8 @@ def _free_id(wanted, taken):
 
 
 def _label(table, classification, columns):
-    """The node text: the name, the role's icon and badge, then one line per column when
-    asked."""
-    badge = "%s %s" % (explain.ICON[classification.role], _badge(classification))
-    lines = [table.name, badge]
+    """The node text: the name, the role badge, then one line per column when asked."""
+    lines = [table.name, _badge(classification)]
     if columns:
         pk = set(table.primary_key)
         fk = {c for key in table.foreign_keys for c in key.columns}
@@ -132,65 +143,93 @@ def unresolved_fks(tables):
     return [(t, fk) for t in tables for fk in t.foreign_keys if fk.ref_table not in known]
 
 
-def _draw(tables, lineage, source, stem, out_dir, name, offline, svg, columns, roles_path):
+class DrawOptions(object):
+    """How scene_from_ddl() draws and writes; the loose keyword arguments it takes, as one
+    value in the manner of PackOptions.
+
+    name: the output basename (default: the input's own name). offline: the viewer's renderer
+    (see html_page). svg: also write the .svg. columns: list each table's columns in its node.
+    roles_path: a roles file (see roles.parse_roles) that overrides the classification."""
+
+    __slots__ = ("name", "offline", "svg", "columns", "roles_path")
+
+    def __init__(self, name=None, offline=None, svg=False, columns=False, roles_path=None):
+        self.name, self.offline, self.svg, self.columns = name, offline, svg, columns
+        self.roles_path = roles_path
+
+
+class DbtOptions(DrawOptions):
+    """DrawOptions plus the two a dbt project adds. draw_lineage: draw each ref() as a dashed
+    "ref" line. mapping_path: also write the source-to-target mapping to that path."""
+
+    __slots__ = ("mapping_path", "draw_lineage")
+
+    def __init__(self, mapping_path=None, draw_lineage=False, **drawing):
+        DrawOptions.__init__(self, **drawing)
+        self.mapping_path, self.draw_lineage = mapping_path, draw_lineage
+
+
+def _draw(tables, lineage, source, stem, out_dir, opts):
     """Overrides, graph and scene for already-parsed `tables`; `source` names the input in
     an error."""
     overrides = None
-    if roles_path:
-        with open(roles_path, encoding="utf-8") as fh:
+    if opts.roles_path:
+        with open(opts.roles_path, encoding="utf-8") as fh:
             try:
                 overrides = parse_roles(fh.read())
             except ValueError as exc:
-                raise ValueError("%s: %s" % (roles_path, exc))
+                raise ValueError("%s: %s" % (opts.roles_path, exc))
     try:
-        spec = graph_from_tables(tables, title=name or stem, columns=columns,
+        spec = graph_from_tables(tables, title=opts.name or stem, columns=opts.columns,
                                  overrides=overrides, lineage=lineage)
     except ValueError as exc:
-        raise ValueError("%s: %s" % (roles_path or source, exc))
-    return scene_from_spec(spec, out_dir, name=name or stem, offline=offline, svg=svg)
+        raise ValueError("%s: %s" % (opts.roles_path or source, exc))
+    return scene_from_spec(spec, out_dir, name=opts.name or stem, offline=opts.offline,
+                           svg=opts.svg)
 
 
-def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False,
-                   columns=False, roles_path=None):
+def scene_from_ddl(ddl_path, out_dir=None, **options):
     """Read a DDL file, draw its tables, and save the scene and viewer.
 
     The output name is `name`, else the file's stem; the directory defaults to the
-    file's own. Returns what scene_from_spec() returns. `columns` lists the columns in
-    each node; `roles_path` names a roles file (see roles.parse_roles) that overrides
-    the classification. Raises ValueError, naming the file at fault, when the DDL or the
-    roles file cannot be read or a gate fails."""
+    file's own. `options` are DrawOptions' fields (name, offline, svg, columns, roles_path);
+    an unknown one, such as a dbt-only one, is a TypeError. Returns what scene_from_spec()
+    returns. Raises ValueError, naming the file at fault, when the DDL or
+    the roles file cannot be read or a gate fails."""
     # implements: REQ-DATAMODEL-901
+    opts = DrawOptions(**options)
     with open(ddl_path, encoding="utf-8") as fh:
         try:
             tables = parse_ddl(fh.read())
         except ValueError as exc:
             raise ValueError("%s: %s" % (ddl_path, exc))
     stem = os.path.splitext(os.path.basename(ddl_path))[0]
-    return _draw(tables, (), ddl_path, stem, out_dir or os.path.dirname(ddl_path) or ".",
-                 name, offline, svg, columns, roles_path)
+    return _draw(tables, (), ddl_path, stem, out_dir or os.path.dirname(ddl_path) or ".", opts)
 
 
-def scene_from_dbt(project_dir, out_dir=None, name=None, offline=None, svg=False,
-                   columns=False, roles_path=None, mapping_path=None, draw_lineage=False):
+def scene_from_dbt(project_dir, out_dir=None, **options):
     """Read a dbt project (see dbt.read_dbt), draw its models, and save the scene.
 
-    Same options as scene_from_ddl(). The output name is `name`, else the project
-    folder's; the directory defaults to the current one, never the project itself.
-    `draw_lineage` also draws each ref() as a dashed "ref" line; it is off by default
-    because on a real project those lines outnumber the foreign keys and bury them.
-    `mapping_path` also writes the source-to-target mapping (see mapping.py) there, as
-    UTF-8 Markdown, and only once the scene has passed every gate; its path is appended to
-    the returned paths."""
+    Takes the options scene_from_ddl() does, plus `draw_lineage` and `mapping_path` (see
+    DbtOptions). The
+    output name is `name`, else the project folder's; the directory defaults to the current
+    one, never the project itself. `draw_lineage` also draws each ref() as a dashed "ref"
+    line; it is off by default because on a real project those lines outnumber the foreign
+    keys and bury them. `mapping_path` also writes the source-to-target mapping (see
+    mapping.py) there, as UTF-8 Markdown, and only once the scene has passed every gate; its
+    path is appended to the returned paths."""
     # implements: REQ-DATAMODEL-907
     # implements: REQ-DATAMODEL-910
     # implements: REQ-DATAMODEL-912
+    opts = DbtOptions(**options)
     tables, lineage = read_dbt(project_dir)
     stem = os.path.basename(os.path.abspath(project_dir))
-    report = mapping_markdown(project_dir, title=name or stem) if mapping_path else None
-    paths = _draw(tables, lineage if draw_lineage else (), project_dir, stem,
-                  out_dir or ".", name, offline, svg, columns, roles_path)
+    report = (mapping_markdown(project_dir, title=opts.name or stem)
+              if opts.mapping_path else None)
+    paths = _draw(tables, lineage if opts.draw_lineage else (), project_dir, stem,
+                  out_dir or ".", opts)
     if report is None:
         return paths
-    with open(mapping_path, "w", encoding="utf-8", newline="\n") as fh:
+    with open(opts.mapping_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(report)
-    return tuple(paths) + (mapping_path,)
+    return tuple(paths) + (opts.mapping_path,)
