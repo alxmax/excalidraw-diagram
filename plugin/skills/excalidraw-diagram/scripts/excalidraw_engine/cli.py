@@ -17,9 +17,10 @@ USAGE = """usage: excalidraw_builder.py [<command>]
   render <scene.excalidraw> [out_dir] [--cdn] [--svg]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
-  data-model --from-ddl <schema.sql> [-o <dir>] [--cdn] [--svg]
+  data-model --from-ddl <schema.sql> [-o <dir>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]
                                         draw the tables of a SQL DDL script, one node per
-                                        table and one edge per foreign key
+                                        table and one edge per foreign key; --columns lists
+                                        each table's columns, --roles overrides a role
 
 Two authoring paths. `scene` is the short one: describe nodes, edges and groups in
 JSON with no coordinates, and pack() places everything and runs the gates. Writing a
@@ -92,7 +93,9 @@ def _scene(args):
 def _data_model(args):
     args, offline = _cdn_flag(args)
     args, svg = _svg_flag(args)
-    flags = {"--from-ddl": "ddl", "-o": "out", "--out": "out"}
+    columns = "--columns" in args
+    args = [a for a in args if a != "--columns"]
+    flags = {"--from-ddl": "ddl", "-o": "out", "--out": "out", "--roles": "roles"}
     got = {}
     while args:
         key = flags.get(args[0])
@@ -101,8 +104,10 @@ def _data_model(args):
             break
         got[key], args = args[1], args[2:]
     if not got.get("ddl"):
-        return _usage_error("data-model --from-ddl <schema.sql> [-o <dir>] [--cdn] [--svg]")
-    print("wrote", *scene_from_ddl(got["ddl"], got.get("out"), offline=offline, svg=svg))
+        return _usage_error("data-model --from-ddl <schema.sql> [-o <dir>] [--columns] "
+                            "[--roles <roles.yml>] [--cdn] [--svg]")
+    print("wrote", *scene_from_ddl(got["ddl"], got.get("out"), offline=offline, svg=svg,
+                                   columns=columns, roles_path=got.get("roles")))
     return 0
 
 

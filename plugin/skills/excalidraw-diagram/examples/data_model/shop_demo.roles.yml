@@ -1,0 +1,3 @@
+# Corrections to the classifier: flat `table: role` lines only.
+stg_payments: fact        # a payments feed that is really an event table
+dim_category: dimension

@@ -1,9 +1,9 @@
 ---
 generated: 2026-11-06
 engine: 2026-09-15.1
-nodes: 28
+nodes: 30
 edges: 6
-design OOP: 77/100 (20/26 source files without a design candidate)
+design OOP: 74/100 (20/27 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -43,6 +43,8 @@ graph LR
     REQ_DATAMODEL_902["A role, a confidence and a reason for every table<br><small>REQ-DATAMODEL-902</small>"]
     REQ_DATAMODEL_903["Five review rules over the classified tables<br><small>REQ-DATAMODEL-903</small>"]
     REQ_DATAMODEL_904["Review findings explained and drawn as amber notes<br><small>REQ-DATAMODEL-904</small>"]
+    REQ_DATAMODEL_905["Columns inside the table nodes, on request<br><small>REQ-DATAMODEL-905</small>"]
+    REQ_DATAMODEL_906["A roles file that corrects the classifier<br><small>REQ-DATAMODEL-906</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
   end
   subgraph sg_misc["misc"]
@@ -112,7 +114,7 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 ```mermaid
 graph LR
   a_ARCH["ARCH<br><small>7 caps</small>"]
-  a_REQ["REQ<br><small>20 caps</small>"]
+  a_REQ["REQ<br><small>22 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 

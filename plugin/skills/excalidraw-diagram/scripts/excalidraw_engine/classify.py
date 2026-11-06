@@ -34,10 +34,11 @@ class Classification(object):
     """A table's role ('fact' | 'dimension' | 'bridge' | 'unknown'), a 0..1 confidence,
     and the sentence listing the evidence behind both."""
 
-    __slots__ = ("role", "confidence", "reason")
+    __slots__ = ("role", "confidence", "reason", "overridden")
 
-    def __init__(self, role, confidence, reason):
+    def __init__(self, role, confidence, reason, overridden=False):
         self.role, self.confidence, self.reason = role, confidence, reason
+        self.overridden = overridden        # True when roles.yml, not the rules, chose it
 
 
 def _fk_columns(table):
@@ -98,9 +99,15 @@ def _decide(name, ev):
     return Classification(top, round(conf, 2), "; ".join(s for _, s in ev[top]))
 
 
-def classify_tables(tables):
-    """{table name: Classification} for every table, from names and structure alone."""
+def classify_tables(tables, overrides=None):
+    """{table name: Classification} for every table, from names and structure alone.
+
+    `overrides` is a {table name: role} map (see roles.parse_roles) that replaces the
+    rules' answer for the tables it names, at confidence 1 and flagged `overridden`; the
+    reason keeps what the rules had said. A name the schema does not define raises
+    ValueError, because a typo would otherwise be silently ignored."""
     # implements: REQ-DATAMODEL-902
+    # implements: REQ-DATAMODEL-906
     referrers = {}
     for t in tables:
         for fk in t.foreign_keys:
@@ -115,4 +122,13 @@ def classify_tables(tables):
                 % m.group(1).lower())
         else:
             out[t.name] = _decide(t.name, _evidence(t, _profile(t, referrers)))
+    for name, role in (overrides or {}).items():
+        if name not in out:
+            raise ValueError("roles file names %s, which the schema does not define "
+                             "(tables: %s)" % (name, ", ".join(out)))
+        found = out[name]
+        said = ("unknown" if found.role == "unknown"
+                else "%s (%d%%)" % (found.role, round(found.confidence * 100)))
+        out[name] = Classification(role, 1.0, "set in the roles file; the rules had said %s"
+                                   % said, overridden=True)
     return out

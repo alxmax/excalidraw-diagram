@@ -14,6 +14,7 @@ import os
 from .classify import classify_tables
 from .ddl import parse_ddl
 from .review import review_tables
+from .roles import parse_roles
 from .spec import scene_from_spec
 
 
@@ -25,7 +26,7 @@ SUBTITLE = ("Each arrow runs from a table to the table its foreign key reference
 NOTE_SUBTITLE = " Amber notes on dashed lines are review findings on the table they touch."
 
 
-def graph_from_tables(tables, title=None, seed=1):
+def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None):
     """A graph description (a dict for scene_from_spec) for `tables`.
 
     Several foreign keys from one table to the same target become one edge labelled
@@ -35,9 +36,13 @@ def graph_from_tables(tables, title=None, seed=1):
 
     Each node is coloured by the role classify_tables() gives its table, labelled with
     that role and its confidence, and the glossary holds the reason for every role.
-    Every finding of review_tables() becomes an amber note joined to its table."""
+    Every finding of review_tables() becomes an amber note joined to its table.
+
+    `columns=True` lists each table's columns under its name, marking the PK and FK ones;
+    `overrides` is a {table: role} map that replaces the classifier's answer."""
     # implements: REQ-DATAMODEL-901
     # implements: REQ-DATAMODEL-904
+    # implements: REQ-DATAMODEL-905
     known = {t.name for t in tables}
     edges, seen = [], {}
     for table in tables:
@@ -51,8 +56,8 @@ def graph_from_tables(tables, title=None, seed=1):
             else:
                 seen[key] = {"src": table.name, "dst": fk.ref_table, "label": label}
                 edges.append(seen[key])
-    roles = classify_tables(tables)
-    nodes = [{"id": t.name, "label": t.name + "\n" + _badge(roles[t.name]),
+    roles = classify_tables(tables, overrides)
+    nodes = [{"id": t.name, "label": _label(t, roles[t.name], columns),
               "fill": roles[t.name].role} for t in tables]
     used = {c.role for c in roles.values()}
     issues = review_tables(tables, roles)
@@ -79,8 +84,23 @@ def _free_id(wanted, taken):
     return wanted
 
 
+def _label(table, classification, columns):
+    """The node text: the name, the role badge, then one line per column when asked."""
+    lines = [table.name, _badge(classification)]
+    if columns:
+        pk = set(table.primary_key)
+        fk = {c for key in table.foreign_keys for c in key.columns}
+        for col in table.columns:
+            marks = [m for m, on in (("PK", col.name in pk), ("FK", col.name in fk)) if on]
+            lines.append(" ".join(marks + [col.name]))
+    return "\n".join(lines)
+
+
 def _badge(classification):
-    """'fact · 92%', or just 'unknown' when no role earned enough evidence."""
+    """'fact · 92%'; 'fact · set by you' when the roles file chose it; just 'unknown'
+    when no role earned enough evidence."""
+    if classification.overridden:
+        return "%s · set by you" % classification.role
     if classification.role == "unknown":
         return "unknown"
     return "%s · %d%%" % (classification.role, round(classification.confidence * 100))
@@ -92,19 +112,33 @@ def unresolved_fks(tables):
     return [(t, fk) for t in tables for fk in t.foreign_keys if fk.ref_table not in known]
 
 
-def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False):
+def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False,
+                   columns=False, roles_path=None):
     """Read a DDL file, draw its tables, and save the scene and viewer.
 
     The output name is `name`, else the file's stem; the directory defaults to the
-    file's own. Returns what scene_from_spec() returns. Raises ValueError when the DDL
-    cannot be read or a gate fails."""
+    file's own. Returns what scene_from_spec() returns. `columns` lists the columns in
+    each node; `roles_path` names a roles file (see roles.parse_roles) that overrides
+    the classification. Raises ValueError, naming the file at fault, when the DDL or the
+    roles file cannot be read or a gate fails."""
     # implements: REQ-DATAMODEL-901
     with open(ddl_path, encoding="utf-8") as fh:
         try:
             tables = parse_ddl(fh.read())
         except ValueError as exc:
             raise ValueError("%s: %s" % (ddl_path, exc))
+    overrides = None
+    if roles_path:
+        with open(roles_path, encoding="utf-8") as fh:
+            try:
+                overrides = parse_roles(fh.read())
+            except ValueError as exc:
+                raise ValueError("%s: %s" % (roles_path, exc))
     stem = os.path.splitext(os.path.basename(ddl_path))[0]
-    spec = graph_from_tables(tables, title=name or stem)
+    try:
+        spec = graph_from_tables(tables, title=name or stem, columns=columns,
+                                 overrides=overrides)
+    except ValueError as exc:
+        raise ValueError("%s: %s" % (roles_path or ddl_path, exc))
     return scene_from_spec(spec, out_dir or os.path.dirname(ddl_path) or ".",
                            name=name or stem, offline=offline, svg=svg)
