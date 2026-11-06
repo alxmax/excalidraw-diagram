@@ -168,7 +168,7 @@ table holding the key to the table it references). It builds the same graph desc
   are ignored. A `CREATE TABLE` it cannot read (`AS SELECT`, a duplicate, an `ALTER` on an
   unknown table) is an error naming the file and the statement, and nothing is written.
 - **Roles:** each table is a fact (blue), dimension (green), bridge (violet) or unknown
-  (grey), shown under its name with an icon and a confidence, e.g. `fact · 100%`. The glossary holds
+  (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
   the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
   evidence; the rest is foreign keys, numeric measures and descriptive columns.
 - **Facts on both sides:** with two or more fact-like tables (facts and bridges) every second one is
@@ -176,9 +176,9 @@ table holding the key to the table it references). It builds the same graph desc
   With many facts crossings remain: measured on a five-fact schema, 11 crossing pairs became 10 and
   routed loops 3 became 1; with two facts, 1 became 0.
 - **Explains itself:** a stranger needs nothing else. The subtitle says how to read the picture;
-  the legend gives each colour an icon and a plain meaning; the glossary defines only the terms
+  the legend gives each colour a plain meaning; the glossary defines only the terms
   that appear (fact, dimension, PK, SCD type 2 ...) in everyday words, then says "Why X is a
-  dimension" for every table. Icons are Unicode emoji, always beside words. An arrow names its
+  dimension" for every table. An arrow names its
   key column only for a one-fact schema without `--columns`; otherwise the subtitle says to add
   `--columns`, because crossing arrows would stack their labels.
 - **Review:** amber notes joined by a dashed line to the table they concern. Rules:

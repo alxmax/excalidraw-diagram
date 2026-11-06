@@ -1,7 +1,7 @@
-"""The words and pictograms that let a stranger read a data-model diagram.
+"""The words that let a stranger read a data-model diagram.
 
 Someone who has never met a star schema, or this repository, should not need to look
-anything up: every colour has an icon and a plain sentence in the legend, every term the
+anything up: every colour has a plain sentence in the legend, every term the
 picture uses is defined in the glossary in everyday words, and every table says why it was
 given its role. Only the terms that actually appear on the diagram are defined, so a small
 schema gets a small glossary.
@@ -9,11 +9,6 @@ schema gets a small glossary.
 Nothing here decides anything. data_model.py decides what is drawn; this module only says
 what it means.
 """
-
-ICON = {"fact": "\U0001F4CA", "dimension": "\U0001F50D", "bridge": "\U0001F309",
-        "unknown": "❓", "note": "\U0001F4DD", "pk": "\U0001F511", "fk": "\U0001F517",
-        "grain": "\U0001F3AF", "surrogate-key": "\U0001F194", "scd2": "\U0001F553",
-        "orphan-fk": "\U0001F47B", "snowflake": "\U0001F9CA"}
 
 ROLE_MEANING = {
     "fact": "events and measurements: what happened and how much",
@@ -27,7 +22,7 @@ ROLE_PHRASE = {"fact": "a fact table", "dimension": "a dimension", "bridge": "a 
                "unknown": "unknown"}
 
 SUBTITLE = ("How to read: every box is a table; an arrow from A to B means A holds a key "
-            "that points at B. Colour and icon show each table's role.")
+            "that points at B. Colour shows each table's role.")
 SUBTITLE_NO_COLUMNS = " Add --columns to see which column joins each pair."
 SUBTITLE_NOTES = " Yellow notes are modelling problems, joined by a dashed line to their table."
 SUBTITLE_LINEAGE = " Dashed lines labelled ref: the model reads from the one they point to."
@@ -57,26 +52,22 @@ _RULE_TERM = {
 
 
 def role_key(role):
-    """The legend text, which is also the colour alias, for a role: icon, name, meaning."""
+    """The legend text, which is also the colour alias, for a role: its name and meaning."""
     # implements: REQ-DATAMODEL-911
-    return "%s %s — %s" % (ICON[role], role, ROLE_MEANING[role])
+    return "%s — %s" % (role, ROLE_MEANING[role])
 
 
-NOTE_KEY = "%s review note — %s" % (ICON["note"], NOTE_MEANING)
+NOTE_KEY = "review note — %s" % NOTE_MEANING
 
 
 def note_text(rule, message):
-    """The text of a review note: the rule's icon, its name, then the reason."""
-    return "%s %s: %s" % (ICON[rule], rule, message)
+    """The text of a review note: the rule's name, then the reason."""
+    return "%s: %s" % (rule, message)
 
 
 def column_line(name, primary, foreign):
-    """One column of a node: icons and PK / FK words ahead of a key column's name."""
-    marks = []
-    if primary:
-        marks.append("%s PK" % ICON["pk"])
-    if foreign:
-        marks.append("%s FK" % ICON["fk"])
+    """One column of a node: the words PK and FK ahead of a key column's name."""
+    marks = (["PK"] if primary else []) + (["FK"] if foreign else [])
     return " ".join(marks + [name])
 
 

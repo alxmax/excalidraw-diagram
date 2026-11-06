@@ -452,9 +452,6 @@ class TestCli(unittest.TestCase):
 ROLES_FILE = os.path.join(DATA, "shop_demo.roles.yml")
 
 
-PK, FK = explain.ICON["pk"], explain.ICON["fk"]
-
-
 def _node(spec, table):
     return next(n for n in spec["nodes"] if n["id"] == table)
 
@@ -465,20 +462,20 @@ class TestColumns(unittest.TestCase):
     def test_columns_are_off_by_default(self):  # verifies: REQ-DATAMODEL-905#CASE-1
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
         self.assertEqual(_node(spec, "dim_date")["label"].split("\n"),
-                         ["dim_date", explain.ICON["dimension"] + " dimension · 100%"])
+                         ["dim_date", "dimension · 100%"])
 
     def test_columns_listed_in_order_with_key_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")), columns=True)
         self.assertEqual(_node(spec, "fact_order_line")["label"].split("\n")[2:],
-                         [PK + " PK order_line_key", FK + " FK date_key",
-                          FK + " FK customer_key", FK + " FK product_id",
+                         ["PK order_line_key", "FK date_key",
+                          "FK customer_key", "FK product_id",
                           "quantity", "unit_price", "line_amount"])
 
     def test_a_key_that_is_both_primary_and_foreign_carries_both_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
         spec = graph_from_tables(parse_ddl(
             "CREATE TABLE p (k int PRIMARY KEY);"
             "CREATE TABLE c (k int PRIMARY KEY REFERENCES p (k), v text);"), columns=True)
-        self.assertIn(PK + " PK " + FK + " FK k", _node(spec, "c")["label"].split("\n"))
+        self.assertIn("PK FK k", _node(spec, "c")["label"].split("\n"))
 
     def test_columns_flag_renders_through_every_gate(self):  # verifies: REQ-DATAMODEL-905#CASE-3
         with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
@@ -487,7 +484,7 @@ class TestColumns(unittest.TestCase):
             self.assertEqual(code, 0)
             with open(os.path.join(out, "shop_demo.excalidraw"), encoding="utf-8") as fh:
                 texts = [e["text"] for e in json.load(fh)["elements"] if e["type"] == "text"]
-        self.assertTrue(any(PK + " PK order_line_key" in t.split("\n") for t in texts))
+        self.assertTrue(any("PK order_line_key" in t.split("\n") for t in texts))
 
 
 class TestRoles(unittest.TestCase):
@@ -922,19 +919,19 @@ class TestExplain(unittest.TestCase):
     def _terms(spec):
         return [row[0] for row in spec["glossary"]]
 
-    def test_legend_pairs_each_colour_with_an_icon_and_a_plain_meaning(self):  # verifies: REQ-DATAMODEL-911#CASE-1
+    def test_legend_pairs_each_colour_with_a_plain_meaning(self):  # verifies: REQ-DATAMODEL-911#CASE-1
         spec = self._spec()
         for role in ("fact", "dimension", "unknown"):
             key = explain.role_key(role)
             self.assertIn(key, spec["roles"])
-            self.assertTrue(key.startswith(explain.ICON[role]), key)
+            self.assertTrue(key.startswith(role), key)
             self.assertIn(explain.ROLE_MEANING[role], key)
-        self.assertIn(explain.ICON["note"], NOTE)
+        self.assertTrue(NOTE.startswith("review note"), NOTE)
 
     def test_the_subtitle_says_how_to_read_arrows_and_colours(self):  # verifies: REQ-DATAMODEL-911#CASE-2
         subtitle = self._spec()["subtitle"]
         self.assertIn("an arrow from A to B means A holds a key that points at B", subtitle)
-        self.assertIn("Colour and icon show each table's role", subtitle)
+        self.assertIn("Colour shows each table's role", subtitle)
 
     def test_the_glossary_defines_the_terms_the_diagram_uses_and_no_others(self):  # verifies: REQ-DATAMODEL-911#CASE-3
         demo = self._terms(self._spec())
@@ -958,11 +955,12 @@ class TestExplain(unittest.TestCase):
         self.assertIn("Why stg_payments is unknown", why)
         self.assertTrue(all(len(text.split()) > 3 for text in why.values()))
 
-    def test_key_columns_carry_an_icon_and_the_words_pk_and_fk(self):  # verifies: REQ-DATAMODEL-911#CASE-5
-        self.assertEqual(explain.column_line("k", True, False), explain.ICON["pk"] + " PK k")
-        self.assertEqual(explain.column_line("k", False, True), explain.ICON["fk"] + " FK k")
+    def test_key_columns_carry_the_words_pk_and_fk(self):  # verifies: REQ-DATAMODEL-911#CASE-5
+        self.assertEqual(explain.column_line("k", True, False), "PK k")
+        self.assertEqual(explain.column_line("k", False, True), "FK k")
+        self.assertEqual(explain.column_line("k", True, True), "PK FK k")
         self.assertEqual(explain.column_line("k", False, False), "k")
-        self.assertTrue(explain.note_text("scd2", "x").startswith(explain.ICON["scd2"]))
+        self.assertEqual(explain.note_text("scd2", "x"), "scd2: x")
 
     def test_arrows_are_labelled_only_where_labels_cannot_collide(self):  # verifies: REQ-DATAMODEL-911#CASE-6
         def labelled(spec):

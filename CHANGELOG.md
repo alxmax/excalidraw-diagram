@@ -1,5 +1,14 @@
 # Changelog
 
+## plugin `v2.16.0` — 2026-11-07
+
+**The data-model pictograms are gone.** v2.12.0 gave every role, key column and review rule an
+emoji. Rendered, they drew small and uneven beside the text and added no meaning the words did not
+already carry, so they were removed. The words stay: the legend still gives each colour a plain
+sentence (`fact — events and measurements: what happened and how much`), key columns still start
+with `PK` or `FK`, and a review note still starts with its rule's name. A node reads `fact · 75%`
+under its name, with no symbol in front.
+
 ## plugin `v2.15.1` — 2026-11-07
 
 **Design review: nine candidates cleared, behaviour unchanged.** The advisory `ask --design`

@@ -118,10 +118,8 @@ def _free_id(wanted, taken):
 
 
 def _label(table, classification, columns):
-    """The node text: the name, the role's icon and badge, then one line per column when
-    asked."""
-    badge = "%s %s" % (explain.ICON[classification.role], _badge(classification))
-    lines = [table.name, badge]
+    """The node text: the name, the role badge, then one line per column when asked."""
+    lines = [table.name, _badge(classification)]
     if columns:
         pk = set(table.primary_key)
         fk = {c for key in table.foreign_keys for c in key.columns}

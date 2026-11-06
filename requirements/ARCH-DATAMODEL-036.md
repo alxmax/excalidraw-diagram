@@ -30,7 +30,7 @@ Every bullet below is binding.
 - A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]
 - The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]
 - dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]
-- The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]
+- The diagram explains itself in plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]
 - Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]
 
 ## Cases
