@@ -1,5 +1,19 @@
 # Changelog
 
+## plugin `v2.11.0` — 2026-11-06
+
+**`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping.** One
+section per model, upstream models first; one row per target column with its source
+(`model.column`, or `source.table.column` for a dbt source), the transformation (`copy`,
+`rename`, or the expression as written) and the rule (the column's schema.yml tests,
+including the target of a `relationships` test and the values of `accepted_values`).
+
+The source is traced through aliases, joins and CTEs that only pass a table through. What
+the reader cannot follow is not guessed: a union, Jinja control flow, a subquery in `FROM`,
+a CTE that reshapes its input, an unaliased expression, a bare column over several
+relations, or a model with no SQL file is marked **needs review** with the reason. The file
+is written only after the diagram has passed its gates.
+
 ## plugin `v2.10.0` — 2026-11-06
 
 **`data-model --from-dbt <project>` draws a dbt project.** One node per model under

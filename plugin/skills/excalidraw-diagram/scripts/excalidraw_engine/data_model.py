@@ -13,6 +13,7 @@ import os
 
 from .classify import classify_tables
 from .dbt import read_dbt
+from .mapping import mapping_markdown
 from .ddl import parse_ddl
 from .review import review_tables
 from .roles import parse_roles
@@ -163,13 +164,22 @@ def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False,
 
 
 def scene_from_dbt(project_dir, out_dir=None, name=None, offline=None, svg=False,
-                   columns=False, roles_path=None):
+                   columns=False, roles_path=None, mapping_path=None):
     """Read a dbt project (see dbt.read_dbt), draw its models, and save the scene.
 
     Same options as scene_from_ddl(). The output name is `name`, else the project
-    folder's; the directory defaults to the current one, never the project itself."""
+    folder's; the directory defaults to the current one, never the project itself.
+    `mapping_path` also writes the source-to-target mapping (see mapping.py) there, as
+    UTF-8 Markdown, and only once the scene has passed every gate; its path is appended to
+    the returned paths."""
     # implements: REQ-DATAMODEL-907
     tables, lineage = read_dbt(project_dir)
     stem = os.path.basename(os.path.abspath(project_dir))
-    return _draw(tables, lineage, project_dir, stem, out_dir or ".", name, offline, svg,
-                 columns, roles_path)
+    report = mapping_markdown(project_dir, title=name or stem) if mapping_path else None
+    paths = _draw(tables, lineage, project_dir, stem, out_dir or ".", name, offline, svg,
+                  columns, roles_path)
+    if report is None:
+        return paths
+    with open(mapping_path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(report)
+    return tuple(paths) + (mapping_path,)

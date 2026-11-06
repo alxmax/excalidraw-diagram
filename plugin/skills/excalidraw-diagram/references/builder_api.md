@@ -178,6 +178,14 @@ table holding the key to the table it references). It builds the same graph desc
   use `--roles`. `schema.yml` is read by a YAML subset reader (maps, lists, scalars, flow
   collections, `|` / `>` blocks); anchors, tags, tabs, repeated keys and multiple documents
   are errors naming the line. Output goes to `-o`, or the current folder.
+- **`--mapping <file.md>`** (with `--from-dbt` only): also writes a source-to-target mapping.
+  One section per model, upstream first; one row per target column with its source
+  (`model.column` or `source.table.column`), the transformation (`copy`, `rename`, or the
+  expression as written) and the rule (its schema.yml tests). It follows a plain `select`,
+  aliases, joins and CTEs that only pass a table through. A union, Jinja control flow, a
+  subquery in FROM, a CTE that reshapes its input, an unaliased expression or a bare column
+  over several relations is marked **needs review** with the reason, never guessed. The file
+  is written only after the scene has passed its gates.
 - **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
   order the DDL declares them. Off by default; it makes every node taller.
 - **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
@@ -186,7 +194,7 @@ table holding the key to the table it references). It builds the same graph desc
   confidence 1, labelled `set by you`, and the glossary keeps what the rules had said. The
   review rules use the new role. A table the schema does not define is an error.
 - **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `read_dbt(dir)` in `excalidraw_engine.dbt`,
-  `parse_yaml(text)`, `parse_roles(text)`,
+  `parse_yaml(text)`, `mapping_markdown(dir)` in `excalidraw_engine.mapping`, `parse_roles(text)`,
   `classify_tables(tables, overrides=None)`, `review_tables(tables, roles)`,
   `graph_from_tables(tables, columns=False, overrides=None, lineage=())`,
   `scene_from_ddl(path, out_dir, columns=False, roles_path=None)` and `scene_from_dbt(dir, ...)`. Output is byte-stable: one schema, one pair of

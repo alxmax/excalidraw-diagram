@@ -52,14 +52,15 @@ def _tests(column):
 
 
 def _model_table(entry, where):
-    """The Table a schema.yml `models:` entry describes."""
+    """(Table, {column: {test: arguments}}) for a schema.yml `models:` entry."""
     if not isinstance(entry, dict) or not entry.get("name"):
         raise ValueError("%s: a model entry needs a name" % where)
-    table = Table(str(entry["name"]))
+    table, all_tests = Table(str(entry["name"])), {}
     for col in entry.get("columns") or []:
         if not isinstance(col, dict) or not col.get("name"):
             raise ValueError("%s: model %s has a column without a name" % (where, table.name))
         name, tests = str(col["name"]), _tests(col)
+        all_tests[name] = tests
         table.columns.append(Column(name, str(col.get("data_type") or ""),
                                     nullable="not_null" not in tests))
         if "unique" in tests and "not_null" in tests:
@@ -69,7 +70,7 @@ def _model_table(entry, where):
         if target:                              # a source(...) target is not a model: skipped
             table.foreign_keys.append(ForeignKey(
                 [name], target.group(1), [str(rel["field"])] if rel.get("field") else []))
-    return table
+    return table, all_tests
 
 
 def read_dbt(project_dir):
@@ -80,28 +81,36 @@ def read_dbt(project_dir):
     every ref() whose target is another model of the project. Raises ValueError naming
     the file when a schema.yml cannot be read, or the directory when it holds no model."""
     # implements: REQ-DATAMODEL-907
+    tables, lineage, _sql, _tests = read_dbt_project(project_dir)
+    return tables, lineage
+
+
+def read_dbt_project(project_dir):
+    """(tables, lineage, sql, tests): what read_dbt() returns, plus the raw SQL of each
+    model that has a .sql file ({model: text}) and the schema.yml tests on each column
+    ({model: {column: {test: arguments}}}). The mapping report reads these."""
     root = os.path.join(project_dir, "models")
     root = root if os.path.isdir(root) else project_dir
-    tables, refs = {}, {}
+    tables, refs, texts, tests = {}, {}, {}, {}
     for path in _walk(root, (".yml", ".yaml")):
         try:
             doc = parse_yaml(_read(path))
             entries = doc.get("models") if isinstance(doc, dict) else None
             for entry in entries or []:
-                table = _model_table(entry, path)
+                table, column_tests = _model_table(entry, path)
                 if table.name in tables:
                     raise ValueError("model %s is described twice" % table.name)
-                tables[table.name] = table
+                tables[table.name], tests[table.name] = table, column_tests
         except ValueError as exc:
             raise ValueError("%s: %s" % (path, exc) if path not in str(exc) else str(exc))
     for path in _walk(root, (".sql",)):
         name = os.path.splitext(os.path.basename(path))[0]
         tables.setdefault(name, Table(name))
-        sql = _NOISE.sub(" ", _read(path))
-        refs[name] = set(_REF.findall(sql))
+        texts[name] = _read(path)
+        refs[name] = set(_REF.findall(_NOISE.sub(" ", texts[name])))
     if not tables:
         raise ValueError("%s: no dbt model found (looked for .sql files and schema.yml "
                          "files under %s)" % (project_dir, root))
     lineage = sorted((m, up) for m, ups in refs.items() for up in ups
                      if up in tables and up != m)
-    return [tables[n] for n in sorted(tables)], lineage
+    return [tables[n] for n in sorted(tables)], lineage, texts, tests

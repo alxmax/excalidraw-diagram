@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -22,6 +22,7 @@ from excalidraw_engine.data_model import (  # noqa: E402
     graph_from_tables, scene_from_ddl, unresolved_fks)
 from excalidraw_engine.dbt import read_dbt  # noqa: E402
 from excalidraw_engine.ddl import parse_ddl  # noqa: E402
+from excalidraw_engine.mapping import mapping_markdown  # noqa: E402
 from excalidraw_engine.miniyaml import parse_yaml  # noqa: E402
 from excalidraw_engine.review import review_tables  # noqa: E402
 from excalidraw_engine.roles import parse_roles  # noqa: E402
@@ -557,6 +558,123 @@ class TestReadDbt(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(cli.main(["data-model"]), 2)
             self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "--from-ddl", "x.sql"]), 2)
+
+
+def _project(models, schema=""):
+    """A throwaway dbt project in a temp dir: {model: sql} plus an optional schema.yml
+    text. Returns (TemporaryDirectory, path); the caller keeps the first alive."""
+    tmp = tempfile.TemporaryDirectory()
+    root = os.path.join(tmp.name, "models")
+    os.makedirs(root)
+    for name, sql in models.items():
+        with open(os.path.join(root, name + ".sql"), "w", encoding="utf-8") as fh:
+            fh.write(sql)
+    if schema:
+        with open(os.path.join(root, "schema.yml"), "w", encoding="utf-8") as fh:
+            fh.write(schema)
+    return tmp, tmp.name
+
+
+def _row(markdown, model, column):
+    """The table row for `column` in the `model` section, or None."""
+    section = markdown.split("## %s\n" % model)[1].split("\n## ")[0]
+    return next((ln for ln in section.splitlines() if ln.startswith("| `%s` |" % column)), None)
+
+
+class TestMapping(unittest.TestCase):
+    """REQ-DATAMODEL-909: a source-to-target mapping that says when it cannot tell."""
+
+    def setUp(self):
+        self.md = mapping_markdown(DBT, title="dbt_shop")
+
+    def test_plain_columns_are_traced_through_aliases_and_pass_through_ctes(self):  # verifies: REQ-DATAMODEL-909#CASE-1
+        self.assertIn("| `customer_id` | `stg_customers.customer_id` | copy | unique, not_null |",
+                      _row(self.md, "customers", "customer_id"))
+        self.assertIn("`stg_orders.status` | copy", _row(self.md, "orders", "status"))
+
+    def test_a_renamed_column_and_a_source_table_are_named(self):  # verifies: REQ-DATAMODEL-909#CASE-1
+        self.assertIn("`raw.customers.id` | rename", _row(self.md, "stg_customers", "customer_id"))
+        self.assertIn("`raw.orders.user_id` | rename", _row(self.md, "stg_orders", "customer_id"))
+
+    def test_an_expression_keeps_its_text_and_lists_the_columns_it_reads(self):  # verifies: REQ-DATAMODEL-909#CASE-2
+        self.assertIn("`stg_orders.order_date` | min(orders.order_date)",
+                      _row(self.md, "customers", "first_order"))
+        self.assertIn("`raw.payments.amount` | amount / 100",
+                      _row(self.md, "stg_payments", "amount"))
+
+    def test_rules_come_from_the_schema_tests(self):  # verifies: REQ-DATAMODEL-909#CASE-3
+        self.assertIn("not_null, relationships to customers.customer_id",
+                      _row(self.md, "orders", "customer_id"))
+        self.assertIn("accepted_values: placed, shipped, completed, returned",
+                      _row(self.md, "orders", "status"))
+
+    def test_models_are_listed_upstream_first_with_what_they_are_built_from(self):  # verifies: REQ-DATAMODEL-909#CASE-3
+        self.assertLess(self.md.index("## stg_customers"), self.md.index("## customers"))
+        self.assertIn("Built from: `stg_orders`, `stg_payments`", self.md.split("## orders")[1])
+
+    def test_select_star_copies_the_declared_columns_and_checks_upstream(self):  # verifies: REQ-DATAMODEL-909#CASE-4
+        tmp, path = _project(
+            {"a": "select 1 as x", "b": "select * from {{ ref('a') }}"},
+            "models:\n  - name: a\n    columns:\n      - name: x\n"
+            "  - name: b\n    columns:\n      - name: x\n      - name: y\n")
+        with tmp:
+            md = mapping_markdown(path)
+        self.assertIn("`a.x` | copy (via *)", _row(md, "b", "x"))
+        self.assertIn("needs review", _row(md, "b", "y"))
+        self.assertIn("a does not declare y", _row(md, "b", "y"))
+
+    def test_what_it_cannot_read_is_marked_needs_review_with_the_reason(self):  # verifies: REQ-DATAMODEL-909#CASE-5
+        cases = {
+            "u": ("select a from {{ ref('s') }} union select a from {{ ref('t') }}", "union"),
+            "j": ("{% if true %}select a from {{ ref('s') }}{% endif %}", "Jinja"),
+            "q": ("select a from (select a from {{ ref('s') }}) z", "subquery"),
+            "m": ("select a from {{ ref('s') }} x join {{ ref('t') }} y on x.k = y.k", "2 relations"),
+            "r": ("with c as (select a + 1 as a from {{ ref('s') }}) select c.a from c", "reshapes"),
+            "n": ("select count(*) from {{ ref('s') }}", "no alias"),
+        }
+        schema = "models:\n" + "".join("  - name: %s\n    columns:\n      - name: a\n" % k
+                                       for k in cases)
+        models = dict({k: v[0] for k, v in cases.items()}, s="select 1 as a", t="select 1 as a")
+        tmp, path = _project(models, schema)
+        with tmp:
+            md = mapping_markdown(path)
+        for model, (_, why) in cases.items():
+            row = _row(md, model, "a") if model != "n" else _row(md, model, "(unnamed)")
+            self.assertIn("needs review", row, model)
+            self.assertIn(why, row, model)
+
+    def test_a_model_with_no_sql_file_is_marked_needs_review(self):  # verifies: REQ-DATAMODEL-909#CASE-5
+        tmp, path = _project({"b": "select 1 as c"},
+                             "models:\n  - name: ghost\n    columns:\n      - name: c\n")
+        with tmp:
+            self.assertIn("no SQL file", _row(mapping_markdown(path), "ghost", "c"))
+
+    def test_a_pipe_in_an_expression_does_not_break_the_table(self):  # verifies: REQ-DATAMODEL-909#CASE-6
+        tmp, path = _project({"s": "select 1 as a", "m": "select a || 'x' as b from {{ ref('s') }}"},
+                             "models:\n  - name: m\n    columns:\n      - name: b\n")
+        with tmp:
+            row = _row(mapping_markdown(path), "m", "b")
+        self.assertIn("a \\|\\| 'x'", row)
+
+    def test_the_same_project_gives_the_same_text(self):  # verifies: REQ-DATAMODEL-909#CASE-6
+        self.assertEqual(self.md, mapping_markdown(DBT, title="dbt_shop"))
+
+    def test_the_mapping_flag_writes_markdown_beside_the_scene(self):  # verifies: REQ-DATAMODEL-909#CASE-7
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            target = os.path.join(out, "mapping.md")
+            self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "-o", out,
+                                       "--mapping", target]), 0)
+            with open(target, encoding="utf-8") as fh:
+                self.assertEqual(fh.read(), self.md)
+
+    def test_mapping_needs_dbt_and_writes_nothing_when_the_project_is_unreadable(self):  # verifies: REQ-DATAMODEL-909#CASE-7
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stderr(io.StringIO()):
+            target = os.path.join(out, "m.md")
+            self.assertEqual(cli.main(["data-model", "--from-ddl",
+                                       os.path.join(DATA, "shop_demo.sql"),
+                                       "--mapping", target]), 2)
+            self.assertEqual(cli.main(["data-model", "--from-dbt", out, "--mapping", target]), 1)
+            self.assertFalse(os.path.exists(target))
 
 
 class TestCapability(unittest.TestCase):

@@ -1,0 +1,75 @@
+---
+id: REQ-DATAMODEL-909
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-DATAMODEL-036]
+---
+
+# A source-to-target mapping that says when it cannot tell
+
+## Description
+> A mapping that looks complete and is wrong is worse than none, because people build on
+> it. The reader behind this one is small, so it follows only what it can follow with
+> certainty and marks the rest "needs review" with the reason, leaving the guess to a person
+> who reads the SQL.
+
+Every bullet below is binding.
+- `mapping_markdown(project_dir)` returns Markdown with one section per model, upstream models first, each holding a table of target column, source, transformation and rule.
+- A plain column is traced through table aliases, joins and CTEs that only pass a table through, to `model.column` or `source.table.column`.
+- A rename reads `rename`, a copy reads `copy`, and any other expression is shown as written with every column it reads listed as a source.
+- The rule is the model's schema.yml tests on the column, including the target of a `relationships` test and the values of `accepted_values`.
+- With `select *`, a column the schema.yml declares is a copy via the star, and a column the upstream schema does not declare is flagged.
+- A column is marked "needs review" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.
+- A column marked "needs review" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.
+- A pipe inside a cell is escaped, and one project always produces the same text.
+- `data-model --from-dbt --mapping <file.md>` writes the report once the scene has passed its gates, and `--mapping` without `--from-dbt` is a usage error.
+
+## Cases
+CASE-1 — plain columns are traced
+  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables
+  When   `mapping_markdown()` is called
+  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`
+
+CASE-2 — an expression keeps its text
+  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`
+  When   `mapping_markdown()` is called
+  Then   each row shows the expression as written, and lists the one column it reads as its source
+
+CASE-3 — rules and order
+  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models
+  When   `mapping_markdown()` is called
+  Then   the rule cell lists those tests with their targets and values, and staging models come first
+
+CASE-4 — select star
+  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not
+  When   `mapping_markdown()` is called
+  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged
+
+CASE-5 — what cannot be read is marked
+  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL
+  When   `mapping_markdown()` is called
+  Then   each affected row says "needs review" with the reason, and names no guessed source
+
+CASE-6 — safe and stable text
+  Given  an expression containing `||`, and the same project read twice
+  When   `mapping_markdown()` is called
+  Then   the pipes are escaped inside the table, and both texts are identical
+
+CASE-7 — the command writes the file
+  Given  the fixture project, a DDL input, and an empty project directory
+  When   `data-model` runs with `--mapping`
+  Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file
+
+## Context
+**Notes**
+- Only a plain `select` is read: window functions, lateral joins, `pivot` and macros are not.
+  A name that looks like a column but is a SQL keyword is filtered by a fixed list, so an
+  unusual keyword can appear as a source; the row is then marked only if the schema is known.
+- Column types are not inferred, so a `cast(...)` shows as written.
+
+**Current implementation**
+- `mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`;
+  `read_dbt_project()` in `dbt.py`; `scene_from_dbt()` in `data_model.py`; the flag in `cli.py`.
+- `TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
