@@ -12,6 +12,7 @@ fact points at its dimensions and the arrow reads "belongs to".
 import os
 
 from .classify import classify_tables
+from .dbt import read_dbt
 from .ddl import parse_ddl
 from .review import review_tables
 from .roles import parse_roles
@@ -24,9 +25,12 @@ ROLE_COLOURS = {"fact": "blue", "dimension": "green", "bridge": "violet", "unkno
 SUBTITLE = ("Each arrow runs from a table to the table its foreign key references. "
             "Under each name: the role and how sure the classification is.")
 NOTE_SUBTITLE = " Amber notes on dashed lines are review findings on the table they touch."
+LINEAGE_SUBTITLE = (" Dashed lines between tables are ref() lineage: the model reads from "
+                    "the one it points to.")
 
 
-def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None):
+def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
+                      lineage=()):
     """A graph description (a dict for scene_from_spec) for `tables`.
 
     Several foreign keys from one table to the same target become one edge labelled
@@ -39,10 +43,15 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None)
     Every finding of review_tables() becomes an amber note joined to its table.
 
     `columns=True` lists each table's columns under its name, marking the PK and FK ones;
-    `overrides` is a {table: role} map that replaces the classifier's answer."""
+    `overrides` is a {table: role} map that replaces the classifier's answer.
+
+    `lineage` is a list of (model, upstream) pairs (dbt's ref()); each is drawn as a dashed
+    line from the model to what it is built from, unless a foreign key already joins that
+    pair the same way."""
     # implements: REQ-DATAMODEL-901
     # implements: REQ-DATAMODEL-904
     # implements: REQ-DATAMODEL-905
+    # implements: REQ-DATAMODEL-907
     known = {t.name for t in tables}
     edges, seen = [], {}
     for table in tables:
@@ -56,6 +65,8 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None)
             else:
                 seen[key] = {"src": table.name, "dst": fk.ref_table, "label": label}
                 edges.append(seen[key])
+    drawn = [(a, b) for a, b in lineage if (a, b) not in seen]
+    edges += [{"src": a, "dst": b, "dashed": True} for a, b in drawn]
     roles = classify_tables(tables, overrides)
     nodes = [{"id": t.name, "label": _label(t, roles[t.name], columns),
               "fill": roles[t.name].role} for t in tables]
@@ -68,7 +79,8 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None)
     if issues:
         used.add(NOTE)
     spec = {"nodes": nodes, "edges": edges, "seed": seed,
-            "subtitle": SUBTITLE + (NOTE_SUBTITLE if issues else ""),
+            "subtitle": SUBTITLE + (LINEAGE_SUBTITLE if drawn else "")
+                        + (NOTE_SUBTITLE if issues else ""),
             "roles": {r: col for r, col in ROLE_COLOURS.items() if r in used},
             "glossary": [[t.name, "%s - %s" % (roles[t.name].role, roles[t.name].reason)]
                          for t in tables]}
@@ -112,6 +124,24 @@ def unresolved_fks(tables):
     return [(t, fk) for t in tables for fk in t.foreign_keys if fk.ref_table not in known]
 
 
+def _draw(tables, lineage, source, stem, out_dir, name, offline, svg, columns, roles_path):
+    """Overrides, graph and scene for already-parsed `tables`; `source` names the input in
+    an error."""
+    overrides = None
+    if roles_path:
+        with open(roles_path, encoding="utf-8") as fh:
+            try:
+                overrides = parse_roles(fh.read())
+            except ValueError as exc:
+                raise ValueError("%s: %s" % (roles_path, exc))
+    try:
+        spec = graph_from_tables(tables, title=name or stem, columns=columns,
+                                 overrides=overrides, lineage=lineage)
+    except ValueError as exc:
+        raise ValueError("%s: %s" % (roles_path or source, exc))
+    return scene_from_spec(spec, out_dir, name=name or stem, offline=offline, svg=svg)
+
+
 def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False,
                    columns=False, roles_path=None):
     """Read a DDL file, draw its tables, and save the scene and viewer.
@@ -127,18 +157,19 @@ def scene_from_ddl(ddl_path, out_dir=None, name=None, offline=None, svg=False,
             tables = parse_ddl(fh.read())
         except ValueError as exc:
             raise ValueError("%s: %s" % (ddl_path, exc))
-    overrides = None
-    if roles_path:
-        with open(roles_path, encoding="utf-8") as fh:
-            try:
-                overrides = parse_roles(fh.read())
-            except ValueError as exc:
-                raise ValueError("%s: %s" % (roles_path, exc))
     stem = os.path.splitext(os.path.basename(ddl_path))[0]
-    try:
-        spec = graph_from_tables(tables, title=name or stem, columns=columns,
-                                 overrides=overrides)
-    except ValueError as exc:
-        raise ValueError("%s: %s" % (roles_path or ddl_path, exc))
-    return scene_from_spec(spec, out_dir or os.path.dirname(ddl_path) or ".",
-                           name=name or stem, offline=offline, svg=svg)
+    return _draw(tables, (), ddl_path, stem, out_dir or os.path.dirname(ddl_path) or ".",
+                 name, offline, svg, columns, roles_path)
+
+
+def scene_from_dbt(project_dir, out_dir=None, name=None, offline=None, svg=False,
+                   columns=False, roles_path=None):
+    """Read a dbt project (see dbt.read_dbt), draw its models, and save the scene.
+
+    Same options as scene_from_ddl(). The output name is `name`, else the project
+    folder's; the directory defaults to the current one, never the project itself."""
+    # implements: REQ-DATAMODEL-907
+    tables, lineage = read_dbt(project_dir)
+    stem = os.path.basename(os.path.abspath(project_dir))
+    return _draw(tables, lineage, project_dir, stem, out_dir or ".", name, offline, svg,
+                 columns, roles_path)

@@ -83,8 +83,8 @@ def _orphan_fk(tables, _roles, by_name):
         for fk in t.foreign_keys:
             target = by_name.get(fk.ref_table)
             if target is None:
-                out.append(Issue(t.name, "orphan-fk", "%s references %s, which no CREATE TABLE "
-                                 "defines" % (", ".join(fk.columns), fk.ref_table)))
+                out.append(Issue(t.name, "orphan-fk", "%s references %s, which the schema "
+                                 "does not define" % (", ".join(fk.columns), fk.ref_table)))
                 continue
             gone = [c for c in fk.ref_columns if target.column(c) is None]
             if gone:

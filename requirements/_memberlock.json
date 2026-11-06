@@ -2,7 +2,7 @@
   "_schema": 2,
   "members": {
     "ARCH-DATAMODEL-036": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "d342f74e0dc8e95b23bc62c0e8767d62e2a29454f88239db2838889b53fec226"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "c07a202a2aa6e825216be93e5fa38425b1ece60283e233032c14d08e9d37c4c8"
     },
     "ARCH-EXCALIDRAW-030": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
@@ -14,13 +14,20 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py#parse_ddl": "3d0456a69c7b135cac1f3f12bbba7693a7befb259ecdca5cb0e4a12224a3809f"
     },
     "REQ-DATAMODEL-901": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "7806b1f6c328f80ec893ffecb74c5d4fa5817c03db9ec564c65fa0851e833ca7"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "b26a5c640d76fb49df293c33592d8f1acb17751f1e24ad528f8adb6cf0b9e574"
     },
     "REQ-DATAMODEL-903": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#review_tables": "a08fd08a0a0a9e87d7d314a353e2f3b34e935f661fb4ef6cb729f61f460b9bb2"
     },
     "REQ-DATAMODEL-906": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py#parse_roles": "78767f4d89d0c3dba61bff34b02b99786823561b66cba82105bdc0a543fbe1db"
+    },
+    "REQ-DATAMODEL-907": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_dbt": "00e75cf0396c5e3d408355bef97deb9bab3e5315daa41082927b10ef1aac3717",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py#read_dbt": "c97c0e48f820732d0f2191f354fd5347dd05f562a2475e86471a11f21fffc4e2"
+    },
+    "REQ-DATAMODEL-908": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py#parse_yaml": "510e433a388d9e4ac8cfbac34fcd277b596b79d664ca83dae0c17a212c416e54"
     },
     "REQ-EXCALIDRAW-844": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",

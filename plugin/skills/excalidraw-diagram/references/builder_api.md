@@ -168,6 +168,16 @@ table holding the key to the table it references). It builds the same graph desc
   `grain` (a fact without a primary key), `surrogate-key` (a dimension keyed by a source
   id), `scd2` (changing attributes with no `valid_from` / `valid_to`), `orphan-fk` (a key
   to a missing table or column), `snowflake` (a dimension normalised into sub-dimensions).
+- **`--from-dbt <project>`:** draws a dbt project instead of a DDL file (exactly one of the
+  two). One node per model under `models/` (a `.sql` file or a `schema.yml` entry). A
+  `relationships` test on a column becomes a foreign key, so it is classified and reviewed
+  like any DDL key; a column with both `unique` and `not_null` tests is the primary key;
+  `data_type` gives the column type. A `ref()` in a model's SQL is lineage, drawn as a dashed
+  line from the model to what it is built from (not drawn when a foreign key already joins
+  the pair). Without `data_type` a model has no typed columns and may classify as unknown:
+  use `--roles`. `schema.yml` is read by a YAML subset reader (maps, lists, scalars, flow
+  collections, `|` / `>` blocks); anchors, tags, tabs, repeated keys and multiple documents
+  are errors naming the line. Output goes to `-o`, or the current folder.
 - **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
   order the DDL declares them. Off by default; it makes every node taller.
 - **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
@@ -175,10 +185,11 @@ table holding the key to the table it references). It builds the same graph desc
   YAML parser, so anything richer is an error naming the line. The table gets the role at
   confidence 1, labelled `set by you`, and the glossary keeps what the rules had said. The
   review rules use the new role. A table the schema does not define is an error.
-- **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `parse_roles(text)`,
+- **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `read_dbt(dir)` in `excalidraw_engine.dbt`,
+  `parse_yaml(text)`, `parse_roles(text)`,
   `classify_tables(tables, overrides=None)`, `review_tables(tables, roles)`,
-  `graph_from_tables(tables, columns=False, overrides=None)` and `scene_from_ddl(path,
-  out_dir, columns=False, roles_path=None)`. Output is byte-stable: one schema, one pair of
+  `graph_from_tables(tables, columns=False, overrides=None, lineage=())`,
+  `scene_from_ddl(path, out_dir, columns=False, roles_path=None)` and `scene_from_dbt(dir, ...)`. Output is byte-stable: one schema, one pair of
   files.
 - **Limits:** the roles and the `scd2` rule are heuristics on names and structure, and
   the diagram lays the fact in one column with its dimensions beside it, not around it.
