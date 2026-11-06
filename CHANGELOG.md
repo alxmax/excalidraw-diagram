@@ -1,5 +1,35 @@
 # Changelog
 
+## plugin `v2.12.0` — 2026-11-07
+
+**Changed: dbt lineage is drawn only with `--lineage`.** Rendered, a real dbt project's
+`ref()` lines outnumbered its foreign keys and ran round the whole diagram, and a dashed
+lineage line looked exactly like the dashed line to a review note. Without the flag the
+diagram now shows models, foreign keys, roles and review notes; with it, each `ref()` is a
+dashed line labelled `ref`. v2.10.0 drew lineage by default. The mapping file is unchanged
+and always says what each model is built from.
+
+**Confidence now means something.** It was the winner's share of the top two scores, so it
+read 100% whenever no other role scored. It is now the winner's lead over the runner-up
+times how much evidence it has, and reaches 100% only with a clear lead and eight points
+or more: a well-evidenced table still reads 100%, a table that rests on little or has a
+close rival reads lower, and a table that is only keys reads low.
+
+**A data-model diagram a stranger can read.** The subtitle says how to read it (a box is a
+table, an arrow from A to B means A holds a key that points at B). The legend gives every
+colour an icon and a plain meaning; the glossary defines only the terms the picture uses (fact,
+dimension, PK, SCD type 2 ...) in everyday words and says why each table has its role; key
+columns and review notes carry icons beside the words. Arrows name their key column only where
+labels cannot collide: with two facts sharing dimensions they used to stack on top of each
+other, so the diagram now says to add `--columns` instead.
+
+**A wide legend no longer overlaps the glossary.** `graph.json`'s glossary starts to the right
+of the legend whatever its width, not at a fixed position.
+
+**Review notes wrap wide.** A node in a `graph.json` takes an optional `max_chars` (the
+wrap width of its label, default 22, so nothing existing changes). `data-model` sets 40 on
+its review notes, which were 12-line towers.
+
 ## plugin `v2.11.0` — 2026-11-06
 
 **`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping.** One

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909  # tested-by: REQ-DATAMODEL-910  # tested-by: REQ-DATAMODEL-911
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -17,9 +17,10 @@ DATA = os.path.join(HERE, "..", "examples", "data_model")
 sys.path.insert(0, HERE)
 
 from excalidraw_engine import cli  # noqa: E402
+from excalidraw_engine import explain  # noqa: E402
 from excalidraw_engine.classify import classify_tables  # noqa: E402
 from excalidraw_engine.data_model import (  # noqa: E402
-    graph_from_tables, scene_from_ddl, unresolved_fks)
+    NOTE, graph_from_tables, scene_from_ddl, unresolved_fks)
 from excalidraw_engine.dbt import read_dbt  # noqa: E402
 from excalidraw_engine.ddl import parse_ddl  # noqa: E402
 from excalidraw_engine.mapping import mapping_markdown  # noqa: E402
@@ -152,8 +153,9 @@ class TestClassify(unittest.TestCase):
 
     def test_node_is_coloured_by_role_and_legend_lists_only_roles_in_use(self):  # verifies: REQ-DATAMODEL-902#CASE-5
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
-        self.assertEqual({n["fill"] for n in spec["nodes"]}, {"fact", "dimension"})
-        self.assertEqual(sorted(spec["roles"]), ["dimension", "fact"])
+        keys = {explain.role_key("fact"), explain.role_key("dimension")}
+        self.assertEqual({n["fill"] for n in spec["nodes"]}, keys)
+        self.assertEqual(set(spec["roles"]), keys)
         self.assertIn("fact", spec["nodes"][3]["label"])
 
 
@@ -263,16 +265,16 @@ class TestReview(unittest.TestCase):
 
     def test_issues_become_amber_notes_joined_to_their_table(self):  # verifies: REQ-DATAMODEL-904#CASE-2
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
-        notes = [n for n in spec["nodes"] if n["fill"] == "review note"]
+        notes = [n for n in spec["nodes"] if n["fill"] == NOTE]
         self.assertEqual(len(notes), 4)
         joined = {(e["src"], e["dst"]) for e in spec["edges"] if e.get("dashed")}
         self.assertIn(("stg_payments", notes[-1]["id"]), joined)
-        self.assertEqual(spec["roles"]["review note"], "yellow")
+        self.assertEqual(spec["roles"][NOTE], "yellow")
 
     def test_clean_schema_draws_no_notes_and_no_note_legend(self):  # verifies: REQ-DATAMODEL-904#CASE-3
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
-        self.assertNotIn("review note", spec["roles"])
-        self.assertEqual([n for n in spec["nodes"] if n["fill"] == "review note"], [])
+        self.assertNotIn(NOTE, spec["roles"])
+        self.assertEqual([n for n in spec["nodes"] if n["fill"] == NOTE], [])
 
 
 class TestGraph(unittest.TestCase):
@@ -280,7 +282,7 @@ class TestGraph(unittest.TestCase):
 
     def test_one_node_per_table_one_edge_per_fk(self):  # verifies: REQ-DATAMODEL-901#CASE-1
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
-        self.assertEqual(len([n for n in spec["nodes"] if n["fill"] != "review note"]), 6)
+        self.assertEqual(len([n for n in spec["nodes"] if n["fill"] != NOTE]), 6)
         pairs = sorted((e["src"], e["dst"]) for e in spec["edges"] if not e.get("dashed"))
         self.assertEqual(pairs, [("dim_product", "dim_category"),
                                  ("fact_order_line", "dim_customer"),
@@ -354,6 +356,9 @@ class TestCli(unittest.TestCase):
 ROLES_FILE = os.path.join(DATA, "shop_demo.roles.yml")
 
 
+PK, FK = explain.ICON["pk"], explain.ICON["fk"]
+
+
 def _node(spec, table):
     return next(n for n in spec["nodes"] if n["id"] == table)
 
@@ -364,19 +369,20 @@ class TestColumns(unittest.TestCase):
     def test_columns_are_off_by_default(self):  # verifies: REQ-DATAMODEL-905#CASE-1
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
         self.assertEqual(_node(spec, "dim_date")["label"].split("\n"),
-                         ["dim_date", "dimension · 100%"])
+                         ["dim_date", explain.ICON["dimension"] + " dimension · 100%"])
 
     def test_columns_listed_in_order_with_key_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
         spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")), columns=True)
         self.assertEqual(_node(spec, "fact_order_line")["label"].split("\n")[2:],
-                         ["PK order_line_key", "FK date_key", "FK customer_key",
-                          "FK product_id", "quantity", "unit_price", "line_amount"])
+                         [PK + " PK order_line_key", FK + " FK date_key",
+                          FK + " FK customer_key", FK + " FK product_id",
+                          "quantity", "unit_price", "line_amount"])
 
     def test_a_key_that_is_both_primary_and_foreign_carries_both_marks(self):  # verifies: REQ-DATAMODEL-905#CASE-2
         spec = graph_from_tables(parse_ddl(
             "CREATE TABLE p (k int PRIMARY KEY);"
             "CREATE TABLE c (k int PRIMARY KEY REFERENCES p (k), v text);"), columns=True)
-        self.assertIn("PK FK k", _node(spec, "c")["label"].split("\n"))
+        self.assertIn(PK + " PK " + FK + " FK k", _node(spec, "c")["label"].split("\n"))
 
     def test_columns_flag_renders_through_every_gate(self):  # verifies: REQ-DATAMODEL-905#CASE-3
         with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
@@ -385,7 +391,7 @@ class TestColumns(unittest.TestCase):
             self.assertEqual(code, 0)
             with open(os.path.join(out, "shop_demo.excalidraw"), encoding="utf-8") as fh:
                 texts = [e["text"] for e in json.load(fh)["elements"] if e["type"] == "text"]
-        self.assertTrue(any("PK order_line_key" in t.split("\n") for t in texts))
+        self.assertTrue(any(PK + " PK order_line_key" in t.split("\n") for t in texts))
 
 
 class TestRoles(unittest.TestCase):
@@ -443,6 +449,45 @@ class TestRoles(unittest.TestCase):
             with open(os.path.join(out, "shop_demo.excalidraw"), encoding="utf-8") as fh:
                 texts = [e["text"] for e in json.load(fh)["elements"] if e["type"] == "text"]
         self.assertTrue(any("fact · set by you" in t for t in texts))
+
+
+class TestConfidence(unittest.TestCase):
+    """REQ-DATAMODEL-902: confidence rests on the lead AND on how much evidence there is."""
+
+    def _conf(self, fixture, table):
+        return classify_tables(parse_ddl(_read(fixture)))[table].confidence
+
+    def test_strong_evidence_and_no_rival_reads_one(self):  # verifies: REQ-DATAMODEL-902#CASE-6
+        self.assertEqual(self._conf("shop_demo.sql", "fact_order_line"), 1.0)
+        self.assertEqual(self._conf("shop_demo.sql", "dim_date"), 1.0)
+
+    def test_thin_evidence_or_a_close_rival_reads_lower(self):  # verifies: REQ-DATAMODEL-902#CASE-6
+        strong = self._conf("shop_demo.sql", "dim_date")
+        self.assertLess(self._conf("shop_noprefix.sql", "calendar"), strong)    # few points
+        self.assertLess(self._conf("shop_noprefix.sql", "products"), strong)    # a rival role
+        self.assertLess(self._conf("shop_noprefix.sql", "product_promotion"), 0.5)  # lead of 1
+
+
+class TestNodeWidth(unittest.TestCase):
+    """A node's `max_chars` sets its label's wrap width; the default is unchanged."""
+
+    def _lines(self, **extra):
+        from excalidraw_engine.scene import Scene
+        s = Scene(seed=1)
+        s.pack([dict(id="a", label="one two three four five six seven eight nine ten eleven", **extra)])
+        return max(len(ln) for e in s.elements if e["type"] == "text"
+                   for ln in e["text"].split("\n"))
+
+    def test_default_wraps_at_22_and_max_chars_widens_it(self):
+        self.assertLessEqual(self._lines(), 22)
+        wide = self._lines(max_chars=40)
+        self.assertGreater(wide, 22)
+        self.assertLessEqual(wide, 40)
+
+    def test_review_notes_ask_for_the_wide_wrap(self):  # verifies: REQ-DATAMODEL-904#CASE-2
+        spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
+        notes = [n for n in spec["nodes"] if n["fill"] == NOTE]
+        self.assertTrue(notes and all(n["max_chars"] == 40 for n in notes))
 
 
 class TestFitTextKeepsLines(unittest.TestCase):
@@ -675,6 +720,116 @@ class TestMapping(unittest.TestCase):
                                        "--mapping", target]), 2)
             self.assertEqual(cli.main(["data-model", "--from-dbt", out, "--mapping", target]), 1)
             self.assertFalse(os.path.exists(target))
+
+
+class TestLineageFlag(unittest.TestCase):
+    """REQ-DATAMODEL-910: lineage is drawn only on request, and labelled `ref`."""
+
+    def _ref_labels(self, *flags):
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "-o", out] + list(flags)), 0)
+            with open(os.path.join(out, "dbt_shop.excalidraw"), encoding="utf-8") as fh:
+                return [e for e in json.load(fh)["elements"]
+                        if e["type"] == "text" and e["text"] == "ref"]
+
+    def test_no_lineage_line_without_the_flag(self):  # verifies: REQ-DATAMODEL-910#CASE-1
+        self.assertEqual(self._ref_labels(), [])
+
+    def test_the_flag_draws_one_ref_label_per_lineage_line(self):  # verifies: REQ-DATAMODEL-910#CASE-2
+        _, lineage = read_dbt(DBT)
+        fk_pairs = {(f.columns and t.name, f.ref_table) for t in read_dbt(DBT)[0]
+                    for f in t.foreign_keys}
+        expected = len([p for p in lineage if p not in fk_pairs])
+        self.assertGreater(expected, 0)
+        self.assertEqual(len(self._ref_labels("--lineage")), expected)
+
+    def test_lineage_without_dbt_is_a_usage_error(self):  # verifies: REQ-DATAMODEL-910#CASE-3
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(cli.main(["data-model", "--from-ddl",
+                                       os.path.join(DATA, "shop_demo.sql"), "--lineage"]), 2)
+
+    def test_the_mapping_is_the_same_with_or_without_the_flag(self):  # verifies: REQ-DATAMODEL-910#CASE-4
+        texts = []
+        for flags in ([], ["--lineage"]):
+            with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+                target = os.path.join(out, "m.md")
+                self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "-o", out,
+                                           "--mapping", target] + flags), 0)
+                with open(target, encoding="utf-8") as fh:
+                    texts.append(fh.read())
+        self.assertEqual(texts[0], texts[1])
+
+
+class TestExplain(unittest.TestCase):
+    """REQ-DATAMODEL-911: a diagram a stranger can read without looking anything up."""
+
+    def _spec(self, fixture="shop_demo.sql", **kw):
+        return graph_from_tables(parse_ddl(_read(fixture)), **kw)
+
+    @staticmethod
+    def _terms(spec):
+        return [row[0] for row in spec["glossary"]]
+
+    def test_legend_pairs_each_colour_with_an_icon_and_a_plain_meaning(self):  # verifies: REQ-DATAMODEL-911#CASE-1
+        spec = self._spec()
+        for role in ("fact", "dimension", "unknown"):
+            key = explain.role_key(role)
+            self.assertIn(key, spec["roles"])
+            self.assertTrue(key.startswith(explain.ICON[role]), key)
+            self.assertIn(explain.ROLE_MEANING[role], key)
+        self.assertIn(explain.ICON["note"], NOTE)
+
+    def test_the_subtitle_says_how_to_read_arrows_and_colours(self):  # verifies: REQ-DATAMODEL-911#CASE-2
+        subtitle = self._spec()["subtitle"]
+        self.assertIn("an arrow from A to B means A holds a key that points at B", subtitle)
+        self.assertIn("Colour and icon show each table's role", subtitle)
+
+    def test_the_glossary_defines_the_terms_the_diagram_uses_and_no_others(self):  # verifies: REQ-DATAMODEL-911#CASE-3
+        demo = self._terms(self._spec())
+        for term in ("Arrow", "Fact table", "Dimension", "Unknown", "NN%", "SCD type 2",
+                     "Snowflake", "Surrogate key", "Orphan key"):
+            self.assertIn(term, demo)
+        for absent in ("PK (primary key)", "Grain", "Bridge table", "set by you"):
+            self.assertNotIn(absent, demo)
+        clean = self._terms(self._spec("shop_clean.sql"))
+        for absent in ("SCD type 2", "Snowflake", "Unknown"):
+            self.assertNotIn(absent, clean)
+        self.assertIn("PK (primary key)", self._terms(self._spec(columns=True)))
+        self.assertIn("set by you", self._terms(self._spec(overrides={"stg_payments": "fact"})))
+
+    def test_every_table_says_why_it_has_its_role(self):  # verifies: REQ-DATAMODEL-911#CASE-4
+        spec = self._spec()
+        why = {row[0]: row[1] for row in spec["glossary"] if row[0].startswith("Why ")}
+        self.assertEqual(len(why), 6)
+        self.assertIn("Why fact_order_line is a fact table", why)
+        self.assertIn("Why dim_product is a dimension", why)
+        self.assertIn("Why stg_payments is unknown", why)
+        self.assertTrue(all(len(text.split()) > 3 for text in why.values()))
+
+    def test_key_columns_carry_an_icon_and_the_words_pk_and_fk(self):  # verifies: REQ-DATAMODEL-911#CASE-5
+        self.assertEqual(explain.column_line("k", True, False), explain.ICON["pk"] + " PK k")
+        self.assertEqual(explain.column_line("k", False, True), explain.ICON["fk"] + " FK k")
+        self.assertEqual(explain.column_line("k", False, False), "k")
+        self.assertTrue(explain.note_text("scd2", "x").startswith(explain.ICON["scd2"]))
+
+    def test_arrows_are_labelled_only_where_labels_cannot_collide(self):  # verifies: REQ-DATAMODEL-911#CASE-6
+        def labelled(spec):
+            return [e for e in spec["edges"] if not e.get("dashed") and e.get("label")]
+        one_fact = self._spec()
+        self.assertTrue(labelled(one_fact))
+        self.assertNotIn("--columns", one_fact["subtitle"])
+        two_facts = self._spec("shop_clean.sql")
+        self.assertEqual(labelled(two_facts), [])
+        self.assertIn("Add --columns to see which column joins each pair", two_facts["subtitle"])
+        with_columns = self._spec("shop_clean.sql", columns=True)
+        self.assertEqual(labelled(with_columns), [])
+        self.assertNotIn("--columns", with_columns["subtitle"])
+
+    def test_a_wide_legend_never_overlaps_the_glossary(self):  # verifies: REQ-DATAMODEL-911#CASE-7
+        with tempfile.TemporaryDirectory() as out:
+            for fixture in ("shop_demo.sql", "shop_clean.sql", "shop_noprefix.sql"):
+                for path in scene_from_ddl(os.path.join(DATA, fixture), out, columns=True):
+                    self.assertTrue(os.path.getsize(path) > 0, fixture)
 
 
 class TestCapability(unittest.TestCase):
