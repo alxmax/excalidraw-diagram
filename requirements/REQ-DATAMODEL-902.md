@@ -20,6 +20,7 @@ Every bullet below is binding.
 - A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.
 - The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.
 - A column with no declared type is read as a measure or a descriptive column from its name, and the reason says it was guessed.
+- A table of only keys is a bridge when it joins two tables, and a factless fact when it joins three or more.
 - A declared type is never overridden by a name.
 - Confidence grows with the winner's lead over the runner-up.
 - Confidence grows with the amount of evidence, and reaches 1 only with eight points or more.
@@ -28,7 +29,7 @@ Every bullet below is binding.
 
 ## Cases
 CASE-1 — accuracy on the test set
-  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects
+  Given  every table of the demo, clean, no-prefix and order-process schemas with the role a modeller expects
   When   `classify_tables()` is run on each schema
   Then   at least ninety percent of the tables get the expected role
 

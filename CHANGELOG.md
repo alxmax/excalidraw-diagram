@@ -1,5 +1,23 @@
 # Changelog
 
+## plugin `v2.14.0` — 2026-11-07
+
+**Modelled by hand first, then compared: two defects the fixtures hid.** An order process
+(customer with history, a three-level snowflake, an accumulating snapshot, a periodic
+snapshot, a many-to-many link and a factless table) was written from a business description
+and its expected roles and findings recorded before the tool ran. 12 of 13 roles matched; the
+review found all three planted problems and added four false ones.
+
+The `scd2` rule listened to words inside key columns and entity names: `department_key`,
+`segment_name` in a `segment` table, `country` on a warehouse. Key columns and an entity's own
+name column are no longer attributes, and a place name (city, country, region) now needs a
+second one to count, since places move for a person and not for a depot. One strong name (an
+address, email, status, segment ...) is still enough.
+
+A table of only keys that joins three or more tables is now a **factless fact** (an event with
+nothing to measure), not a bridge; two tables is still a bridge. `promotion_coverage` was the
+one role the tool got wrong.
+
 ## plugin `v2.13.0` — 2026-11-07
 
 **Run on a real dbt project, the mapping was wrong in a way it did not admit.** On the public

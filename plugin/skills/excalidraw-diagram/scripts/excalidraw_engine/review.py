@@ -16,8 +16,14 @@ problem over inventing one.
 import re
 
 _SURROGATE = re.compile(r"(_key|_sk|_skey)$|^(key|sk)$", re.I)
-_CHANGING = re.compile(r"(^|_)(address|city|country|region|segment|status|tier|email|phone|"
-                       r"manager|department|job_title|salary|plan)(_|$)", re.I)
+# Names that suggest an attribute which changes over time. One strong name is enough; the
+# weak ones are places, which move for a person and almost never for a warehouse, so two
+# of them are needed.
+_STRONG = re.compile(r"(^|_)(address|email|phone|status|tier|plan|manager|department|"
+                     r"job_title|salary|segment)(_|$)", re.I)
+_WEAK = re.compile(r"(^|_)(city|country|region)(_|$)", re.I)
+_KEYISH = re.compile(r"(^id$|_id$|_key$|_sk$|_fk$|_code$)", re.I)
+_LABEL = ("name", "label", "title", "description")
 _VALID_FROM = re.compile(r"^(valid_from|effective_from|effective_date|row_start|start_date)$", re.I)
 _VALID_TO = re.compile(r"^(valid_to|effective_to|row_end|end_date)$", re.I)
 
@@ -60,13 +66,26 @@ def _surrogate_key(tables, roles, _by_name):
     return out
 
 
+def _attributes(table):
+    """The names of the columns that describe what `table` holds, as opposed to keys and to
+    the entity's own label: `department_key` is a key and `department.department_name` is the
+    department's name, and neither is an attribute that changes."""
+    keys = set(table.primary_key) | {c for fk in table.foreign_keys for c in fk.columns}
+    own = [table.name.lower() + "_" + w for w in _LABEL]
+    return [c.name for c in table.columns
+            if c.name not in keys and not _KEYISH.search(c.name) and c.name.lower() not in own]
+
+
 def _scd2(tables, roles, _by_name):
     out = []
     for t in _of_role(tables, roles, "dimension"):
         names = [c.name for c in t.columns]
         has_from = any(_VALID_FROM.match(n) for n in names)
         has_to = any(_VALID_TO.match(n) for n in names)
-        changing = [n for n in names if _CHANGING.search(n)]
+        attrs = _attributes(t)
+        strong = [n for n in attrs if _STRONG.search(n)]
+        weak = [n for n in attrs if _WEAK.search(n)]
+        changing = strong + weak if strong or len(weak) >= 2 else []
         if has_from != has_to:
             out.append(Issue(t.name, "scd2", "only one of valid_from / valid_to is present; "
                                              "a type 2 history needs both"))

@@ -1422,6 +1422,7 @@
         "A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.",
         "The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.",
         "A column with no declared type is read as a measure or a descriptive column from its name, and the reason says it was guessed.",
+        "A table of only keys is a bridge when it joins two tables, and a factless fact when it joins three or more.",
         "A declared type is never overridden by a name.",
         "Confidence grows with the winner's lead over the runner-up.",
         "Confidence grows with the amount of evidence, and reaches 1 only with eight points or more.",
@@ -1437,7 +1438,7 @@
         "`classify_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
         "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one\n\nCASE-7 — names stand in for missing types\n  Given  a table whose columns carry no types, and the same table with types declared\n  When   `classify_tables()` is run on each\n  Then   the untyped one is a fact whose reason says it was guessed from names, and the typed one is not",
+      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean, no-prefix and order-process schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one\n\nCASE-7 — names stand in for missing types\n  Given  a table whose columns carry no types, and the same table with types declared\n  When   `classify_tables()` is run on each\n  Then   the untyped one is a fact whose reason says it was guessed from names, and the typed one is not",
       "input": "",
       "output": "",
       "desc": "",
@@ -1454,7 +1455,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:147"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:152"
         }
       ],
       "test_exempt": null,
@@ -1470,7 +1471,7 @@
           "basis": "wording",
           "where": "Cases",
           "quote": "",
-          "question": "There are 10 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "question": "There are 11 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
           "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
         }
       ]
@@ -1487,20 +1488,22 @@
         "`review_tables(tables, roles)` returns issues ordered by table, each naming its table and its rule.",
         "The `grain` rule flags a fact table that has no primary key.",
         "The `surrogate-key` rule flags a dimension whose key is missing, composite or named like a source id instead of `*_key` or `*_sk`.",
-        "The `scd2` rule flags a dimension with attributes that change over time but no `valid_from` and `valid_to`, or with only one of them.",
+        "The `scd2` rule flags a dimension with a changing attribute but no `valid_from` and `valid_to`, or with only one of them.",
+        "A changing attribute is one of address, email, phone, status, tier, plan, manager, department, job title, salary, segment; two place names from city, country, region also count.",
+        "Key columns, and the entity's own name column such as `department_name` in `department`, are never changing attributes.",
         "The `orphan-fk` rule flags a foreign key to a table, or to a column, that does not exist.",
         "The `snowflake` rule flags a dimension referenced by another dimension, and calls the chain deep from two levels down; an outrigger shared by two dimensions is not flagged."
       ],
       "verify": [],
       "notes": [
-        "The `scd2` rule reads column names, so it is a heuristic: it names the columns it suspects.",
+        "The `scd2` rule reads column names, so it is a heuristic: it names the columns it suspects. A lone place name (`country` on a warehouse) is not enough: places move for a person, not for a depot.",
         "`snowflake` flags the sub-dimension, not the dimension that points at it, because that is the table a modeller would fold away."
       ],
       "current_impl": [
         "`review_tables()` and its five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
         "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
+      "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with an `address` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
       "input": "",
       "output": "",
       "desc": "",
@@ -1517,7 +1520,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:137"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:156"
         }
       ],
       "test_exempt": null,
@@ -1526,7 +1529,17 @@
       "risks": [],
       "clauses": 7,
       "covered": 7,
-      "clarify": []
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 8 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-904",
@@ -1679,7 +1692,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:148"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:153"
         },
         {
           "role": "implements",
@@ -2488,7 +2501,7 @@
     },
     {
       "month": "2026-11",
-      "count": 6,
+      "count": 7,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2497,11 +2510,20 @@
         "v2.8.0",
         "v2.9.0",
         "v2.12.0",
-        "v2.13.0"
+        "v2.13.0",
+        "v2.14.0"
       ],
-      "landmark": "v2.13.0",
-      "headline": "Run on a real dbt project, the mapping was wrong in a way it did not admit",
+      "landmark": "v2.14.0",
+      "headline": "Modelled by hand first, then compared: two defects the fixtures hid",
       "entries": [
+        {
+          "version": "v2.14.0",
+          "date": "2026-11-07",
+          "headline": "Modelled by hand first, then compared: two defects the fixtures hid",
+          "body": "**Modelled by hand first, then compared: two defects the fixtures hid.** An order process\n(customer with history, a three-level snowflake, an accumulating snapshot, a periodic\nsnapshot, a many-to-many link and a factless table) was written from a business description\nand its expected roles and findings recorded before the tool ran. 12 of 13 roles matched; the\nreview found all three planted problems and added four false ones.\n\nThe `scd2` rule listened to words inside key columns and entity names: `department_key`,\n`segment_name` in a `segment` table, `country` on a warehouse. Key columns and an entity's own\nname column are no longer attributes, and a place name (city, country, region) now needs a\nsecond one to count, since places move for a person and not for a depot. One strong name (an\naddress, email, status, segment ...) is still enough.\n\nA table of only keys that joins three or more tables is now a **factless fact** (an event with\nnothing to measure), not a bridge; two tables is still a bridge. `promotion_coverage` was the\none role the tool got wrong.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.13.0",
           "date": "2026-11-07",
@@ -2915,7 +2937,7 @@
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py",
-        "line": 38,
+        "line": 44,
         "name": "_grain",
         "detail": "_by_name, roles, tables travel together through 3 functions: _grain, _scd2, _surrogate_key"
       },

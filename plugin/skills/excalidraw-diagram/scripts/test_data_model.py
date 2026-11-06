@@ -109,6 +109,12 @@ EXPECTED = {
     "shop_clean.sql": {
         "fact_order_line": "fact", "fact_payment": "fact", "dim_customer": "dimension",
         "dim_product": "dimension", "dim_date": "dimension"},
+    "order_process.sql": {
+        "calendar": "dimension", "customer": "dimension", "department": "dimension",
+        "product_category": "dimension", "product": "dimension", "warehouse": "dimension",
+        "promotion": "dimension", "segment": "dimension", "order_line": "fact",
+        "order_fulfilment": "fact", "inventory_snapshot": "fact",
+        "customer_segment": "bridge", "promotion_coverage": "fact"},
     "shop_noprefix.sql": {
         "sales": "fact", "customers": "dimension", "products": "dimension",
         "calendar": "dimension", "promotions": "dimension", "product_promotion": "bridge"},
@@ -187,6 +193,17 @@ class TestClassify(unittest.TestCase):
         self.assertNotIn("guessed", got.reason)
         self.assertNotEqual(got.role, "fact")
 
+    def test_keys_only_joining_three_tables_is_a_factless_fact_and_two_is_a_bridge(self):  # verifies: REQ-DATAMODEL-902#CASE-1
+        dims = "".join("CREATE TABLE d%d (k int PRIMARY KEY, name varchar(10));" % i for i in (1, 2, 3))
+        two = classify_tables(parse_ddl(dims + "CREATE TABLE link (a int REFERENCES d1 (k), "
+                                        "b int REFERENCES d2 (k), PRIMARY KEY (a, b));"))
+        three = classify_tables(parse_ddl(dims + "CREATE TABLE cover (a int REFERENCES d1 (k), "
+                                          "b int REFERENCES d2 (k), c int REFERENCES d3 (k), "
+                                          "PRIMARY KEY (a, b, c));"))
+        self.assertEqual(two["link"].role, "bridge")
+        self.assertEqual(three["cover"].role, "fact")
+        self.assertIn("factless fact", three["cover"].reason)
+
     def test_node_is_coloured_by_role_and_legend_lists_only_roles_in_use(self):  # verifies: REQ-DATAMODEL-902#CASE-5
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
         keys = {explain.role_key("fact"), explain.role_key("dimension")}
@@ -209,8 +226,35 @@ _FACT_ON_A = ("CREATE TABLE fact_s (s_key serial PRIMARY KEY, d1 int REFERENCES 
               "d2 int REFERENCES dim_a, amount numeric);")
 
 
+_FACT_ON_P = ("CREATE TABLE fact_s (s_key serial PRIMARY KEY, d1 int REFERENCES dim_p, "
+              "d2 int REFERENCES dim_p, amount numeric);")
+
+
 class TestReview(unittest.TestCase):
     """REQ-DATAMODEL-903: each rule fires on its problem and stays silent without it."""
+
+    def test_the_order_process_gets_exactly_its_three_findings(self):  # verifies: REQ-DATAMODEL-903#CASE-1  # verifies: REQ-DATAMODEL-903#CASE-2
+        # modelled by hand from a business description before the tool was run on it
+        self.assertEqual(sorted(_review(_read("order_process.sql"))),
+                         [("department", "snowflake"), ("product_category", "snowflake"),
+                          ("warehouse", "surrogate-key")])
+
+    def test_scd2_ignores_key_columns_and_the_entitys_own_label(self):  # verifies: REQ-DATAMODEL-903#CASE-5
+        # department_key is a key, and department_name is the department's own name: neither
+        # is an attribute that changes, though both contain a word the rule listens for
+        sql = ("CREATE TABLE department (department_key serial PRIMARY KEY, "
+               "department_name varchar(40));"
+               "CREATE TABLE dim_p (p_key serial PRIMARY KEY, name varchar(20), "
+               "department_key int REFERENCES department (department_key));") + _FACT_ON_P
+        self.assertNotIn("scd2", [rule for _, rule in _review(sql)])
+
+    def test_scd2_needs_two_places_but_only_one_strong_name(self):  # verifies: REQ-DATAMODEL-903#CASE-5
+        def fires(cols):
+            sql = ("CREATE TABLE dim_a (a_key serial PRIMARY KEY, %s);" % cols) + _FACT_ON_A
+            return ("dim_a", "scd2") in _review(sql)
+        self.assertFalse(fires("country varchar(20)"))              # a warehouse does not move
+        self.assertTrue(fires("city varchar(20), country varchar(20)"))
+        self.assertTrue(fires("email varchar(40)"))
 
     def test_every_planted_problem_is_found(self):  # verifies: REQ-DATAMODEL-903#CASE-1
         self.assertEqual(sorted(_review(_read("shop_demo.sql"))),
@@ -240,7 +284,7 @@ class TestReview(unittest.TestCase):
             self.assertEqual(_review(ddl + _FACT_ON_A), [], col)
 
     def test_scd2_fires_on_changing_attributes_without_history_columns(self):  # verifies: REQ-DATAMODEL-903#CASE-5
-        ddl = "CREATE TABLE dim_a (a_key serial PRIMARY KEY, city varchar(20));"
+        ddl = "CREATE TABLE dim_a (a_key serial PRIMARY KEY, address varchar(20));"
         self.assertIn(("dim_a", "scd2"), _review(ddl + _FACT_ON_A))
 
     def test_scd2_fires_on_half_a_history(self):  # verifies: REQ-DATAMODEL-903#CASE-5

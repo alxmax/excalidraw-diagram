@@ -118,8 +118,13 @@ def _evidence(table, p):
                                 + _GUESS * ("descriptive" in p["guessed"])))
     if not p["fk_out"]:
         ev["dimension"].append((1, "no foreign keys out"))
-    if p["fk_out"] >= 2 and p["all_keys"] and not p["measures"]:
-        ev["bridge"].append((4, "every column is a key (a factless fact is the alternative)"))
+    if p["all_keys"] and not p["measures"]:
+        if p["fk_out"] == 2:
+            ev["bridge"].append((4, "every column is a key and it joins two tables "
+                                    "(a factless fact is the alternative)"))
+        elif p["fk_out"] >= 3:
+            ev["fact"].append((3, "every column is a key and it joins %d tables: an event with "
+                                  "nothing to measure (a factless fact)" % p["fk_out"]))
     return ev
 
 

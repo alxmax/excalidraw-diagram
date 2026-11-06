@@ -18,7 +18,9 @@ Every bullet below is binding.
 - `review_tables(tables, roles)` returns issues ordered by table, each naming its table and its rule.
 - The `grain` rule flags a fact table that has no primary key.
 - The `surrogate-key` rule flags a dimension whose key is missing, composite or named like a source id instead of `*_key` or `*_sk`.
-- The `scd2` rule flags a dimension with attributes that change over time but no `valid_from` and `valid_to`, or with only one of them.
+- The `scd2` rule flags a dimension with a changing attribute but no `valid_from` and `valid_to`, or with only one of them.
+- A changing attribute is one of address, email, phone, status, tier, plan, manager, department, job title, salary, segment; two place names from city, country, region also count.
+- Key columns, and the entity's own name column such as `department_name` in `department`, are never changing attributes.
 - The `orphan-fk` rule flags a foreign key to a table, or to a column, that does not exist.
 - The `snowflake` rule flags a dimension referenced by another dimension, and calls the chain deep from two levels down; an outrigger shared by two dimensions is not flagged.
 
@@ -44,7 +46,7 @@ CASE-4 — surrogate key
   Then   the first three raise `surrogate-key` and the last does not
 
 CASE-5 — SCD type 2
-  Given  a dimension with a `city` column, one with half a history, and ones with a full history or stable attributes
+  Given  a dimension with an `address` column, one with half a history, and ones with a full history or stable attributes
   When   `review_tables()` is run
   Then   the first two raise `scd2` and the others do not
 
@@ -61,6 +63,7 @@ CASE-7 — snowflake
 ## Context
 **Notes**
 - The `scd2` rule reads column names, so it is a heuristic: it names the columns it suspects.
+  A lone place name (`country` on a warehouse) is not enough: places move for a person, not for a depot.
 - `snowflake` flags the sub-dimension, not the dimension that points at it, because that
   is the table a modeller would fold away.
 
