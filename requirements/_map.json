@@ -19,7 +19,8 @@
         "A table can list its columns on request. [[REQ-DATAMODEL-905]]",
         "A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]",
         "The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]",
-        "dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]"
+        "dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]",
+        "A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]"
       ],
       "verify": [],
       "notes": [
@@ -58,7 +59,8 @@
         "REQ-DATAMODEL-905",
         "REQ-DATAMODEL-906",
         "REQ-DATAMODEL-907",
-        "REQ-DATAMODEL-908"
+        "REQ-DATAMODEL-908",
+        "REQ-DATAMODEL-909"
       ],
       "members": [
         {
@@ -749,7 +751,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:135"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:138"
         },
         {
           "role": "implements",
@@ -1501,11 +1503,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:154"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:155"
         }
       ],
       "test_exempt": null,
@@ -1679,7 +1681,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
         }
       ],
       "test_exempt": null,
@@ -1735,7 +1737,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
         }
       ],
       "test_exempt": null,
@@ -1862,15 +1864,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:55"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:171"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:175"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py:82"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py:83"
         }
       ],
       "test_exempt": null,
@@ -1938,6 +1940,71 @@
       "risks": [],
       "clauses": 4,
       "covered": 4
+    },
+    {
+      "id": "REQ-DATAMODEL-909",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "A source-to-target mapping that says when it cannot tell",
+      "intent": "A mapping that looks complete and is wrong is worse than none, because people build on it. The reader behind this one is small, so it follows only what it can follow with certainty and marks the rest \"needs review\" with the reason, leaving the guess to a person who reads the SQL.",
+      "contract": [
+        "`mapping_markdown(project_dir)` returns Markdown with one section per model, upstream models first, each holding a table of target column, source, transformation and rule.",
+        "A plain column is traced through table aliases, joins and CTEs that only pass a table through, to `model.column` or `source.table.column`.",
+        "A rename reads `rename`, a copy reads `copy`, and any other expression is shown as written with every column it reads listed as a source.",
+        "The rule is the model's schema.yml tests on the column, including the target of a `relationships` test and the values of `accepted_values`.",
+        "With `select *`, a column the schema.yml declares is a copy via the star, and a column the upstream schema does not declare is flagged.",
+        "A column is marked \"needs review\" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.",
+        "A column marked \"needs review\" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.",
+        "A pipe inside a cell is escaped, and one project always produces the same text.",
+        "`data-model --from-dbt --mapping <file.md>` writes the report once the scene has passed its gates, and `--mapping` without `--from-dbt` is a usage error."
+      ],
+      "verify": [],
+      "notes": [
+        "Only a plain `select` is read: window functions, lateral joins, `pivot` and macros are not. A name that looks like a column but is a SQL keyword is filtered by a fixed list, so an unusual keyword can appear as a source; the row is then marked only if the schema is known.",
+        "Column types are not inferred, so a `cast(...)` shows as written."
+      ],
+      "current_impl": [
+        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`; `scene_from_dbt()` in `data_model.py`; the flag in `cli.py`.",
+        "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — plain columns are traced Given  the fixture project, where marts read staging models through CTEs and staging models read source tables When   `mapping_markdown()` is called Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`",
+        "CASE-2 — — an expression keeps its text Given  `min(orders.order_date) as first_order` and `amount / 100 as amount` When   `mapping_markdown()` is called Then   each row shows the expression as written, and lists the one column it reads as its source",
+        "CASE-3 — — rules and order Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models When   `mapping_markdown()` is called Then   the rule cell lists those tests with their targets and values, and staging models come first",
+        "CASE-4 — — select star Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not When   `mapping_markdown()` is called Then   declared columns read `copy (via *)`, and the column missing upstream is flagged",
+        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
+        "CASE-6 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical",
+        "CASE-7 — — the command writes the file Given  the fixture project, a DDL input, and an empty project directory When   `data-model` runs with `--mapping` Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file"
+      ],
+      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical\n\nCASE-7 — the command writes the file\n  Given  the fixture project, a DDL input, and an empty project directory\n  When   `data-model` runs with `--mapping`\n  Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py:297"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 7,
+      "covered": 7
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -2195,6 +2262,10 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-909",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ]
@@ -2239,16 +2310,17 @@
     },
     {
       "month": "2026-11",
-      "count": 3,
+      "count": 4,
       "first": "2026-11-06",
       "last": "2026-11-06",
       "versions": [
         "v2.10.0",
+        "v2.11.0",
         "v2.8.0",
         "v2.9.0"
       ],
-      "landmark": "v2.10.0",
-      "headline": "`data-model --from-dbt <project>` draws a dbt project"
+      "landmark": "v2.11.0",
+      "headline": "`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping"
     }
   ],
   "commands": [
@@ -2430,16 +2502,16 @@
     }
   ],
   "design": {
-    "files": 29,
+    "files": 30,
     "clean_files": 21,
-    "score": 72,
+    "score": 70,
     "candidates": {
       "encapsulation": 5,
       "abstraction": 2,
       "inheritance": 0,
       "polymorphism": 0,
       "metrics": 2,
-      "standards": 4
+      "standards": 5
     },
     "findings": [
       {
@@ -2454,15 +2526,15 @@
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py",
-        "line": 129,
+        "line": 132,
         "name": "cli.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 129"
+        "detail": "1 line(s) wider than 100 columns, first at line 132"
       },
       {
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 127,
+        "line": 128,
         "name": "_draw",
         "detail": "columns, name, offline, out_dir, roles_path, svg travel together through 3 functions: _draw, scene_from_dbt, scene_from_ddl"
       },
@@ -2470,7 +2542,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 127,
+        "line": 128,
         "name": "_draw",
         "detail": "`_draw` takes 10 parameters (over 6)"
       },
@@ -2478,7 +2550,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 145,
+        "line": 146,
         "name": "scene_from_ddl",
         "detail": "`scene_from_ddl` takes 7 parameters (over 6)"
       },
@@ -2486,9 +2558,17 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 165,
+        "line": 166,
         "name": "scene_from_dbt",
-        "detail": "`scene_from_dbt` takes 7 parameters (over 6)"
+        "detail": "`scene_from_dbt` takes 8 parameters (over 6)"
+      },
+      {
+        "pillar": "standards",
+        "kind": "line-too-long",
+        "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py",
+        "line": 20,
+        "name": "mapping.py",
+        "detail": "9 line(s) wider than 100 columns, first at line 20"
       },
       {
         "pillar": "standards",
@@ -2557,11 +2637,11 @@
   },
   "health": {
     "score": 100,
-    "total": 32,
-    "healthy": 32,
-    "confirmed": 32,
-    "implemented": 31,
-    "tested": 31,
+    "total": 33,
+    "healthy": 33,
+    "confirmed": 33,
+    "implemented": 32,
+    "tested": 32,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

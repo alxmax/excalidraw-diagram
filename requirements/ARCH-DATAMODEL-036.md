@@ -27,6 +27,7 @@ Every bullet below is binding.
 - A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]
 - The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]
 - dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]
+- A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]
 
 ## Cases
 CASE-1
