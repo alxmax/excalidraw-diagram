@@ -41,9 +41,9 @@ CASE-3 — every role is explained
   Then   the reason is not empty and the confidence lies between 0 and 1
 
 CASE-4 — no evidence means unknown
-  Given  a table with one key and one text column, and a staging table shaped like a fact
+  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores
   When   `classify_tables()` is run
-  Then   both are unknown with confidence 0, and the reason says why
+  Then   all three are unknown with confidence 0, and the reason says why
 
 CASE-5 — colour and legend follow the role
   Given  a schema holding only facts and dimensions

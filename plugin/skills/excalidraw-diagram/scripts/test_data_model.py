@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909  # tested-by: REQ-DATAMODEL-910  # tested-by: REQ-DATAMODEL-911
+# tested-by: REQ-DATAMODEL-900  # tested-by: REQ-DATAMODEL-901  # tested-by: REQ-DATAMODEL-902  # tested-by: REQ-DATAMODEL-903  # tested-by: REQ-DATAMODEL-904  # tested-by: ARCH-DATAMODEL-036  # tested-by: REQ-DATAMODEL-905  # tested-by: REQ-DATAMODEL-906  # tested-by: REQ-DATAMODEL-907  # tested-by: REQ-DATAMODEL-908  # tested-by: REQ-DATAMODEL-909  # tested-by: REQ-DATAMODEL-910  # tested-by: REQ-DATAMODEL-911  # tested-by: REQ-DATAMODEL-912
 """Tests for the data-model module: DDL parser, table graph, end-to-end scene.
 
 Run:  python -X utf8 -m unittest test_data_model -v   (from this scripts/ dir)
@@ -11,6 +11,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "examples", "data_model")
@@ -20,7 +21,7 @@ from excalidraw_engine import cli  # noqa: E402
 from excalidraw_engine import explain  # noqa: E402
 from excalidraw_engine.classify import classify_tables  # noqa: E402
 from excalidraw_engine.data_model import (  # noqa: E402
-    NOTE, graph_from_tables, scene_from_ddl, unresolved_fks)
+    NOTE, graph_from_tables, scene_from_dbt, scene_from_ddl, unresolved_fks)
 from excalidraw_engine.dbt import read_dbt  # noqa: E402
 from excalidraw_engine.ddl import parse_ddl  # noqa: E402
 from excalidraw_engine.mapping import mapping_markdown  # noqa: E402
@@ -150,6 +151,17 @@ class TestClassify(unittest.TestCase):
         c = classify_tables(parse_ddl(sql))["stg_x"]
         self.assertEqual(c.role, "unknown")
         self.assertIn("staging", c.reason)
+
+    def test_a_tie_between_two_roles_is_unknown_with_zero_confidence(self):  # verifies: REQ-DATAMODEL-902#CASE-4
+        # `rates` is referenced by another table (dimension +2, no keys out +1) and holds
+        # three numbers (fact +3): fact 3, dimension 3
+        sql = ("CREATE TABLE rates (rate_key serial PRIMARY KEY, buy numeric, sell numeric, "
+               "mid numeric);"
+               "CREATE TABLE trades (trade_key serial PRIMARY KEY, "
+               "rate_key int REFERENCES rates (rate_key));")
+        got = classify_tables(parse_ddl(sql))["rates"]
+        self.assertEqual((got.role, got.confidence), ("unknown", 0.0))
+        self.assertIn("fact and dimension tie", got.reason)
 
     def test_node_is_coloured_by_role_and_legend_lists_only_roles_in_use(self):  # verifies: REQ-DATAMODEL-902#CASE-5
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
@@ -668,7 +680,7 @@ class TestMapping(unittest.TestCase):
         self.assertIn("needs review", _row(md, "b", "y"))
         self.assertIn("a does not declare y", _row(md, "b", "y"))
 
-    def test_what_it_cannot_read_is_marked_needs_review_with_the_reason(self):  # verifies: REQ-DATAMODEL-909#CASE-5
+    def test_what_it_cannot_read_is_marked_needs_review_with_the_reason(self):  # verifies: REQ-DATAMODEL-909#CASE-5  # verifies: REQ-DATAMODEL-909#CASE-6
         cases = {
             "u": ("select a from {{ ref('s') }} union select a from {{ ref('t') }}", "union"),
             "j": ("{% if true %}select a from {{ ref('s') }}{% endif %}", "Jinja"),
@@ -687,24 +699,26 @@ class TestMapping(unittest.TestCase):
             row = _row(md, model, "a") if model != "n" else _row(md, model, "(unnamed)")
             self.assertIn("needs review", row, model)
             self.assertIn(why, row, model)
+        # model n also declares column a, which its SELECT never produces
+        self.assertIn("declared in schema.yml but not in the SELECT", _row(md, "n", "a"))
 
-    def test_a_model_with_no_sql_file_is_marked_needs_review(self):  # verifies: REQ-DATAMODEL-909#CASE-5
+    def test_a_model_with_no_sql_file_is_marked_needs_review(self):  # verifies: REQ-DATAMODEL-909#CASE-6
         tmp, path = _project({"b": "select 1 as c"},
                              "models:\n  - name: ghost\n    columns:\n      - name: c\n")
         with tmp:
             self.assertIn("no SQL file", _row(mapping_markdown(path), "ghost", "c"))
 
-    def test_a_pipe_in_an_expression_does_not_break_the_table(self):  # verifies: REQ-DATAMODEL-909#CASE-6
+    def test_a_pipe_in_an_expression_does_not_break_the_table(self):  # verifies: REQ-DATAMODEL-909#CASE-7
         tmp, path = _project({"s": "select 1 as a", "m": "select a || 'x' as b from {{ ref('s') }}"},
                              "models:\n  - name: m\n    columns:\n      - name: b\n")
         with tmp:
             row = _row(mapping_markdown(path), "m", "b")
         self.assertIn("a \\|\\| 'x'", row)
 
-    def test_the_same_project_gives_the_same_text(self):  # verifies: REQ-DATAMODEL-909#CASE-6
+    def test_the_same_project_gives_the_same_text(self):  # verifies: REQ-DATAMODEL-909#CASE-7
         self.assertEqual(self.md, mapping_markdown(DBT, title="dbt_shop"))
 
-    def test_the_mapping_flag_writes_markdown_beside_the_scene(self):  # verifies: REQ-DATAMODEL-909#CASE-7
+    def test_the_mapping_flag_writes_markdown_beside_the_scene(self):  # verifies: REQ-DATAMODEL-912#CASE-1
         with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
             target = os.path.join(out, "mapping.md")
             self.assertEqual(cli.main(["data-model", "--from-dbt", DBT, "-o", out,
@@ -712,7 +726,16 @@ class TestMapping(unittest.TestCase):
             with open(target, encoding="utf-8") as fh:
                 self.assertEqual(fh.read(), self.md)
 
-    def test_mapping_needs_dbt_and_writes_nothing_when_the_project_is_unreadable(self):  # verifies: REQ-DATAMODEL-909#CASE-7
+    def test_a_scene_that_fails_a_gate_leaves_no_mapping_file(self):  # verifies: REQ-DATAMODEL-912#CASE-2
+        with tempfile.TemporaryDirectory() as out:
+            target = os.path.join(out, "m.md")
+            with mock.patch("excalidraw_engine.data_model.scene_from_spec",
+                            side_effect=ValueError("1 overlapping shape(s)")):
+                with self.assertRaisesRegex(ValueError, "overlapping"):
+                    scene_from_dbt(DBT, out, mapping_path=target)
+            self.assertFalse(os.path.exists(target))
+
+    def test_mapping_needs_dbt_and_writes_nothing_when_the_project_is_unreadable(self):  # verifies: REQ-DATAMODEL-912#CASE-3  # verifies: REQ-DATAMODEL-912#CASE-4
         with tempfile.TemporaryDirectory() as out, contextlib.redirect_stderr(io.StringIO()):
             target = os.path.join(out, "m.md")
             self.assertEqual(cli.main(["data-model", "--from-ddl",

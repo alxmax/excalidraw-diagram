@@ -51,7 +51,7 @@ class TestExampleDiagrams(unittest.TestCase):
 
 
 def _make_case(path):
-    def case(self):
+    def case(self):  # verifies: ARCH-EXCALIDRAW-031#CASE-5
         captured = {}
         original_save = eb.Scene.save
 
@@ -198,7 +198,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s._move_node(nid, 10, 10)            # must not raise
         self.assertEqual(s._geom[nid][:2], (10, 10))
 
-    def test_save_crossing_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1  # verifies: REQ-EXCALIDRAW-846#CASE-2
+    def test_save_crossing_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1  # verifies: REQ-EXCALIDRAW-846#CASE-2  # verifies: ARCH-EXCALIDRAW-031#CASE-1
         s = eb.Scene(seed=99)
         left = s.box("L", (0, 0, 80, 40))
         s.box("M", (200, 0, 80, 40))
@@ -208,7 +208,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d, gates=eb.Gates(crossing="error"))
 
-    def test_save_crossing_check_warn_default_does_not_raise(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1
+    def test_save_crossing_check_warn_default_does_not_raise(self):  # verifies: REQ-EXCALIDRAW-846#CASE-1  # verifies: ARCH-EXCALIDRAW-031#CASE-1
         s = eb.Scene(seed=99)
         left = s.box("L", (0, 0, 80, 40))
         s.box("M", (200, 0, 80, 40))
@@ -248,7 +248,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.box("a", (0, 0), paint="indigo")            # no legend() -> nothing to enforce
         self.assertEqual(s.check_legend_coverage(), [])
 
-    def test_save_legend_check_error_raises_on_uncovered_fill(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3
+    def test_save_legend_check_error_raises_on_uncovered_fill(self):  # verifies: REQ-EXCALIDRAW-846#CASE-3  # verifies: ARCH-EXCALIDRAW-031#CASE-2
         s = eb.Scene(seed=99)
         s.box("a", (0, 0), paint="blue")
         s.box("b", (0, 200), paint="violet")          # uncovered
@@ -291,7 +291,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         self.assertEqual(s.check_text_overflow(), [],
                          "a box sized by fit_text must clear the overflow check")
 
-    def test_save_overflow_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-4
+    def test_save_overflow_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-4  # verifies: ARCH-EXCALIDRAW-031#CASE-3
         s = eb.Scene(seed=99)
         s.box("a label far too wide for this tiny box", (0, 0, 40, 30), paint="blue")
         with tempfile.TemporaryDirectory() as d:
@@ -334,7 +334,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         self.assertEqual(s.check_text_overlaps(), [],
                          "bound labels (box + legend rows) must not be flagged")
 
-    def test_save_text_overlap_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-1
+    def test_save_text_overlap_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-1  # verifies: ARCH-EXCALIDRAW-031#CASE-4
         s = eb.Scene(seed=99)
         s.label("caption one is here", (100, 100), font=14)
         s.label("caption two is here", (100, 103), font=14)
@@ -378,7 +378,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.path([(0, 0), (5, 0)])               # tiny unbound connector
         self.assertEqual(s.check_short_arrows(), [])
 
-    def test_save_short_arrow_raises_by_default(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
+    def test_save_short_arrow_raises_by_default(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3  # verifies: ARCH-EXCALIDRAW-031#CASE-6
         s = eb.Scene(seed=99)
         a = s.box("A", (0, 0, 120, 60))
         b = s.box("B", (124, 0, 120, 60))
@@ -387,7 +387,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
             with self.assertRaises(ValueError):
                 s.save("x", out_dir=d)         # hard gate — raises with no opt-out
 
-    def test_save_short_arrow_allow_escape(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3
+    def test_save_short_arrow_allow_escape(self):  # verifies: REQ-EXCALIDRAW-847#CASE-3  # verifies: ARCH-EXCALIDRAW-031#CASE-6
         s = eb.Scene(seed=99)
         a = s.box("A", (0, 0, 120, 60))
         b = s.box("B", (124, 0, 120, 60))
@@ -415,7 +415,7 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.arrow(a, b, label="ok")
         self.assertEqual(s.check_arrow_label_fit(), [])
 
-    def test_save_label_fit_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-2
+    def test_save_label_fit_error_raises(self):  # verifies: REQ-EXCALIDRAW-847#CASE-2  # verifies: ARCH-EXCALIDRAW-031#CASE-7
         s = eb.Scene(seed=99)
         a = s.box("A", (0, 0, 120, 60))
         b = s.box("B", (240, 0, 120, 60))
@@ -674,7 +674,7 @@ except AttributeError:
 
 
 class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  # tested-by: REQ-EXCALIDRAW-845
-    def test_scene_save_produces_importable_json(self):  # verifies: REQ-EXCALIDRAW-844#CASE-1
+    def test_scene_save_produces_importable_json(self):  # verifies: REQ-EXCALIDRAW-844#CASE-1  # verifies: ARCH-EXCALIDRAW-030#CASE-1
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=1)
             s.box("Hello", (0, 0))
@@ -727,7 +727,7 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
             self.assertTrue(os.path.exists(p_json))
             self.assertTrue(os.path.exists(p_html))
 
-    def test_seeded_scene_reproduces_byte_identical_output(self):  # verifies: REQ-EXCALIDRAW-845#CASE-3
+    def test_seeded_scene_reproduces_byte_identical_output(self):  # verifies: REQ-EXCALIDRAW-845#CASE-3  # verifies: ARCH-EXCALIDRAW-030#CASE-3
         def _build():
             s = eb.Scene(seed=42)
             a = s.box("A", (0, 0))
@@ -742,6 +742,30 @@ class CasesExcalidraw030(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-844  #
             with open(p2, "rb") as f:
                 c2 = f.read()
         self.assertEqual(c1, c2)
+
+    def test_overlapping_boxes_raise_on_a_default_save_naming_both(self):  # verifies: ARCH-EXCALIDRAW-030#CASE-2
+        s = eb.Scene(seed=1)
+        s.box("Left", (0, 0, 120, 60))
+        s.box("Right", (60, 10, 120, 60))          # sits on top of the first
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError, "overlap"):
+                s.save("x", out_dir=d)
+
+    def test_a_scene_cannot_be_saved_twice(self):  # verifies: ARCH-EXCALIDRAW-030#CASE-4
+        s = eb.Scene(seed=1)
+        s.box("Only", (0, 0))
+        with tempfile.TemporaryDirectory() as d:
+            s.save("x", out_dir=d)
+            with self.assertRaisesRegex(RuntimeError, "one scene, one save"):
+                s.save("y", out_dir=d)
+
+    def test_a_pipeline_is_connected_nodes_with_no_overlap(self):  # verifies: ARCH-EXCALIDRAW-030#CASE-5
+        s = eb.Scene(seed=1)
+        s.pipeline([("Start", "terminator"), ("Do it", "process"), ("End", "terminator")], (0, 0))
+        arrows = [e for e in s.elements if e["type"] == "arrow"]
+        self.assertEqual(len(arrows), 2)           # three steps, joined end to end
+        self.assertTrue(all(a["startBinding"] and a["endBinding"] for a in arrows))
+        self.assertEqual(s.check_overlaps(), [])
 
     def test_builder_imports_stdlib_only(self):  # verifies: REQ-EXCALIDRAW-845#CASE-4
         paths = [os.path.join(HERE, "excalidraw_builder.py")] + sorted(
@@ -1442,7 +1466,7 @@ class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
         with mock.patch.dict(os.environ, {"EXCALIDRAW_DIAGRAM_OFFLINE": "0"}):
             self.assertIn(assets.CDN, html_page("demo", self.SCENE))
 
-    def test_save_writes_an_offline_viewer(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1
+    def test_save_writes_an_offline_viewer(self):  # verifies: REQ-EXCALIDRAW-854#CASE-1  # verifies: ARCH-EXCALIDRAW-030#CASE-1
         with tempfile.TemporaryDirectory() as d:
             s = eb.Scene(seed=7)
             s.box("A", (0, 0))

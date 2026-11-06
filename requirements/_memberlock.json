@@ -2,7 +2,7 @@
   "_schema": 2,
   "members": {
     "ARCH-DATAMODEL-036": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "d6bb7025f565af08f74d43b8d0babaebc400d1125f5019170eeb7683a55bae7b"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "37e47c6119fd8f7b716927f31514029efe17a23fc556416b8cf557eb64f1a21f"
     },
     "ARCH-EXCALIDRAW-030": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"

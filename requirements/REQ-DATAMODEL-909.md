@@ -24,7 +24,6 @@ Every bullet below is binding.
 - A column is marked "needs review" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.
 - A column marked "needs review" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.
 - A pipe inside a cell is escaped, and one project always produces the same text.
-- `data-model --from-dbt --mapping <file.md>` writes the report once the scene has passed its gates, and `--mapping` without `--from-dbt` is a usage error.
 
 ## Cases
 CASE-1 — plain columns are traced
@@ -48,19 +47,19 @@ CASE-4 — select star
   Then   declared columns read `copy (via *)`, and the column missing upstream is flagged
 
 CASE-5 — what cannot be read is marked
-  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL
+  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE
   When   `mapping_markdown()` is called
   Then   each affected row says "needs review" with the reason, and names no guessed source
 
-CASE-6 — safe and stable text
+CASE-6 — what is missing is marked
+  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks
+  When   `mapping_markdown()` is called
+  Then   each affected row says "needs review" with the reason
+
+CASE-7 — safe and stable text
   Given  an expression containing `||`, and the same project read twice
   When   `mapping_markdown()` is called
   Then   the pipes are escaped inside the table, and both texts are identical
-
-CASE-7 — the command writes the file
-  Given  the fixture project, a DDL input, and an empty project directory
-  When   `data-model` runs with `--mapping`
-  Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file
 
 ## Context
 **Notes**
@@ -71,5 +70,5 @@ CASE-7 — the command writes the file
 
 **Current implementation**
 - `mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`;
-  `read_dbt_project()` in `dbt.py`; `scene_from_dbt()` in `data_model.py`; the flag in `cli.py`.
+  `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.
 - `TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.

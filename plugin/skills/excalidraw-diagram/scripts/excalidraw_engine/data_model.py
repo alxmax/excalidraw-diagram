@@ -183,6 +183,7 @@ def scene_from_dbt(project_dir, out_dir=None, name=None, offline=None, svg=False
     the returned paths."""
     # implements: REQ-DATAMODEL-907
     # implements: REQ-DATAMODEL-910
+    # implements: REQ-DATAMODEL-912
     tables, lineage = read_dbt(project_dir)
     stem = os.path.basename(os.path.abspath(project_dir))
     report = mapping_markdown(project_dir, title=name or stem) if mapping_path else None

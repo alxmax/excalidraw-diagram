@@ -51,3 +51,9 @@ plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
 
 # Local-only pictures: untracked, so they promise nothing the repo has to trace.
 docs/local_*.html
+
+# The two READMEs: prose for people who find the repository or the marketplace entry. They
+# describe capabilities the requirements already own, so tagging them would state the same
+# obligation twice.
+README.md
+plugin/README.md

@@ -21,6 +21,7 @@
         "The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]",
         "dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]",
         "A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]",
+        "The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]",
         "dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]",
         "The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]"
       ],
@@ -64,7 +65,8 @@
         "REQ-DATAMODEL-908",
         "REQ-DATAMODEL-909",
         "REQ-DATAMODEL-910",
-        "REQ-DATAMODEL-911"
+        "REQ-DATAMODEL-911",
+        "REQ-DATAMODEL-912"
       ],
       "members": [
         {
@@ -151,7 +153,9 @@
       "test_exempt": null,
       "milestone": "v1.0.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "REQ-EXCALIDRAW-844",
@@ -336,7 +340,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:765"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:789"
         },
         {
           "role": "implements",
@@ -413,7 +417,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1379"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1403"
         },
         {
           "role": "implements",
@@ -495,7 +499,9 @@
       "test_exempt": null,
       "milestone": "v1.0.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clauses": 7,
+      "covered": 7
     },
     {
       "id": "REQ-EXCALIDRAW-846",
@@ -606,7 +612,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:897"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:921"
         },
         {
           "role": "implements",
@@ -822,7 +828,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1262"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1286"
         },
         {
           "role": "implements",
@@ -953,7 +959,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1477"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1501"
         },
         {
           "role": "implements",
@@ -1027,7 +1033,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:918"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
         }
       ],
       "test_exempt": null,
@@ -1155,7 +1161,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
         },
         {
           "role": "implements",
@@ -1216,7 +1222,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
         },
         {
           "role": "implements",
@@ -1552,11 +1558,11 @@
         "CASE-1 — — accuracy on the test set Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects When   `classify_tables()` is run on each schema Then   at least ninety percent of the tables get the expected role",
         "CASE-2 — — structure alone is enough Given  a shop schema whose tables carry no `fact_` or `dim_` prefix When   `classify_tables()` is run Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix",
         "CASE-3 — — every role is explained Given  any classified table When   its classification is read Then   the reason is not empty and the confidence lies between 0 and 1",
-        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, and a staging table shaped like a fact When   `classify_tables()` is run Then   both are unknown with confidence 0, and the reason says why",
+        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores When   `classify_tables()` is run Then   all three are unknown with confidence 0, and the reason says why",
         "CASE-5 — — colour and legend follow the role Given  a schema holding only facts and dimensions When   `graph_from_tables()` is called Then   nodes are filled fact or dimension, and the legend holds those two roles only",
         "CASE-6 — — confidence reflects lead and evidence Given  a table with strong evidence and no rival, and one with thin evidence When   `classify_tables()` is run Then   the first has confidence 1, and the second has a lower one"
       ],
-      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, and a staging table shaped like a fact\n  When   `classify_tables()` is run\n  Then   both are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one",
+      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one",
       "input": "",
       "output": "",
       "desc": "",
@@ -1966,8 +1972,7 @@
         "With `select *`, a column the schema.yml declares is a copy via the star, and a column the upstream schema does not declare is flagged.",
         "A column is marked \"needs review\" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.",
         "A column marked \"needs review\" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.",
-        "A pipe inside a cell is escaped, and one project always produces the same text.",
-        "`data-model --from-dbt --mapping <file.md>` writes the report once the scene has passed its gates, and `--mapping` without `--from-dbt` is a usage error."
+        "A pipe inside a cell is escaped, and one project always produces the same text."
       ],
       "verify": [],
       "notes": [
@@ -1975,7 +1980,7 @@
         "Column types are not inferred, so a `cast(...)` shows as written."
       ],
       "current_impl": [
-        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`; `scene_from_dbt()` in `data_model.py`; the flag in `cli.py`.",
+        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
         "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "acc": [
@@ -1983,11 +1988,11 @@
         "CASE-2 — — an expression keeps its text Given  `min(orders.order_date) as first_order` and `amount / 100 as amount` When   `mapping_markdown()` is called Then   each row shows the expression as written, and lists the one column it reads as its source",
         "CASE-3 — — rules and order Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models When   `mapping_markdown()` is called Then   the rule cell lists those tests with their targets and values, and staging models come first",
         "CASE-4 — — select star Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not When   `mapping_markdown()` is called Then   declared columns read `copy (via *)`, and the column missing upstream is flagged",
-        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
-        "CASE-6 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical",
-        "CASE-7 — — the command writes the file Given  the fixture project, a DDL input, and an empty project directory When   `data-model` runs with `--mapping` Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file"
+        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
+        "CASE-6 — — what is missing is marked Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason",
+        "CASE-7 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical"
       ],
-      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical\n\nCASE-7 — the command writes the file\n  Given  the fixture project, a DDL input, and an empty project directory\n  When   `data-model` runs with `--mapping`\n  Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file",
+      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
       "input": "",
       "output": "",
       "desc": "",
@@ -2143,6 +2148,62 @@
       "risks": [],
       "clauses": 7,
       "covered": 7
+    },
+    {
+      "id": "REQ-DATAMODEL-912",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "The mapping file is written only for a diagram that was drawn",
+      "intent": "A mapping file beside a diagram that failed its checks would look like a finished pair when half of it never existed. So the file is written last, after the scene has passed every gate, and a run that fails anywhere leaves no mapping behind.",
+      "contract": [
+        "`data-model --from-dbt <project> --mapping <file.md>` writes the mapping as UTF-8 Markdown, the same text `mapping_markdown()` returns.",
+        "The file is written only after the scene has passed every gate.",
+        "`--mapping` without `--from-dbt` is a usage error.",
+        "A project that cannot be read leaves no mapping file."
+      ],
+      "verify": [],
+      "notes": [
+        "The report is built before the scene is drawn, so a project that cannot be read fails early; the file itself is written after the gates, so a drawing that fails them never gets one."
+      ],
+      "current_impl": [
+        "`scene_from_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the `--mapping` flag in `cli.py`.",
+        "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — the file is written beside the scene Given  the fixture dbt project and a mapping path When   `data-model --from-dbt --mapping` runs Then   the file holds exactly the text `mapping_markdown()` returns",
+        "CASE-2 — — a failed gate leaves no file Given  a project whose scene fails a gate When   `scene_from_dbt()` is called with a mapping path Then   it raises `ValueError`, and no mapping file exists",
+        "CASE-3 — — the mapping needs a dbt project Given  a DDL file and a mapping path When   `data-model --from-ddl --mapping` runs Then   the command fails with a usage error",
+        "CASE-4 — — an unreadable project leaves nothing Given  an empty project directory and a mapping path When   `data-model --from-dbt --mapping` runs Then   the command fails, and no mapping file exists"
+      ],
+      "accept": "CASE-1 — the file is written beside the scene\n  Given  the fixture dbt project and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the file holds exactly the text `mapping_markdown()` returns\n\nCASE-2 — a failed gate leaves no file\n  Given  a project whose scene fails a gate\n  When   `scene_from_dbt()` is called with a mapping path\n  Then   it raises `ValueError`, and no mapping file exists\n\nCASE-3 — the mapping needs a dbt project\n  Given  a DDL file and a mapping path\n  When   `data-model --from-ddl --mapping` runs\n  Then   the command fails with a usage error\n\nCASE-4 — an unreadable project leaves nothing\n  Given  an empty project directory and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the command fails, and no mapping file exists",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:186"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -2409,6 +2470,10 @@
     ],
     [
       "REQ-DATAMODEL-911",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-912",
       "ARCH-DATAMODEL-036"
     ],
     [
@@ -2784,11 +2849,11 @@
   },
   "health": {
     "score": 100,
-    "total": 35,
-    "healthy": 35,
-    "confirmed": 35,
-    "implemented": 34,
-    "tested": 34,
+    "total": 36,
+    "healthy": 36,
+    "confirmed": 36,
+    "implemented": 35,
+    "tested": 35,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,
