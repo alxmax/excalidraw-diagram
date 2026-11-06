@@ -17,7 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.9", "3.12", "3.13"]
-        os: [ubuntu-latest, windows-latest]
+        # ubuntu-24.04, not -latest: setup-python has no Python 3.9 for Ubuntu 26.04, and 3.9
+        # is the floor CLAUDE.md promises to test. Move both together.
+        os: [ubuntu-24.04, windows-latest]
     runs-on: ${{ matrix.os }}
     name: tests (py${{ matrix.python }} on ${{ matrix.os }})
     steps:
@@ -35,6 +37,9 @@ jobs:
       - name: MCP server tests
         working-directory: plugin/skills/excalidraw-diagram/scripts
         run: python -X utf8 -m unittest test_mcp_server -v
+      - name: Data-model tests
+        working-directory: plugin/skills/excalidraw-diagram/scripts
+        run: python -X utf8 -m unittest test_data_model -v
 
   # Every example generator must still run. They are the skill's worked examples, so a
   # generator that raises is a documentation defect, not just a broken script. They write

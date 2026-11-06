@@ -149,6 +149,31 @@ Call `s.pack(nodes, edges, groups=…, options=PackOptions(direction="TB"))` dir
 when you want the auto-layout inside a generator that also draws things by hand.
 `scene_from_spec(spec, out_dir, name=None)` builds a description already in memory.
 
+## The `data-model` command
+
+`python scripts/excalidraw_builder.py data-model --from-ddl schema.sql -o out/` reads
+SQL DDL and draws the tables: one node per table, one arrow per foreign key (from the
+table holding the key to the table it references). It builds the same graph description
+`scene --from-json` takes, so layout and gates are unchanged. Standard library only.
+
+- **Reads:** `CREATE TABLE` (columns, inline or table-level `PRIMARY KEY` / `REFERENCES`)
+  and `ALTER TABLE ... ADD ... FOREIGN KEY`, PostgreSQL and generic SQL. Other statements
+  are ignored. A `CREATE TABLE` it cannot read (`AS SELECT`, a duplicate, an `ALTER` on an
+  unknown table) is an error naming the file and the statement, and nothing is written.
+- **Roles:** each table is a fact (blue), dimension (green), bridge (violet) or unknown
+  (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
+  the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
+  evidence; the rest is foreign keys, numeric measures and descriptive columns.
+- **Review:** amber notes joined by a dashed line to the table they concern. Rules:
+  `grain` (a fact without a primary key), `surrogate-key` (a dimension keyed by a source
+  id), `scd2` (changing attributes with no `valid_from` / `valid_to`), `orphan-fk` (a key
+  to a missing table or column), `snowflake` (a dimension normalised into sub-dimensions).
+- **Python:** `parse_ddl(sql)` in `excalidraw_engine.ddl`, `classify_tables(tables)`,
+  `review_tables(tables, roles)`, `graph_from_tables(tables)` and `scene_from_ddl(path,
+  out_dir)`. Output is byte-stable: one schema, one pair of files.
+- **Limits:** the roles and the `scd2` rule are heuristics on names and structure, and
+  the diagram lays the fact in one column with its dimensions beside it, not around it.
+
 ## Every call
 
 | Call | Draws / returns |

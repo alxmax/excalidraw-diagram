@@ -1,9 +1,9 @@
 ---
-generated: 2026-10-21
+generated: 2026-11-06
 engine: 2026-09-15.1
-nodes: 22
-edges: 5
-design OOP: 82/100 (18/22 source files without a design candidate)
+nodes: 28
+edges: 6
+design OOP: 77/100 (20/26 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -15,6 +15,7 @@ _Capabilities grouped by area; thick border = bus; arrows = `depends_on`. Edges 
 ```mermaid
 graph LR
   subgraph sg_ARCH["ARCH"]
+    ARCH_DATAMODEL_036["A data model drawn and reviewed from its SQL<br><small>ARCH-DATAMODEL-036</small>"]
     ARCH_EXCALIDRAW_030["Excalidraw scene builder — core API<br><small>ARCH-EXCALIDRAW-030</small>"]
     ARCH_EXCALIDRAW_031["Excalidraw quality gates<br><small>ARCH-EXCALIDRAW-031</small>"]
     ARCH_EXCALIDRAW_032["Excalidraw builder entry points: CLI verbs and MCP tools<br><small>ARCH-EXCALIDRAW-032</small>"]
@@ -37,11 +38,17 @@ graph LR
     REQ_EXCALIDRAW_858["pack(): what a node says about itself<br><small>REQ-EXCALIDRAW-858</small>"]
     REQ_RELEASE_855["check_versions.py: the three copies of the version agree<br><small>REQ-RELEASE-855</small>"]
     REQ_RELEASE_857["check_versions.py --bump: start a release with no copy left behind<br><small>REQ-RELEASE-857</small>"]
+    REQ_DATAMODEL_900["Reading tables, keys and foreign keys from DDL<br><small>REQ-DATAMODEL-900</small>"]
+    REQ_DATAMODEL_901["Tables as the graph the builder already draws<br><small>REQ-DATAMODEL-901</small>"]
+    REQ_DATAMODEL_902["A role, a confidence and a reason for every table<br><small>REQ-DATAMODEL-902</small>"]
+    REQ_DATAMODEL_903["Five review rules over the classified tables<br><small>REQ-DATAMODEL-903</small>"]
+    REQ_DATAMODEL_904["Review findings explained and drawn as amber notes<br><small>REQ-DATAMODEL-904</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
   end
   subgraph sg_misc["misc"]
     SYS_DIAGRAM_001["Stakeholder need — a picture of the system, without a drawing session<br><small>SYS-DIAGRAM-001</small>"]
   end
+  ARCH_DATAMODEL_036 --> ARCH_EXCALIDRAW_030
   ARCH_EXCALIDRAW_031 --> ARCH_EXCALIDRAW_030
   ARCH_EXCALIDRAW_032 --> ARCH_EXCALIDRAW_030
   ARCH_EXCALIDRAW_033 --> ARCH_EXCALIDRAW_030
@@ -55,6 +62,11 @@ _Each system/architecture requirement → its code; arrow label = role (`impleme
 
 ```mermaid
 graph LR
+  ARCH_DATAMODEL_036["A data model drawn and reviewed from its SQL<br><small>ARCH-DATAMODEL-036</small>"]
+  f_plugin_skills_excalidraw_diagram_scripts_test_data_model_py_2["plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"]
+  ARCH_DATAMODEL_036 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_data_model_py_2
+  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1["plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"]
+  ARCH_DATAMODEL_036 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1
   ARCH_EXCALIDRAW_030["Excalidraw scene builder — core API<br><small>ARCH-EXCALIDRAW-030</small>"]
   f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2"]
   ARCH_EXCALIDRAW_030 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2
@@ -99,8 +111,8 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 
 ```mermaid
 graph LR
-  a_ARCH["ARCH<br><small>6 caps</small>"]
-  a_REQ["REQ<br><small>15 caps</small>"]
+  a_ARCH["ARCH<br><small>7 caps</small>"]
+  a_REQ["REQ<br><small>20 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 
