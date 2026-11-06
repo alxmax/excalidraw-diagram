@@ -17,13 +17,14 @@ USAGE = """usage: excalidraw_builder.py [<command>]
   render <scene.excalidraw> [out_dir] [--cdn] [--svg]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
-  data-model (--from-ddl <schema.sql> | --from-dbt <project> [--mapping <file.md>])
+  data-model (--from-ddl <schema.sql> | --from-dbt <project> [--mapping <file.md>] [--lineage])
              [-o <dir>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]
                                         draw the tables of a SQL DDL script or the models of
                                         a dbt project, one node per table and one edge per
                                         foreign key; --columns lists each table's columns,
                                         --roles overrides a role, --mapping writes the
-                                        source-to-target mapping as Markdown (dbt only)
+                                        source-to-target mapping as Markdown and --lineage
+                                        draws each ref() as a dashed line (dbt only)
 
 Two authoring paths. `scene` is the short one: describe nodes, edges and groups in
 JSON with no coordinates, and pack() places everything and runs the gates. Writing a
@@ -96,8 +97,8 @@ def _scene(args):
 def _data_model(args):
     args, offline = _cdn_flag(args)
     args, svg = _svg_flag(args)
-    columns = "--columns" in args
-    args = [a for a in args if a != "--columns"]
+    columns, lineage = "--columns" in args, "--lineage" in args
+    args = [a for a in args if a not in ("--columns", "--lineage")]
     flags = {"--from-ddl": "ddl", "--from-dbt": "dbt", "-o": "out", "--out": "out",
              "--roles": "roles", "--mapping": "mapping"}
     got = {}
@@ -107,11 +108,14 @@ def _data_model(args):
             got = {}
             break
         got[key], args = args[1], args[2:]
-    if bool(got.get("ddl")) == bool(got.get("dbt")) or (got.get("mapping") and not got.get("dbt")):
+    dbt_only = got.get("mapping") or lineage
+    if bool(got.get("ddl")) == bool(got.get("dbt")) or (dbt_only and not got.get("dbt")):
         return _usage_error("data-model (--from-ddl <schema.sql> | --from-dbt <project> "
-                            "[--mapping <file.md>]) [-o <dir>] [--columns] "
+                            "[--mapping <file.md>] [--lineage]) [-o <dir>] [--columns] "
                             "[--roles <roles.yml>] [--cdn] [--svg]")
     extra = {"mapping_path": got["mapping"]} if got.get("mapping") else {}
+    if lineage:
+        extra["draw_lineage"] = True
     draw = scene_from_ddl if got.get("ddl") else scene_from_dbt
     print("wrote", *draw(got.get("ddl") or got["dbt"], got.get("out"), offline=offline,
                          svg=svg, columns=columns, roles_path=got.get("roles"), **extra))

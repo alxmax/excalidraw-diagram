@@ -205,8 +205,8 @@ class _PackRun(object):
         for nid in self.ids:
             spec = self.specs[nid]
             font = self.font[nid] = Font.coerce(spec.get("font"), Font(self.opts.font_size))
-            text, w, h = fit_text(str(spec.get("label", nid)),
-                                  size=font.size, max_chars=22, min_size=(150, 58))
+            text, w, h = fit_text(str(spec.get("label", nid)), size=font.size,
+                                  max_chars=int(spec.get("max_chars", 22)), min_size=(150, 58))
             if spec.get("kind") in _DIAMONDS:
                 w, h = diamond_size(text, font.size)
             self.size[nid] = (float(spec.get("w", w)), float(spec.get("h", h)), text)

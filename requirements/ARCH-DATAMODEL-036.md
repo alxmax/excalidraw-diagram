@@ -28,6 +28,9 @@ Every bullet below is binding.
 - The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]
 - dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]
 - A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]
+- The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]
+- dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]
+- The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]
 
 ## Cases
 CASE-1

@@ -118,7 +118,8 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
     {"id": "api", "label": "API gateway", "fill": "service", "kind": "process"},
     {"id": "old", "label": "archived", "fill": "#5c2d91",
      "font": {"size": 15, "color": "#ffffff"}}
-  ],                                   // kind: any box() shape name; font: size/color/align
+  ],                                   // kind: any box() shape name; font: size/color/align;
+                                       // max_chars: wrap width of the label (default 22)
   "edges": [
     {"src": "api", "dst": "auth", "label": "verify", "dashed": false}
   ],
@@ -161,9 +162,15 @@ table holding the key to the table it references). It builds the same graph desc
   are ignored. A `CREATE TABLE` it cannot read (`AS SELECT`, a duplicate, an `ALTER` on an
   unknown table) is an error naming the file and the statement, and nothing is written.
 - **Roles:** each table is a fact (blue), dimension (green), bridge (violet) or unknown
-  (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
+  (grey), shown under its name with an icon and a confidence, e.g. `fact · 100%`. The glossary holds
   the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
   evidence; the rest is foreign keys, numeric measures and descriptive columns.
+- **Explains itself:** a stranger needs nothing else. The subtitle says how to read the picture;
+  the legend gives each colour an icon and a plain meaning; the glossary defines only the terms
+  that appear (fact, dimension, PK, SCD type 2 ...) in everyday words, then says "Why X is a
+  dimension" for every table. Icons are Unicode emoji, always beside words. An arrow names its
+  key column only for a one-fact schema without `--columns`; otherwise the subtitle says to add
+  `--columns`, because crossing arrows would stack their labels.
 - **Review:** amber notes joined by a dashed line to the table they concern. Rules:
   `grain` (a fact without a primary key), `surrogate-key` (a dimension keyed by a source
   id), `scd2` (changing attributes with no `valid_from` / `valid_to`), `orphan-fk` (a key
@@ -172,12 +179,15 @@ table holding the key to the table it references). It builds the same graph desc
   two). One node per model under `models/` (a `.sql` file or a `schema.yml` entry). A
   `relationships` test on a column becomes a foreign key, so it is classified and reviewed
   like any DDL key; a column with both `unique` and `not_null` tests is the primary key;
-  `data_type` gives the column type. A `ref()` in a model's SQL is lineage, drawn as a dashed
-  line from the model to what it is built from (not drawn when a foreign key already joins
-  the pair). Without `data_type` a model has no typed columns and may classify as unknown:
+  `data_type` gives the column type. A `ref()` in a model's SQL is lineage, drawn only with `--lineage`
+  (off by default: on a real project those lines outnumber the foreign keys), as a dashed
+  line labelled `ref` from the model to what it is built from (not drawn when a foreign key
+  already joins the pair). Without `data_type` a model has no typed columns and may classify as unknown:
   use `--roles`. `schema.yml` is read by a YAML subset reader (maps, lists, scalars, flow
   collections, `|` / `>` blocks); anchors, tags, tabs, repeated keys and multiple documents
   are errors naming the line. Output goes to `-o`, or the current folder.
+- **`--lineage`** (with `--from-dbt` only): see above. The mapping always states what each
+  model is built from, with or without it.
 - **`--mapping <file.md>`** (with `--from-dbt` only): also writes a source-to-target mapping.
   One section per model, upstream first; one row per target column with its source
   (`model.column` or `source.table.column`), the transformation (`copy`, `rename`, or the

@@ -69,11 +69,13 @@ def scene_from_spec(spec, out_dir, name=None, offline=None, svg=False):
         scene.label(str(subtitle), (40, top - 54), font=Font(14, align="left"))
     # the two decoders sit below the diagram, side by side, clear of every lane
     key_y = scene.bounds()[3] + 70
+    glossary_x = 460
     if spec.get("legend", bool(spec.get("roles"))) and scene.roles:
-        scene.legend(at=(40, key_y), title="What the colours mean")
+        key = scene.rect(scene.legend(at=(40, key_y), title="What the colours mean"))
+        glossary_x = max(glossary_x, int(key.x + key.w) + 40)   # clear of a wide legend
     entries = [(str(t[0]), str(t[1])) for t in spec.get("glossary") or [] if len(t) >= 2]
     if entries:
-        scene.glossary(entries, (460, key_y))
+        scene.glossary(entries, (glossary_x, key_y))
     return scene.save(str(name or spec.get("name") or "diagram"), out_dir,
                       gates=Gates.strict(), offline=offline, svg=svg)
 

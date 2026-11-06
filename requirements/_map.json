@@ -20,7 +20,10 @@
         "A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]",
         "The command also draws a dbt project: models, `relationships` tests as foreign keys and `ref()` as lineage. [[REQ-DATAMODEL-907]]",
         "dbt schema files are read by a YAML subset reader that refuses what it cannot read. [[REQ-DATAMODEL-908]]",
-        "A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]"
+        "A dbt project can also produce a source-to-target mapping that marks what it cannot trace. [[REQ-DATAMODEL-909]]",
+        "The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]",
+        "dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]",
+        "The diagram explains itself in icons and plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]"
       ],
       "verify": [],
       "notes": [
@@ -60,7 +63,10 @@
         "REQ-DATAMODEL-906",
         "REQ-DATAMODEL-907",
         "REQ-DATAMODEL-908",
-        "REQ-DATAMODEL-909"
+        "REQ-DATAMODEL-909",
+        "REQ-DATAMODEL-910",
+        "REQ-DATAMODEL-911",
+        "REQ-DATAMODEL-912"
       ],
       "members": [
         {
@@ -147,7 +153,9 @@
       "test_exempt": null,
       "milestone": "v1.0.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clauses": 5,
+      "covered": 5
     },
     {
       "id": "REQ-EXCALIDRAW-844",
@@ -332,7 +340,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:765"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:789"
         },
         {
           "role": "implements",
@@ -409,7 +417,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1379"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1403"
         },
         {
           "role": "implements",
@@ -491,7 +499,9 @@
       "test_exempt": null,
       "milestone": "v1.0.0",
       "priority": "",
-      "risks": []
+      "risks": [],
+      "clauses": 7,
+      "covered": 7
     },
     {
       "id": "REQ-EXCALIDRAW-846",
@@ -602,7 +612,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:897"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:921"
         },
         {
           "role": "implements",
@@ -751,7 +761,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:138"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:142"
         },
         {
           "role": "implements",
@@ -818,7 +828,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1262"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1286"
         },
         {
           "role": "implements",
@@ -826,7 +836,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:86"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:88"
         }
       ],
       "test_exempt": null,
@@ -949,7 +959,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1477"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1501"
         },
         {
           "role": "implements",
@@ -1023,7 +1033,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:918"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
         }
       ],
       "test_exempt": null,
@@ -1151,7 +1161,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
         },
         {
           "role": "implements",
@@ -1212,7 +1222,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1002"
         },
         {
           "role": "implements",
@@ -1503,11 +1513,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:49"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:155"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:162"
         }
       ],
       "test_exempt": null,
@@ -1530,12 +1540,14 @@
         "The reason lists the evidence behind the role: name prefix, foreign keys out, numeric measures, tables that reference it and descriptive columns.",
         "A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.",
         "The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.",
+        "Confidence grows with the winner's lead over the runner-up.",
+        "Confidence grows with the amount of evidence, and reaches 1 only with eight points or more.",
         "A table whose best score is below three, or ties for first, is unknown with confidence 0; a staging prefix such as `stg_` is always unknown.",
         "`graph_from_tables()` fills each node by role, adds the role and confidence to its label, and lists in the legend only the roles in use."
       ],
       "verify": [],
       "notes": [
-        "Confidence is the winner's score over the winner's plus the runner-up's. It reads 1.0 whenever every other role scores zero, so it ranks doubt rather than certainty.",
+        "Confidence is the winner's lead over the runner-up, as a share of the winner's score, times the winner's score over eight (at most 1). Two tables that both win clearly differ when one rests on three points and the other on eight.",
         "A table with only key columns is a bridge by structure but may be a factless fact; the reason says so."
       ],
       "current_impl": [
@@ -1546,10 +1558,11 @@
         "CASE-1 — — accuracy on the test set Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects When   `classify_tables()` is run on each schema Then   at least ninety percent of the tables get the expected role",
         "CASE-2 — — structure alone is enough Given  a shop schema whose tables carry no `fact_` or `dim_` prefix When   `classify_tables()` is run Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix",
         "CASE-3 — — every role is explained Given  any classified table When   its classification is read Then   the reason is not empty and the confidence lies between 0 and 1",
-        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, and a staging table shaped like a fact When   `classify_tables()` is run Then   both are unknown with confidence 0, and the reason says why",
-        "CASE-5 — — colour and legend follow the role Given  a schema holding only facts and dimensions When   `graph_from_tables()` is called Then   nodes are filled fact or dimension, and the legend holds those two roles only"
+        "CASE-4 — — no evidence means unknown Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores When   `classify_tables()` is run Then   all three are unknown with confidence 0, and the reason says why",
+        "CASE-5 — — colour and legend follow the role Given  a schema holding only facts and dimensions When   `graph_from_tables()` is called Then   nodes are filled fact or dimension, and the legend holds those two roles only",
+        "CASE-6 — — confidence reflects lead and evidence Given  a table with strong evidence and no rival, and one with thin evidence When   `classify_tables()` is run Then   the first has confidence 1, and the second has a lower one"
       ],
-      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, and a staging table shaped like a fact\n  When   `classify_tables()` is run\n  Then   both are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only",
+      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one",
       "input": "",
       "output": "",
       "desc": "",
@@ -1567,15 +1580,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:109"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:116"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 5,
-      "covered": 5
+      "clauses": 6,
+      "covered": 6
     },
     {
       "id": "REQ-DATAMODEL-903",
@@ -1681,7 +1694,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
         }
       ],
       "test_exempt": null,
@@ -1701,7 +1714,9 @@
       "intent": "A table drawn as a name hides what a modeller most wants to check: which column is the key, which ones point elsewhere, which ones are measures. Listing the columns answers that, but it makes every node taller, so it is off until asked for.",
       "contract": [
         "`graph_from_tables(tables, columns=True)` lists every column of a table under its name and role badge, in the order the DDL declares them.",
-        "A primary-key column is prefixed `PK`, a foreign-key column `FK`, and a column that is both is prefixed `PK FK`.",
+        "A primary-key column starts with a key icon, then `PK`.",
+        "A foreign-key column starts with a link icon, then `FK`.",
+        "A column that is both a primary key and a foreign key carries both marks.",
         "Without `columns`, a node holds only the table name and its role badge.",
         "The `data-model` command takes `--columns` and passes it through to the same graph builder."
       ],
@@ -1716,10 +1731,10 @@
       ],
       "acc": [
         "CASE-1 — — off by default Given  the demo schema When   `graph_from_tables()` is called without `columns` Then   each node label is the table name and its role badge, and nothing else",
-        "CASE-2 — — columns in order with key marks Given  a fact table with a primary key, three foreign keys and three measures When   `graph_from_tables(columns=True)` is called Then   its label lists all seven columns in declared order, with `PK` and `FK` where they apply",
+        "CASE-2 — — columns in order with key marks Given  a fact table with a primary key, three foreign keys and three measures When   `graph_from_tables(columns=True)` is called Then   its label lists all seven columns in declared order, with an icon and `PK` or `FK` where they apply",
         "CASE-3 — — the flag reaches the drawing Given  the demo schema When   `data-model --from-ddl` is run with `--columns` Then   the scene passes every gate and holds a text element listing `PK order_line_key`"
       ],
-      "accept": "CASE-1 — off by default\n  Given  the demo schema\n  When   `graph_from_tables()` is called without `columns`\n  Then   each node label is the table name and its role badge, and nothing else\n\nCASE-2 — columns in order with key marks\n  Given  a fact table with a primary key, three foreign keys and three measures\n  When   `graph_from_tables(columns=True)` is called\n  Then   its label lists all seven columns in declared order, with `PK` and `FK` where they apply\n\nCASE-3 — the flag reaches the drawing\n  Given  the demo schema\n  When   `data-model --from-ddl` is run with `--columns`\n  Then   the scene passes every gate and holds a text element listing `PK order_line_key`",
+      "accept": "CASE-1 — off by default\n  Given  the demo schema\n  When   `graph_from_tables()` is called without `columns`\n  Then   each node label is the table name and its role badge, and nothing else\n\nCASE-2 — columns in order with key marks\n  Given  a fact table with a primary key, three foreign keys and three measures\n  When   `graph_from_tables(columns=True)` is called\n  Then   its label lists all seven columns in declared order, with an icon and `PK` or `FK` where they apply\n\nCASE-3 — the flag reaches the drawing\n  Given  the demo schema\n  When   `data-model --from-ddl` is run with `--columns`\n  Then   the scene passes every gate and holds a text element listing `PK order_line_key`",
       "input": "",
       "output": "",
       "desc": "",
@@ -1737,7 +1752,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
         }
       ],
       "test_exempt": null,
@@ -1797,7 +1812,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:110"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:117"
         },
         {
           "role": "implements",
@@ -1864,11 +1879,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:55"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:175"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:184"
         },
         {
           "role": "implements",
@@ -1957,8 +1972,7 @@
         "With `select *`, a column the schema.yml declares is a copy via the star, and a column the upstream schema does not declare is flagged.",
         "A column is marked \"needs review\" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.",
         "A column marked \"needs review\" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.",
-        "A pipe inside a cell is escaped, and one project always produces the same text.",
-        "`data-model --from-dbt --mapping <file.md>` writes the report once the scene has passed its gates, and `--mapping` without `--from-dbt` is a usage error."
+        "A pipe inside a cell is escaped, and one project always produces the same text."
       ],
       "verify": [],
       "notes": [
@@ -1966,7 +1980,7 @@
         "Column types are not inferred, so a `cast(...)` shows as written."
       ],
       "current_impl": [
-        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`; `scene_from_dbt()` in `data_model.py`; the flag in `cli.py`.",
+        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
         "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "acc": [
@@ -1974,11 +1988,11 @@
         "CASE-2 — — an expression keeps its text Given  `min(orders.order_date) as first_order` and `amount / 100 as amount` When   `mapping_markdown()` is called Then   each row shows the expression as written, and lists the one column it reads as its source",
         "CASE-3 — — rules and order Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models When   `mapping_markdown()` is called Then   the rule cell lists those tests with their targets and values, and staging models come first",
         "CASE-4 — — select star Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not When   `mapping_markdown()` is called Then   declared columns read `copy (via *)`, and the column missing upstream is flagged",
-        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
-        "CASE-6 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical",
-        "CASE-7 — — the command writes the file Given  the fixture project, a DDL input, and an empty project directory When   `data-model` runs with `--mapping` Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file"
+        "CASE-5 — — what cannot be read is marked Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason, and names no guessed source",
+        "CASE-6 — — what is missing is marked Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks When   `mapping_markdown()` is called Then   each affected row says \"needs review\" with the reason",
+        "CASE-7 — — safe and stable text Given  an expression containing `||`, and the same project read twice When   `mapping_markdown()` is called Then   the pipes are escaped inside the table, and both texts are identical"
       ],
-      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, a reshaping CTE, and a model with no SQL\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical\n\nCASE-7 — the command writes the file\n  Given  the fixture project, a DDL input, and an empty project directory\n  When   `data-model` runs with `--mapping`\n  Then   the first writes the report, the DDL run is a usage error, and the empty project writes no file",
+      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
       "input": "",
       "output": "",
       "desc": "",
@@ -2005,6 +2019,191 @@
       "risks": [],
       "clauses": 7,
       "covered": 7
+    },
+    {
+      "id": "REQ-DATAMODEL-910",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "dbt lineage drawn only on request, and labelled",
+      "intent": "On a real dbt project the `ref()` lines outnumber the foreign keys and run round the whole diagram, burying the model the picture is for. And a dashed lineage line looks exactly like the dashed line to a review note. So lineage is off until asked for, and when it is drawn each line says what it is.",
+      "contract": [
+        "`data-model --from-dbt` draws no lineage line unless `--lineage` is given.",
+        "With `--lineage`, each `ref()` pair is a dashed line labelled `ref`, from the model to what it is built from.",
+        "`--lineage` is a usage error without `--from-dbt`.",
+        "The source-to-target mapping is unaffected by `--lineage`: it always states what each model is built from."
+      ],
+      "verify": [],
+      "notes": [
+        "A label on a dashed line is the only thing that tells lineage from a review note, since edges carry no colour of their own."
+      ],
+      "current_impl": [
+        "`scene_from_dbt(draw_lineage=...)` and `graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
+        "`TestLineageFlag` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — no lineage by default Given  the fixture dbt project When   `data-model --from-dbt` runs without `--lineage` Then   the scene holds no text element reading `ref`",
+        "CASE-2 — — lineage on request Given  the same project When   `data-model --from-dbt` runs with `--lineage` Then   the scene passes every gate and holds one `ref` label for each lineage line",
+        "CASE-3 — — lineage needs dbt Given  a DDL file When   `data-model --from-ddl` runs with `--lineage` Then   the command fails with a usage error",
+        "CASE-4 — — the mapping does not depend on the flag Given  the fixture project and a mapping path When   `data-model --from-dbt --mapping` runs with and without `--lineage` Then   both write the same mapping text"
+      ],
+      "accept": "CASE-1 — no lineage by default\n  Given  the fixture dbt project\n  When   `data-model --from-dbt` runs without `--lineage`\n  Then   the scene holds no text element reading `ref`\n\nCASE-2 — lineage on request\n  Given  the same project\n  When   `data-model --from-dbt` runs with `--lineage`\n  Then   the scene passes every gate and holds one `ref` label for each lineage line\n\nCASE-3 — lineage needs dbt\n  Given  a DDL file\n  When   `data-model --from-ddl` runs with `--lineage`\n  Then   the command fails with a usage error\n\nCASE-4 — the mapping does not depend on the flag\n  Given  the fixture project and a mapping path\n  When   `data-model --from-dbt --mapping` runs with and without `--lineage`\n  Then   both write the same mapping text",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:185"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
+    },
+    {
+      "id": "REQ-DATAMODEL-911",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "A data-model diagram a stranger can read",
+      "intent": "A student, or anyone who has never met a star schema or this repository, should not have to look anything up. Every colour has an icon and a plain sentence, every term on the picture is defined in everyday words, and every table says why it has its role.",
+      "contract": [
+        "The legend gives each role in use a colour, an icon and a plain meaning, and the review note gets the same.",
+        "The subtitle says how to read the picture: a box is a table, an arrow from A to B means A holds a key that points at B.",
+        "The glossary defines the terms the diagram uses in everyday words, and defines no term the diagram does not use.",
+        "The glossary ends with one \"Why\" row per table, giving the evidence for its role.",
+        "A key column in a node starts with an icon and the word `PK` or `FK`.",
+        "A review note starts with the icon of its rule.",
+        "An arrow carries its key column's name only when no two labels can meet: one fact table, and columns not listed.",
+        "Without those labels the subtitle says to add `--columns`, unless the columns are already listed.",
+        "The glossary starts to the right of the legend, whatever the legend's width."
+      ],
+      "verify": [],
+      "notes": [
+        "The icons are Unicode emoji, so their look depends on the viewer's emoji font. The words carry the meaning on their own: an icon is a visual cue, never the only one.",
+        "The \"Why\" rows repeat the classifier's evidence text, which is plain but still names things like \"descriptive columns\"; the glossary defines the roles those words lead to."
+      ],
+      "current_impl": [
+        "Text and icons in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`; label policy in `data_model.py`; the glossary position in `spec.py`.",
+        "`TestExplain` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — legend with icon and meaning Given  a schema with facts, dimensions, unknown tables and review notes When   `graph_from_tables()` is called Then   each role in use has a legend entry starting with its icon and holding its plain meaning",
+        "CASE-2 — — how to read it Given  any schema When   `graph_from_tables()` is called Then   the subtitle says what a box is and what an arrow from A to B means",
+        "CASE-3 — — only the terms in use Given  a schema with notes, a clean one, one with columns listed and one with a role set by hand When   the glossary terms of each are read Then   each defines what it shows, and none defines SCD, PK or the like where the diagram has no use for them",
+        "CASE-4 — — why each table has its role Given  the demo schema of six tables When   the glossary is read Then   it ends with one \"Why\" row per table, each holding the evidence in words",
+        "CASE-5 — — icons on keys and notes Given  a primary key, a foreign key, a plain column and a review note When   their text is built Then   the keys start with an icon, then `PK` or `FK` And    the plain column is bare And    the note starts with its rule's icon",
+        "CASE-6 — — labels only where they cannot collide Given  a one-fact schema, a two-fact schema, and the two-fact schema with columns listed When   `graph_from_tables()` is called Then   only the first labels its arrows, and the second says to add `--columns` in its subtitle",
+        "CASE-7 — — a wide legend Given  schemas whose legend holds long entries When   `scene_from_ddl()` draws them through every gate Then   the files are written because the glossary does not overlap the legend"
+      ],
+      "accept": "CASE-1 — legend with icon and meaning\n  Given  a schema with facts, dimensions, unknown tables and review notes\n  When   `graph_from_tables()` is called\n  Then   each role in use has a legend entry starting with its icon and holding its plain meaning\n\nCASE-2 — how to read it\n  Given  any schema\n  When   `graph_from_tables()` is called\n  Then   the subtitle says what a box is and what an arrow from A to B means\n\nCASE-3 — only the terms in use\n  Given  a schema with notes, a clean one, one with columns listed and one with a role set by hand\n  When   the glossary terms of each are read\n  Then   each defines what it shows, and none defines SCD, PK or the like where the diagram has no use for them\n\nCASE-4 — why each table has its role\n  Given  the demo schema of six tables\n  When   the glossary is read\n  Then   it ends with one \"Why\" row per table, each holding the evidence in words\n\nCASE-5 — icons on keys and notes\n  Given  a primary key, a foreign key, a plain column and a review note\n  When   their text is built\n  Then   the keys start with an icon, then `PK` or `FK`\n  And    the plain column is bare\n  And    the note starts with its rule's icon\n\nCASE-6 — labels only where they cannot collide\n  Given  a one-fact schema, a two-fact schema, and the two-fact schema with columns listed\n  When   `graph_from_tables()` is called\n  Then   only the first labels its arrows, and the second says to add `--columns` in its subtitle\n\nCASE-7 — a wide legend\n  Given  schemas whose legend holds long entries\n  When   `scene_from_ddl()` draws them through every gate\n  Then   the files are written because the glossary does not overlap the legend",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:61"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:88"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 7,
+      "covered": 7
+    },
+    {
+      "id": "REQ-DATAMODEL-912",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "The mapping file is written only for a diagram that was drawn",
+      "intent": "A mapping file beside a diagram that failed its checks would look like a finished pair when half of it never existed. So the file is written last, after the scene has passed every gate, and a run that fails anywhere leaves no mapping behind.",
+      "contract": [
+        "`data-model --from-dbt <project> --mapping <file.md>` writes the mapping as UTF-8 Markdown, the same text `mapping_markdown()` returns.",
+        "The file is written only after the scene has passed every gate.",
+        "`--mapping` without `--from-dbt` is a usage error.",
+        "A project that cannot be read leaves no mapping file."
+      ],
+      "verify": [],
+      "notes": [
+        "The report is built before the scene is drawn, so a project that cannot be read fails early; the file itself is written after the gates, so a drawing that fails them never gets one."
+      ],
+      "current_impl": [
+        "`scene_from_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the `--mapping` flag in `cli.py`.",
+        "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "acc": [
+        "CASE-1 — — the file is written beside the scene Given  the fixture dbt project and a mapping path When   `data-model --from-dbt --mapping` runs Then   the file holds exactly the text `mapping_markdown()` returns",
+        "CASE-2 — — a failed gate leaves no file Given  a project whose scene fails a gate When   `scene_from_dbt()` is called with a mapping path Then   it raises `ValueError`, and no mapping file exists",
+        "CASE-3 — — the mapping needs a dbt project Given  a DDL file and a mapping path When   `data-model --from-ddl --mapping` runs Then   the command fails with a usage error",
+        "CASE-4 — — an unreadable project leaves nothing Given  an empty project directory and a mapping path When   `data-model --from-dbt --mapping` runs Then   the command fails, and no mapping file exists"
+      ],
+      "accept": "CASE-1 — the file is written beside the scene\n  Given  the fixture dbt project and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the file holds exactly the text `mapping_markdown()` returns\n\nCASE-2 — a failed gate leaves no file\n  Given  a project whose scene fails a gate\n  When   `scene_from_dbt()` is called with a mapping path\n  Then   it raises `ValueError`, and no mapping file exists\n\nCASE-3 — the mapping needs a dbt project\n  Given  a DDL file and a mapping path\n  When   `data-model --from-ddl --mapping` runs\n  Then   the command fails with a usage error\n\nCASE-4 — an unreadable project leaves nothing\n  Given  an empty project directory and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the command fails, and no mapping file exists",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "deps": [],
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:186"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -2266,6 +2465,18 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-910",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-911",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-912",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ]
@@ -2310,17 +2521,18 @@
     },
     {
       "month": "2026-11",
-      "count": 4,
+      "count": 5,
       "first": "2026-11-06",
-      "last": "2026-11-06",
+      "last": "2026-11-07",
       "versions": [
         "v2.10.0",
         "v2.11.0",
         "v2.8.0",
-        "v2.9.0"
+        "v2.9.0",
+        "v2.12.0"
       ],
-      "landmark": "v2.11.0",
-      "headline": "`data-model --from-dbt ... --mapping map.md` writes a source-to-target mapping"
+      "landmark": "v2.12.0",
+      "headline": "Changed: dbt lineage is drawn only with `--lineage`"
     }
   ],
   "commands": [
@@ -2502,9 +2714,9 @@
     }
   ],
   "design": {
-    "files": 30,
-    "clean_files": 21,
-    "score": 70,
+    "files": 31,
+    "clean_files": 22,
+    "score": 71,
     "candidates": {
       "encapsulation": 5,
       "abstraction": 2,
@@ -2526,15 +2738,15 @@
         "pillar": "standards",
         "kind": "line-too-long",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py",
-        "line": 132,
+        "line": 136,
         "name": "cli.py",
-        "detail": "1 line(s) wider than 100 columns, first at line 132"
+        "detail": "1 line(s) wider than 100 columns, first at line 136"
       },
       {
         "pillar": "encapsulation",
         "kind": "data-clump",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 128,
+        "line": 135,
         "name": "_draw",
         "detail": "columns, name, offline, out_dir, roles_path, svg travel together through 3 functions: _draw, scene_from_dbt, scene_from_ddl"
       },
@@ -2542,7 +2754,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 128,
+        "line": 135,
         "name": "_draw",
         "detail": "`_draw` takes 10 parameters (over 6)"
       },
@@ -2550,7 +2762,7 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 146,
+        "line": 153,
         "name": "scene_from_ddl",
         "detail": "`scene_from_ddl` takes 7 parameters (over 6)"
       },
@@ -2558,9 +2770,9 @@
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py",
-        "line": 166,
+        "line": 173,
         "name": "scene_from_dbt",
-        "detail": "`scene_from_dbt` takes 8 parameters (over 6)"
+        "detail": "`scene_from_dbt` takes 9 parameters (over 6)"
       },
       {
         "pillar": "standards",
@@ -2600,7 +2812,7 @@
         "file": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py",
         "line": 166,
         "name": "_PackRun",
-        "detail": "`_PackRun` reaches 56 methods (over 50): 13 of its own plus 43 it calls"
+        "detail": "`_PackRun` reaches 57 methods (over 50): 13 of its own plus 44 it calls"
       },
       {
         "pillar": "encapsulation",
@@ -2637,11 +2849,11 @@
   },
   "health": {
     "score": 100,
-    "total": 33,
-    "healthy": 33,
-    "confirmed": 33,
-    "implemented": 32,
-    "tested": 32,
+    "total": 36,
+    "healthy": 36,
+    "confirmed": 36,
+    "implemented": 35,
+    "tested": 35,
     "drafts": 0,
     "orphans": 0,
     "untested": 0,

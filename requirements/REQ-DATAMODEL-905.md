@@ -16,7 +16,9 @@ satisfies: [ARCH-DATAMODEL-036]
 
 Every bullet below is binding.
 - `graph_from_tables(tables, columns=True)` lists every column of a table under its name and role badge, in the order the DDL declares them.
-- A primary-key column is prefixed `PK`, a foreign-key column `FK`, and a column that is both is prefixed `PK FK`.
+- A primary-key column starts with a key icon, then `PK`.
+- A foreign-key column starts with a link icon, then `FK`.
+- A column that is both a primary key and a foreign key carries both marks.
 - Without `columns`, a node holds only the table name and its role badge.
 - The `data-model` command takes `--columns` and passes it through to the same graph builder.
 
@@ -29,7 +31,7 @@ CASE-1 — off by default
 CASE-2 — columns in order with key marks
   Given  a fact table with a primary key, three foreign keys and three measures
   When   `graph_from_tables(columns=True)` is called
-  Then   its label lists all seven columns in declared order, with `PK` and `FK` where they apply
+  Then   its label lists all seven columns in declared order, with an icon and `PK` or `FK` where they apply
 
 CASE-3 — the flag reaches the drawing
   Given  the demo schema

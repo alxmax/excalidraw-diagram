@@ -4,10 +4,15 @@ The rule from the brief, made explicit: a table with several foreign keys out an
 additive numeric columns is a fact candidate; a table other tables reference, holding
 descriptive columns, is a dimension candidate. Each piece of evidence has a weight and a
 sentence, so a classification is never a bare label: `reason` lists exactly what was
-seen, and `confidence` says how far the winner is ahead.
+seen, and `confidence` says how far the winner is ahead AND how much it rests on.
 
-    confidence = winner / (winner + runner-up)      unknown when the winner scores < 3
+    confidence = (winner - runner-up) / winner  x  min(1, winner / STRONG)
+                 how far ahead                      how much evidence
+                                                    unknown when the winner scores < 3
                                                     or two roles tie
+
+So 100% needs a clear lead over the runner-up and STRONG (8) points of evidence; a table
+with a lead but only a few points, or plenty of points but a close rival, reads lower.
 
 The name prefix (fact_, dim_, bridge_ ...) is one piece of evidence, not the verdict: a
 schema without prefixes classifies from its structure alone. A table whose columns are
@@ -17,6 +22,7 @@ all keys is a bridge by structure but could equally be a factless fact; the reas
 import re
 
 THRESHOLD = 3
+STRONG = 8              # evidence at which a clear lead reads as full confidence
 _SCORED = ("fact", "dimension", "bridge")
 _STAGING = re.compile(r"^(stg|staging|raw|tmp|temp|src)_", re.I)
 _PREFIX = {"fact": re.compile(r"^(fact|fct|f)_", re.I),
@@ -95,7 +101,8 @@ def _decide(name, ev):
         return Classification("unknown", 0.0, "not enough evidence (%s)" % summary)
     if scores[top] == scores[second]:
         return Classification("unknown", 0.0, "%s and %s tie (%s)" % (top, second, summary))
-    conf = scores[top] / float(scores[top] + scores[second])
+    lead = (scores[top] - scores[second]) / float(scores[top])
+    conf = lead * min(1.0, scores[top] / float(STRONG))
     return Classification(top, round(conf, 2), "; ".join(s for _, s in ev[top]))
 
 
