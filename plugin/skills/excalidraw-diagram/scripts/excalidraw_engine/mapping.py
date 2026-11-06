@@ -4,9 +4,13 @@ For every model, one row per target column: where it comes from, what is done to
 which rules (the schema.yml tests) it must meet.
 
 The source of a column is only as good as the SQL reader behind it, and that reader is a
-small one: it follows a plain `select`, aliases, joins and CTEs that merely pass a table
-through. Anything else is NOT guessed. A union, Jinja control flow, a subquery in `from`,
-a CTE that reshapes its input, or an unqualified column with several relations in scope
+small one: it follows a plain `select`, aliases, joins and CTEs, tracing each column through
+every CTE's own SELECT to the models and source tables underneath, so a CTE is never named as
+a source. A model's columns are the ones its SQL produces, followed through `*`, because
+schema.yml usually lists only the columns it tests.
+
+Anything else is NOT guessed. A union, Jinja control flow (a `{% for %}` loop), a subquery in
+`from`, a CTE it cannot read, or an unqualified column no single relation is known to hold
 gives a row marked "needs review" with the reason, because a mapping that looks complete
 and is wrong is worse than one that says where to read the SQL.
 """
@@ -154,19 +158,6 @@ def _select(text):
     return Select(items, aliases)
 
 
-def _passthrough(body):
-    """The one relation a CTE body only passes through (`select * from x`, or plain
-    unrenamed columns of x), else None."""
-    sel = _select(body)
-    if sel.why or len(set(sel.aliases.values())) != 1 or re.search(r"\b(join)\b", body, re.I):
-        return None
-    for item in sel.items:
-        plain = _PLAIN.match(item) or re.match(r"^(?:\w+\.)?\*$", item)
-        if not plain:
-            return None
-    return next(iter(sel.aliases.values()))
-
-
 # ---------------------------------------------------------------------------
 # one model -> rows
 # ---------------------------------------------------------------------------
@@ -184,97 +175,237 @@ def _rule_text(tests):
     return ", ".join(parts) or "—"
 
 
-def _resolve(rel, ctes, models, seen=()):
-    """(name, note): the model or source `rel` stands for, following pass-through CTEs.
-    `note` says why it is only the CTE's own name when it could not be followed."""
-    if rel in ctes and rel not in seen:
-        inner = _passthrough(ctes[rel])
-        if inner is None:
-            return rel, "CTE %s reshapes its input and is not traced" % rel
-        return _resolve(inner, ctes, models, seen + (rel,))
-    return rel, None
+_STAR = re.compile(r"^(?:(\w+)\.)?\*$")
 
 
-def _expr_sources(expr, sel, ctes, models, columns):
-    """([source strings], review reason or None) for the columns an expression reads."""
-    found, reason = [], None
+def _star_relation(match, sel):
+    """The one relation a `*` or `alias.*` stands for, or None when it is ambiguous."""
+    alias = (match.group(1) or "").lower()
+    if alias:
+        return sel.aliases.get(alias)
+    return next(iter(sel.aliases.values())) if len(sel.aliases) == 1 else None
+
+
+def _split_item(item):
+    """(expression, target column name or None, plain-column match) for one select item."""
+    alias_m = _AS.match(item)
+    expr, target = (alias_m.group(1), alias_m.group(2)) if alias_m else (item, None)
+    plain = _PLAIN.match(expr.strip())
+    return expr, target or (plain.group(2) if plain else None), plain
+
+
+def _query(text):
+    """(ctes, Select) for a model's SQL, or None when it cannot be read to the end."""
+    prepared = _prepare(text)
+    parsed = _ctes(prepared) if prepared is not None else None
+    if parsed is None:
+        return None
+    ctes, rest = parsed
+    sel = _select(rest)
+    return None if sel.why else (ctes, sel)
+
+
+class _Project(object):
+    """The models of a dbt project and the columns each one produces.
+
+    A model's columns come from its own SQL, followed through `*` and through CTEs, because
+    schema.yml usually names only the columns it tests. A model whose SQL cannot be followed
+    to the end yields None. A source table (a seed or a raw table) is no model, so its columns
+    are never known."""
+
+    def __init__(self, tables, sql):
+        self.declared = {t.name: [c.name for c in t.columns] for t in tables}
+        self.sql, self._cache = sql, {}
+
+    def produced(self, model, seen=()):
+        """The ordered column names `model` produces, or None when they cannot be known."""
+        if model in self._cache:
+            return self._cache[model]
+        if model in seen or model not in self.declared:
+            return None
+        text = self.sql.get(model)
+        if text is None:
+            cols = self.declared[model] or None          # no SQL: only what schema.yml says
+        else:
+            query = _query(text)
+            cols = self._select_columns(query[1], query[0], seen + (model,)) if query else None
+        self._cache[model] = cols
+        return cols
+
+    def relation_columns(self, rel, ctes, seen=()):
+        """The column names of relation `rel` as a query sees it: a CTE, a model, or None."""
+        if rel in ctes:
+            sel = _select(ctes[rel])
+            if rel in seen or sel.why:
+                return None
+            return self._select_columns(sel, ctes, seen + (rel,))
+        return self.produced(rel, seen)
+
+    def _select_columns(self, sel, ctes, seen):
+        names = []
+        for item in sel.items:
+            star = _STAR.match(item)
+            if star:
+                rel = _star_relation(star, sel)
+                cols = self.relation_columns(rel, ctes, seen) if rel else None
+                if cols is None:
+                    return None
+                names += cols
+                continue
+            target = _split_item(item)[1]
+            if target:
+                names.append(target)
+        return list(dict.fromkeys(names))
+
+
+def _trace(rel, col, ctes, project, seen=()):
+    """([sources], transform, review) for column `col` of relation `rel`.
+
+    A relation that is no CTE is a model or a source table, so the column is just `rel.col`.
+    A CTE is followed into its own SELECT: the sources named are the models and source tables
+    underneath, never the CTE itself. `transform` is the expression a CTE applied to the
+    column when it did more than rename it; `review` says why a CTE could not be followed."""
+    if rel not in ctes:
+        return ["%s.%s" % (rel, col)], None, None
+    if rel in seen:
+        return [], None, "CTE %s reads itself" % rel
+    sel = _select(ctes[rel])
+    if sel.why:
+        return [], None, "CTE %s is not traced: %s" % (rel, sel.why)
+    seen, star_rel = seen + (rel,), None
+    for item in sel.items:
+        star = _STAR.match(item)
+        if star:
+            star_rel = _star_relation(star, sel) or star_rel
+            continue
+        expr, target, plain = _split_item(item)
+        if target and target.lower() == col.lower():
+            sources, review, inner = _expr_sources(expr, sel, ctes, project, seen)
+            copy = bool(plain) and len(sources) == 1
+            how = (inner[0] if inner else None) if copy else " ".join(expr.split())
+            return sources, how, review
+    if star_rel:
+        return _trace(star_rel, col, ctes, project, seen)
+    return [], None, "CTE %s has no column %s" % (rel, col)
+
+
+def _expr_sources(expr, sel, ctes, project, seen=()):
+    """([source strings], review reason or None, [inner transforms]) for the columns an
+    expression reads. Each column is traced through any CTE it comes from, and a bare name
+    over several relations is placed with the one relation known to hold it."""
+    found, reason, inner = [], None, []
+
+    def follow(rel, col):
+        nonlocal reason
+        sources, how, note = _trace(rel, col, ctes, project, seen)
+        found.extend(sources)
+        reason = reason or note
+        if how:
+            inner.append(how)
+
     scrubbed = re.sub(r"'[^']*'", "''", expr)
     for alias, col in _QUALIFIED.findall(scrubbed):
         rel = sel.aliases.get(alias.lower())
         if rel is None:
             reason = reason or "%s. is not a relation in this query" % alias
-            continue
-        name, note = _resolve(rel, ctes, models)
-        reason = reason or note
-        found.append("%s.%s" % (name, col))
+        else:
+            follow(rel, col)
     bare = re.sub(r"\b\w+\.\w+\b", " ", scrubbed)
     names = [w for w in _WORD.findall(bare) if w.lower() not in _NOT_COLUMN]
-    if names and len(sel.aliases) != 1:
-        reason = reason or "unqualified column%s %s with %d relations in scope" % (
-            "s" if len(names) > 1 else "", ", ".join(names), len(sel.aliases))
-    elif names:
-        rel, note = _resolve(next(iter(sel.aliases.values())), ctes, models)
-        reason = reason or note
-        known = columns.get(rel)
-        if known:
-            names = [n for n in names if n in known]
-        elif len(names) > 1 and not _PLAIN.match(expr.strip()):
-            reason = reason or "several bare names (%s) and no schema for %s" % (", ".join(names), rel)
-            names = []
-        found += ["%s.%s" % (rel, n) for n in names]
-    return list(dict.fromkeys(found)), reason
+    rels = sorted(set(sel.aliases.values()))
+    cols = {r: project.relation_columns(r, ctes, seen) for r in rels} if names else {}
+    for n in names:
+        if len(sel.aliases) == 1:
+            rel = rels[0]
+            if cols[rel] is not None and n not in cols[rel]:
+                continue                                # a keyword or function, not a column
+            if cols[rel] is None and rel not in ctes and len(names) > 1 \
+                    and not _PLAIN.match(expr.strip()):
+                reason = reason or "several bare names (%s) and no schema for %s" % (
+                    ", ".join(names), rel)
+                break
+            follow(rel, n)
+            continue
+        owners = [r for r in rels if cols[r] is not None and n in cols[r]]
+        if len(owners) == 1 and all(cols[r] is not None for r in rels):
+            follow(owners[0], n)
+        else:
+            reason = reason or "unqualified column %s with %d relations in scope" % (
+                n, len(sel.aliases))
+    return list(dict.fromkeys(found)), reason, inner
 
 
-def _model_rows(name, sql, table, tests, models, columns):
-    """The Rows for model `name`; every column of `table` plus whatever the SELECT names."""
+def _star_row(rel, col, ctes, project, rule):
+    """The Row for column `col` that a `*` over relation `rel` brings in."""
+    sources, how, note = _trace(rel, col, ctes, project)
+    renamed = bool(sources) and sources[0].rsplit(".", 1)[1] != col
+    return Row(col, sources, how or ("rename (via *)" if renamed else "copy (via *)"),
+               rule(col), note)
+
+
+def _why_unreadable(sql):
+    """Why a model's SQL cannot be read at all, in a sentence."""
+    if sql is None:
+        return "no SQL file"
+    prepared = _prepare(sql)
+    if prepared is None:
+        return "the SQL uses Jinja this reader does not evaluate"
+    parsed = _ctes(prepared)
+    return "the WITH clause could not be read" if parsed is None else _select(parsed[1]).why
+
+
+def _model_rows(name, sql, table, tests, project):
+    """The Rows for model `name`: every column its SELECT produces, in order, then any column
+    schema.yml declares that the SQL does not produce."""
     declared = [c.name for c in table.columns]
     rule = lambda col: _rule_text(tests.get(col, {}))
-    text = _prepare(sql) if sql is not None else None
-    if text is None:
-        why = "no SQL file" if sql is None else "the SQL uses Jinja this reader does not evaluate"
+    query = _query(sql) if sql is not None else None
+    if query is None:
+        why = _why_unreadable(sql)
         return [Row(c, [], "—", rule(c), why) for c in declared]
-    parsed = _ctes(text)
-    if parsed is None:
-        return [Row(c, [], "—", rule(c), "the WITH clause could not be read") for c in declared]
-    ctes, rest = parsed
-    sel = _select(rest)
-    if sel.why:
-        return [Row(c, [], "—", rule(c), sel.why) for c in declared]
-    rows, named, star_rel = [], set(), None
+    ctes, sel = query
+    rows, named, unknown_star = [], set(), None
+
+    def add(row):
+        rows.append(row)
+        named.add(row.target.lower())
+
     for item in sel.items:
-        star = re.match(r"^(?:(\w+)\.)?\*$", item)
+        star = _STAR.match(item)
         if star:
-            alias = (star.group(1) or "").lower()
-            rel = sel.aliases.get(alias) if alias else (next(iter(sel.aliases.values()))
-                                                         if len(sel.aliases) == 1 else None)
-            star_rel = _resolve(rel, ctes, models)[0] if rel else None
-            if star_rel is None:
+            rel = _star_relation(star, sel)
+            if rel is None:
                 rows.append(Row("*", [], "—", "—", "SELECT * with more than one relation in scope"))
+                continue
+            produced = project.relation_columns(rel, ctes)
+            if produced is None:
+                unknown_star = rel
+            for col in produced or []:
+                if col.lower() not in named:
+                    add(_star_row(rel, col, ctes, project, rule))
             continue
-        alias_m = _AS.match(item)
-        expr, target = (alias_m.group(1), alias_m.group(2)) if alias_m else (item, None)
-        plain = _PLAIN.match(expr.strip())
-        target = target or (plain.group(2) if plain else None)
-        sources, review = _expr_sources(expr, sel, ctes, models, columns)
+        expr, target, plain = _split_item(item)
+        sources, review, inner = _expr_sources(expr, sel, ctes, project)
         if target is None:
             rows.append(Row("(unnamed)", sources, " ".join(expr.split()), "—",
                             "an expression with no alias: its column name is up to the warehouse"))
             continue
-        named.add(target.lower())
         copy = bool(plain) and len(sources) == 1
-        transform = ("copy" if copy and sources[0].split(".")[-1] == target
-                     else "rename" if copy else " ".join(expr.split()))
-        rows.append(Row(target, sources, transform, rule(target), review))
+        if copy and inner:
+            transform = inner[0]
+        elif copy:
+            transform = "copy" if sources[0].split(".")[-1] == target else "rename"
+        else:
+            transform = " ".join(expr.split())
+        add(Row(target, sources, transform, rule(target), review))
     for col in declared:
         if col.lower() in named:
             continue
-        if star_rel:
-            note = None
-            if columns.get(star_rel) and col not in columns[star_rel]:
-                note = "%s does not declare %s in its schema.yml" % (star_rel, col)
-            rows.append(Row(col, ["%s.%s" % (star_rel, col)], "copy (via *)", rule(col), note))
+        if unknown_star:                         # the star's columns are unknown: trust the schema
+            add(_star_row(unknown_star, col, ctes, project, rule))
         else:
-            rows.append(Row(col, [], "—", rule(col), "declared in schema.yml but not in the SELECT"))
+            add(Row(col, [], "—", rule(col),
+                    "declared in schema.yml, but the SQL produces no column %s" % col))
     return rows
 
 
@@ -296,8 +427,7 @@ def mapping_markdown(project_dir, title=None):
     One section per model, upstream models first. Deterministic: one project, one text."""
     # implements: REQ-DATAMODEL-909
     tables, lineage, sql, tests = read_dbt_project(project_dir)
-    models = {t.name for t in tables}
-    columns = {t.name: {c.name for c in t.columns} for t in tables if t.columns}
+    project = _Project(tables, sql)
     upstream = {}
     for model, up in lineage:
         upstream.setdefault(model, []).append(up)
@@ -307,7 +437,7 @@ def mapping_markdown(project_dir, title=None):
            "**needs review** could not be traced by this reader: read that model's SQL.", ""]
     for table in order:
         rows = _model_rows(table.name, sql.get(table.name), table, tests.get(table.name, {}),
-                           models, columns)
+                           project)
         out += ["## %s" % table.name, ""]
         if upstream.get(table.name):
             out += ["Built from: " + ", ".join("`%s`" % u for u in sorted(upstream[table.name])), ""]

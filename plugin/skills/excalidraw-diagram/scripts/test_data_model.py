@@ -23,7 +23,7 @@ from excalidraw_engine.classify import classify_tables  # noqa: E402
 from excalidraw_engine.data_model import (  # noqa: E402
     NOTE, graph_from_tables, scene_from_dbt, scene_from_ddl, unresolved_fks)
 from excalidraw_engine.dbt import read_dbt  # noqa: E402
-from excalidraw_engine.ddl import parse_ddl  # noqa: E402
+from excalidraw_engine.ddl import Column, ForeignKey, Table, parse_ddl  # noqa: E402
 from excalidraw_engine.mapping import mapping_markdown  # noqa: E402
 from excalidraw_engine.miniyaml import parse_yaml  # noqa: E402
 from excalidraw_engine.review import review_tables  # noqa: E402
@@ -162,6 +162,30 @@ class TestClassify(unittest.TestCase):
         got = classify_tables(parse_ddl(sql))["rates"]
         self.assertEqual((got.role, got.confidence), ("unknown", 0.0))
         self.assertIn("fact and dimension tie", got.reason)
+
+    @staticmethod
+    def _orders_table(types):
+        """A dbt-style `orders` that points at `customers`; `types` maps column -> type."""
+        orders = Table("orders")
+        orders.columns = [Column(n, types.get(n, "")) for n in
+                          ("order_id", "customer_id", "status", "amount", "coupon_amount")]
+        orders.primary_key = ["order_id"]
+        orders.foreign_keys = [ForeignKey(["customer_id"], "customers", ["customer_id"])]
+        customers = Table("customers")
+        customers.columns = [Column("customer_id", "")]
+        customers.primary_key = ["customer_id"]
+        return [customers, orders]
+
+    def test_an_untyped_table_is_judged_from_its_column_names_and_says_so(self):  # verifies: REQ-DATAMODEL-902#CASE-7
+        got = classify_tables(self._orders_table({}))["orders"]
+        self.assertEqual(got.role, "fact")
+        self.assertIn("amount, coupon_amount (guessed from the names", got.reason)
+
+    def test_a_declared_type_is_never_overridden_by_a_name(self):  # verifies: REQ-DATAMODEL-902#CASE-7
+        typed = {"status": "varchar", "amount": "text", "coupon_amount": "text"}
+        got = classify_tables(self._orders_table(typed))["orders"]
+        self.assertNotIn("guessed", got.reason)
+        self.assertNotEqual(got.role, "fact")
 
     def test_node_is_coloured_by_role_and_legend_lists_only_roles_in_use(self):  # verifies: REQ-DATAMODEL-902#CASE-5
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
@@ -669,7 +693,7 @@ class TestMapping(unittest.TestCase):
         self.assertLess(self.md.index("## stg_customers"), self.md.index("## customers"))
         self.assertIn("Built from: `stg_orders`, `stg_payments`", self.md.split("## orders")[1])
 
-    def test_select_star_copies_the_declared_columns_and_checks_upstream(self):  # verifies: REQ-DATAMODEL-909#CASE-4
+    def test_select_star_copies_what_is_produced_and_flags_a_declared_column_that_is_not(self):  # verifies: REQ-DATAMODEL-909#CASE-4  # verifies: REQ-DATAMODEL-909#CASE-6
         tmp, path = _project(
             {"a": "select 1 as x", "b": "select * from {{ ref('a') }}"},
             "models:\n  - name: a\n    columns:\n      - name: x\n"
@@ -678,7 +702,7 @@ class TestMapping(unittest.TestCase):
             md = mapping_markdown(path)
         self.assertIn("`a.x` | copy (via *)", _row(md, "b", "x"))
         self.assertIn("needs review", _row(md, "b", "y"))
-        self.assertIn("a does not declare y", _row(md, "b", "y"))
+        self.assertIn("SQL produces no column y", _row(md, "b", "y"))
 
     def test_what_it_cannot_read_is_marked_needs_review_with_the_reason(self):  # verifies: REQ-DATAMODEL-909#CASE-5  # verifies: REQ-DATAMODEL-909#CASE-6
         cases = {
@@ -686,7 +710,8 @@ class TestMapping(unittest.TestCase):
             "j": ("{% if true %}select a from {{ ref('s') }}{% endif %}", "Jinja"),
             "q": ("select a from (select a from {{ ref('s') }}) z", "subquery"),
             "m": ("select a from {{ ref('s') }} x join {{ ref('t') }} y on x.k = y.k", "2 relations"),
-            "r": ("with c as (select a + 1 as a from {{ ref('s') }}) select c.a from c", "reshapes"),
+            "r": ("with c as (select a from {{ ref('s') }} union select a from {{ ref('t') }}) "
+                  "select c.a from c", "not traced"),
             "n": ("select count(*) from {{ ref('s') }}", "no alias"),
         }
         schema = "models:\n" + "".join("  - name: %s\n    columns:\n      - name: a\n" % k
@@ -700,13 +725,57 @@ class TestMapping(unittest.TestCase):
             self.assertIn("needs review", row, model)
             self.assertIn(why, row, model)
         # model n also declares column a, which its SELECT never produces
-        self.assertIn("declared in schema.yml but not in the SELECT", _row(md, "n", "a"))
+        self.assertIn("SQL produces no column a", _row(md, "n", "a"))
 
     def test_a_model_with_no_sql_file_is_marked_needs_review(self):  # verifies: REQ-DATAMODEL-909#CASE-6
         tmp, path = _project({"b": "select 1 as c"},
                              "models:\n  - name: ghost\n    columns:\n      - name: c\n")
         with tmp:
             self.assertIn("no SQL file", _row(mapping_markdown(path), "ghost", "c"))
+
+    def test_a_column_is_traced_through_every_cte_to_the_source_table(self):  # verifies: REQ-DATAMODEL-909#CASE-1
+        # the usual dbt shape: read the table, rename in a CTE, select * from the last CTE
+        tmp, path = _project(
+            {"stg": "with source as (select * from {{ ref('raw_c') }}),\n"
+                    "renamed as (select id as customer_id, first_name from source)\n"
+                    "select * from renamed"},
+            "models:\n  - name: stg\n    columns:\n      - name: customer_id\n")
+        with tmp:
+            md = mapping_markdown(path)
+        self.assertIn("`raw_c.id` | rename (via *)", _row(md, "stg", "customer_id"))
+        self.assertIn("`raw_c.first_name` | copy (via *)", _row(md, "stg", "first_name"))
+        self.assertNotIn("renamed", md.split("## stg")[1])      # a CTE is never named as a source
+        self.assertNotIn("needs review", md.split("## stg")[1])
+
+    def test_an_expression_inside_a_cte_is_shown_not_hidden_behind_a_copy(self):  # verifies: REQ-DATAMODEL-909#CASE-2
+        tmp, path = _project(
+            {"stg": "with source as (select * from {{ ref('raw_p') }}),\n"
+                    "renamed as (select amount / 100 as amount from source)\n"
+                    "select * from renamed"})
+        with tmp:
+            row = _row(mapping_markdown(path), "stg", "amount")
+        self.assertIn("`raw_p.amount` | amount / 100", row)
+
+    def test_a_bare_name_over_two_relations_goes_to_the_one_that_holds_it(self):  # verifies: REQ-DATAMODEL-909#CASE-1
+        tmp, path = _project(
+            {"orders": "select 1 as order_id, 2 as customer_id",
+             "payments": "select 1 as order_id, 5 as amount",
+             "m": "select sum(amount) as total from {{ ref('payments') }} p "
+                  "left join {{ ref('orders') }} o on p.order_id = o.order_id"},
+            "models:\n  - name: m\n    columns:\n      - name: total\n")
+        with tmp:
+            row = _row(mapping_markdown(path), "m", "total")
+        self.assertIn("`payments.amount` | sum(amount)", row)
+        self.assertNotIn("needs review", row)
+
+    def test_a_column_the_sql_produces_is_listed_though_the_schema_omits_it(self):  # verifies: REQ-DATAMODEL-909#CASE-4
+        tmp, path = _project(
+            {"a": "select 1 as x, 2 as z", "b": "select * from {{ ref('a') }}"},
+            "models:\n  - name: b\n    columns:\n      - name: x\n")
+        with tmp:
+            md = mapping_markdown(path)
+        self.assertIn("`a.z` | copy (via *)", _row(md, "b", "z"))
+        self.assertNotIn("needs review", _row(md, "b", "z"))
 
     def test_a_pipe_in_an_expression_does_not_break_the_table(self):  # verifies: REQ-DATAMODEL-909#CASE-7
         tmp, path = _project({"s": "select 1 as a", "m": "select a || 'x' as b from {{ ref('s') }}"},

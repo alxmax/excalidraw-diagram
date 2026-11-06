@@ -22,6 +22,7 @@ all keys is a bridge by structure but could equally be a factless fact; the reas
 import re
 
 THRESHOLD = 3
+_GUESS = " (guessed from the names: no data types declared)"
 STRONG = 8              # evidence at which a clear lead reads as full confidence
 _SCORED = ("fact", "dimension", "bridge")
 _STAGING = re.compile(r"^(stg|staging|raw|tmp|temp|src)_", re.I)
@@ -34,6 +35,13 @@ _DESCRIPTIVE = re.compile(r"^(?:n?var)?char|^character|^n?text|^citext|^string|^
                           r"^bool", re.I)
 _KEYLIKE = re.compile(r"(^id$|_id$|_key$|_sk$|_fk$|_no$|_num$|_number$|_code$)", re.I)
 _CALENDAR = re.compile(r"^(year|month|day|week|quarter|hour|minute|fiscal_\w+|day_of_\w+)$", re.I)
+# Only for a column with NO declared type (a dbt schema.yml usually has none): the name is all
+# there is to read, so it is read, and the reason says the call was a guess.
+_MEASURE_NAME = re.compile(r"(^|_)(amount|total|count|qty|quantity|price|cost|revenue|sum|"
+                           r"balance|fee|tax|discount)(_|$)|^number_of_", re.I)
+_DESCRIPTIVE_NAME = re.compile(r"(^|_)(name|city|country|region|address|email|phone|status|"
+                               r"type|category|method|description|title|label|segment|"
+                               r"channel|brand)(_|$)", re.I)
 
 
 class Classification(object):
@@ -51,14 +59,35 @@ def _fk_columns(table):
     return {c for fk in table.foreign_keys for c in fk.columns}
 
 
+def _judge_columns(plain):
+    """(measures, descriptive, guessed): the non-key columns read as additive numbers and as
+    descriptive text, from their declared types; `guessed` names the lists (a subset of
+    'measures', 'descriptive') that had to rest on a column's name because it has no type."""
+    measures, descriptive, guessed = [], [], set()
+    for c in plain:
+        if c.type:
+            if _NUMERIC.match(c.type) and not _CALENDAR.match(c.name):
+                measures.append(c.name)
+            elif _DESCRIPTIVE.match(c.type):
+                descriptive.append(c.name)
+        elif _MEASURE_NAME.search(c.name) and not _CALENDAR.match(c.name):
+            measures.append(c.name)
+            guessed.add("measures")
+        elif _DESCRIPTIVE_NAME.search(c.name):
+            descriptive.append(c.name)
+            guessed.add("descriptive")
+    return measures, descriptive, guessed
+
+
 def _profile(table, referrers):
     """The facts about `table` the rules read: measures, descriptive columns, FK counts."""
     keys = set(table.primary_key) | _fk_columns(table)
     plain = [c for c in table.columns if c.name not in keys and not _KEYLIKE.search(c.name)]
+    measures, descriptive, guessed = _judge_columns(plain)
     return {
-        "measures": [c.name for c in plain
-                     if _NUMERIC.match(c.type) and not _CALENDAR.match(c.name)],
-        "descriptive": [c.name for c in plain if _DESCRIPTIVE.match(c.type)],
+        "measures": measures,
+        "descriptive": descriptive,
+        "guessed": guessed,
         "fk_out": len({fk.ref_table for fk in table.foreign_keys} - {table.name}),
         "fk_in": len(referrers.get(table.name, ())),
         "all_keys": all(c.name in keys for c in table.columns),
@@ -76,7 +105,8 @@ def _evidence(table, p):
         ev["fact"].append((2, "%d foreign keys to other tables" % p["fk_out"]))
     if p["measures"]:
         shown = p["measures"][:3]
-        ev["fact"].append((len(shown), "numeric measures " + ", ".join(shown)))
+        ev["fact"].append((len(shown), "numeric measures " + ", ".join(shown)
+                           + _GUESS * ("measures" in p["guessed"])))
     if p["fk_out"] and not p["fk_in"]:
         ev["fact"].append((1, "no table references it"))
     if p["fk_in"]:
@@ -84,7 +114,8 @@ def _evidence(table, p):
                                 % (p["fk_in"], "s" if p["fk_in"] > 1 else "")))
     if p["descriptive"]:
         shown = p["descriptive"][:3]
-        ev["dimension"].append((len(shown), "descriptive columns " + ", ".join(shown)))
+        ev["dimension"].append((len(shown), "descriptive columns " + ", ".join(shown)
+                                + _GUESS * ("descriptive" in p["guessed"])))
     if not p["fk_out"]:
         ev["dimension"].append((1, "no foreign keys out"))
     if p["fk_out"] >= 2 and p["all_keys"] and not p["measures"]:

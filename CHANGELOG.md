@@ -1,5 +1,28 @@
 # Changelog
 
+## plugin `v2.13.0` — 2026-11-07
+
+**Run on a real dbt project, the mapping was wrong in a way it did not admit.** On the public
+dbt-labs `jaffle_shop` (Apache-2.0) the usual shape, `with source as (...), renamed as (...)
+select * from renamed`, gave sources like `renamed.customer_id`: the name of a CTE, not marked
+for review. A column is now traced through every CTE's own SELECT to the models and source
+tables underneath, so `customer_id` reads `raw_customers.id`, `rename`, and an expression done
+inside a CTE (`amount / 100`) is shown rather than hidden behind `copy`.
+
+A model's rows are now the columns its SQL produces, followed through `*`, not only those its
+schema.yml lists. That adds columns the schema omits, drops a false "does not declare" warning
+(schema.yml usually names only the columns it tests), and finds a real inconsistency in the
+public project: its schema documents `total_order_amount` and the SQL produces
+`customer_lifetime_value`. A bare name over several relations (`sum(amount)` over a join) goes to
+the one relation known to hold it. Jinja control flow (a `{% for %}` loop, as in `orders`) is
+still marked "needs review", never guessed.
+
+**A model with no declared types is no longer always "unknown".** dbt schema files usually
+declare none, so the measures-and-descriptions rule had nothing to read: `jaffle_shop`'s `orders`,
+with five `*_amount` columns, came out unknown. A column with no type is now read from its name
+(`amount`, `*_amount`, `number_of_*` as measures; `status`, `*_name` as descriptive), and the
+reason says "guessed from the names". A declared type is never overridden by a name.
+
 ## plugin `v2.12.0` — 2026-11-07
 
 **Changed: dbt lineage is drawn only with `--lineage`.** Rendered, a real dbt project's

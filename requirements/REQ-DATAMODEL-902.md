@@ -19,6 +19,8 @@ Every bullet below is binding.
 - The reason lists the evidence behind the role: name prefix, foreign keys out, numeric measures, tables that reference it and descriptive columns.
 - A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.
 - The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.
+- A column with no declared type is read as a measure or a descriptive column from its name, and the reason says it was guessed.
+- A declared type is never overridden by a name.
 - Confidence grows with the winner's lead over the runner-up.
 - Confidence grows with the amount of evidence, and reaches 1 only with eight points or more.
 - A table whose best score is below three, or ties for first, is unknown with confidence 0; a staging prefix such as `stg_` is always unknown.
@@ -54,6 +56,11 @@ CASE-6 — confidence reflects lead and evidence
   Given  a table with strong evidence and no rival, and one with thin evidence
   When   `classify_tables()` is run
   Then   the first has confidence 1, and the second has a lower one
+
+CASE-7 — names stand in for missing types
+  Given  a table whose columns carry no types, and the same table with types declared
+  When   `classify_tables()` is run on each
+  Then   the untyped one is a fact whose reason says it was guessed from names, and the typed one is not
 
 ## Context
 **Notes**

@@ -1421,6 +1421,8 @@
         "The reason lists the evidence behind the role: name prefix, foreign keys out, numeric measures, tables that reference it and descriptive columns.",
         "A table with several foreign keys out and numeric measures leans fact; a table that others reference and that holds descriptive columns leans dimension.",
         "The name prefix is one piece of evidence, so a schema without prefixes is classified from structure.",
+        "A column with no declared type is read as a measure or a descriptive column from its name, and the reason says it was guessed.",
+        "A declared type is never overridden by a name.",
         "Confidence grows with the winner's lead over the runner-up.",
         "Confidence grows with the amount of evidence, and reaches 1 only with eight points or more.",
         "A table whose best score is below three, or ties for first, is unknown with confidence 0; a staging prefix such as `stg_` is always unknown.",
@@ -1435,7 +1437,7 @@
         "`classify_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
         "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one",
+      "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean and no-prefix schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one\n\nCASE-7 — names stand in for missing types\n  Given  a table whose columns carry no types, and the same table with types declared\n  When   `classify_tables()` is run on each\n  Then   the untyped one is a fact whose reason says it was guessed from names, and the typed one is not",
       "input": "",
       "output": "",
       "desc": "",
@@ -1452,15 +1454,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:116"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:147"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 6,
-      "covered": 6,
+      "clauses": 7,
+      "covered": 7,
       "clarify": [
         {
           "rule": "clause-without-case",
@@ -1468,7 +1470,7 @@
           "basis": "wording",
           "where": "Cases",
           "quote": "",
-          "question": "There are 8 clauses and 6 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "question": "There are 10 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
           "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
         }
       ]
@@ -1677,7 +1679,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:117"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:148"
         },
         {
           "role": "implements",
@@ -1827,24 +1829,26 @@
       "intent": "A mapping that looks complete and is wrong is worse than none, because people build on it. The reader behind this one is small, so it follows only what it can follow with certainty and marks the rest \"needs review\" with the reason, leaving the guess to a person who reads the SQL.",
       "contract": [
         "`mapping_markdown(project_dir)` returns Markdown with one section per model, upstream models first, each holding a table of target column, source, transformation and rule.",
-        "A plain column is traced through table aliases, joins and CTEs that only pass a table through, to `model.column` or `source.table.column`.",
+        "A model's rows are the columns its SELECT produces, in order, then any column schema.yml declares that the SQL does not produce.",
+        "A column is traced through table aliases, joins and CTEs to `model.column` or `source.table.column`, never to the name of a CTE.",
+        "A bare column name over several relations is placed with the one relation known to hold it, and left for review when that relation is not unique.",
         "A rename reads `rename`, a copy reads `copy`, and any other expression is shown as written with every column it reads listed as a source.",
         "The rule is the model's schema.yml tests on the column, including the target of a `relationships` test and the values of `accepted_values`.",
-        "With `select *`, a column the schema.yml declares is a copy via the star, and a column the upstream schema does not declare is flagged.",
-        "A column is marked \"needs review\" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a reshaping CTE or an ambiguous bare name.",
+        "With `select *`, each column the starred relation produces is a copy via the star, whether or not schema.yml declares it.",
+        "A column is marked \"needs review\" with its reason, never guessed, for a union, Jinja control flow, a subquery in FROM, a CTE it cannot read or an ambiguous bare name.",
         "A column marked \"needs review\" also covers an unaliased expression, a column missing from the SELECT, and a model with no SQL file.",
         "A pipe inside a cell is escaped, and one project always produces the same text."
       ],
       "verify": [],
       "notes": [
-        "Only a plain `select` is read: window functions, lateral joins, `pivot` and macros are not. A name that looks like a column but is a SQL keyword is filtered by a fixed list, so an unusual keyword can appear as a source; the row is then marked only if the schema is known.",
+        "Only a plain `select` is read: window functions, lateral joins, `pivot`, macros and Jinja loops are not. A name that looks like a column but is a SQL keyword is filtered by a fixed list, so an unusual keyword can appear as a source; the row is then marked only if the schema is known.",
         "Column types are not inferred, so a `cast(...)` shows as written."
       ],
       "current_impl": [
         "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
         "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — plain columns are traced\n  Given  the fixture project, where marts read staging models through CTEs and staging models read source tables\n  When   `mapping_markdown()` is called\n  Then   each plain column names its upstream `model.column` or `source.table.column`, as `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and lists the one column it reads as its source\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from an upstream model, and a column its schema declares but the upstream does not\n  When   `mapping_markdown()` is called\n  Then   declared columns read `copy (via *)`, and the column missing upstream is flagged\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a reshaping CTE\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
+      "accept": "CASE-1 — plain columns are traced\n  Given  models that read source tables through CTEs, rename a column there, and end in `select *`\n  When   `mapping_markdown()` is called\n  Then   each column names its `model.column` or `source.table.column`, never a CTE\n  And    each reads `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and one inside a CTE is not hidden behind `copy`\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from a model producing a column its schema does not declare\n  When   `mapping_markdown()` is called\n  Then   every column the star brings in gets a row reading `copy (via *)`, declared or not\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a CTE built on a union\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
       "input": "",
       "output": "",
       "desc": "",
@@ -1861,7 +1865,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py:297"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py:428"
         }
       ],
       "test_exempt": null,
@@ -1877,7 +1881,7 @@
           "basis": "wording",
           "where": "Cases",
           "quote": "",
-          "question": "There are 8 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "question": "There are 10 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
           "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
         }
       ]
@@ -2484,7 +2488,7 @@
     },
     {
       "month": "2026-11",
-      "count": 5,
+      "count": 6,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2492,11 +2496,20 @@
         "v2.11.0",
         "v2.8.0",
         "v2.9.0",
-        "v2.12.0"
+        "v2.12.0",
+        "v2.13.0"
       ],
-      "landmark": "v2.12.0",
-      "headline": "Changed: dbt lineage is drawn only with `--lineage`",
+      "landmark": "v2.13.0",
+      "headline": "Run on a real dbt project, the mapping was wrong in a way it did not admit",
       "entries": [
+        {
+          "version": "v2.13.0",
+          "date": "2026-11-07",
+          "headline": "Run on a real dbt project, the mapping was wrong in a way it did not admit",
+          "body": "**Run on a real dbt project, the mapping was wrong in a way it did not admit.** On the public\ndbt-labs `jaffle_shop` (Apache-2.0) the usual shape, `with source as (...), renamed as (...)\nselect * from renamed`, gave sources like `renamed.customer_id`: the name of a CTE, not marked\nfor review. A column is now traced through every CTE's own SELECT to the models and source\ntables underneath, so `customer_id` reads `raw_customers.id`, `rename`, and an expression done\ninside a CTE (`amount / 100`) is shown rather than hidden behind `copy`.\n\nA model's rows are now the columns its SQL produces, followed through `*`, not only those its\nschema.yml lists. That adds columns the schema omits, drops a false \"does not declare\" warning\n(schema.yml usually names only the columns it tests), and finds a real inconsistency in the\npublic project: its schema documents `total_order_amount` and the SQL produces\n`customer_lifetime_value`. A bare name over several relations (`sum(amount)` over a join) goes to\nthe one relation known to hold it. Jinja control flow (a `{% for %}` loop, as in `orders`) is\nstill marked \"needs review\", never guessed.\n\n**A model with no declared types is no longer always \"unknown\".** dbt schema files usually\ndeclare none, so the measures-and-descriptions rule had nothing to read: `jaffle_shop`'s `orders`,\nwith five `*_amount` columns, came out unknown. A column with no type is now read from its name\n(`amount`, `*_amount`, `number_of_*` as measures; `status`, `*_name` as descriptive), and the\nreason says \"guessed from the names\". A declared type is never overridden by a name.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.12.0",
           "date": "2026-11-07",

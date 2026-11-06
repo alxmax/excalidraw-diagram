@@ -189,13 +189,16 @@ table holding the key to the table it references). It builds the same graph desc
 - **`--lineage`** (with `--from-dbt` only): see above. The mapping always states what each
   model is built from, with or without it.
 - **`--mapping <file.md>`** (with `--from-dbt` only): also writes a source-to-target mapping.
-  One section per model, upstream first; one row per target column with its source
+  One section per model, upstream first; one row per column the model's SELECT produces
+  (then any column schema.yml declares that the SQL does not), with its source
   (`model.column` or `source.table.column`), the transformation (`copy`, `rename`, or the
-  expression as written) and the rule (its schema.yml tests). It follows a plain `select`,
-  aliases, joins and CTEs that only pass a table through. A union, Jinja control flow, a
-  subquery in FROM, a CTE that reshapes its input, an unaliased expression or a bare column
-  over several relations is marked **needs review** with the reason, never guessed. The file
-  is written only after the scene has passed its gates.
+  expression as written) and the rule (its schema.yml tests). A column is traced through
+  aliases, joins and every CTE to the models and source tables underneath, never to a CTE's
+  name; a bare name over several relations goes to the one relation known to hold it. A
+  union, Jinja control flow such as a `{% for %}` loop, a subquery in FROM, a CTE it cannot
+  read, an unaliased expression or a column no single relation is known to hold is marked
+  **needs review** with the reason, never guessed. The file is written only after the scene
+  has passed its gates.
 - **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
   order the DDL declares them. Off by default; it makes every node taller.
 - **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
