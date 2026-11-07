@@ -1,6 +1,10 @@
 {
   "_schema": 1,
   "accepted": {
+    "ARCH-DATAMODEL-036": {
+      "hash": "2a5a58d7ba9c",
+      "reason": "ARCH-036 links REQ-DATAMODEL-914"
+    },
     "ARCH-EXCALIDRAW-030": {
       "hash": "d6cc8ab05de6",
       "reason": "wikilink REQ-EXCALIDRAW-854 from its parent's Description"
@@ -24,6 +28,14 @@
     "ARCH-RELEASE-035": {
       "hash": "12f81b0ac97b",
       "reason": "ARCH-RELEASE-035 split: the script-level contract moves into its code-level child REQ-RELEASE-855 (RM032)"
+    },
+    "REQ-DATAMODEL-901": {
+      "hash": "e8e1c86f61ac",
+      "reason": "--name flag (901), searched sides (913), outside-the-star frame and routed look (914), viewer fits the scene (854)"
+    },
+    "REQ-DATAMODEL-913": {
+      "hash": "874de45079df",
+      "reason": "--name flag (901), searched sides (913), outside-the-star frame and routed look (914), viewer fits the scene (854)"
     },
     "REQ-EXCALIDRAW-844": {
       "hash": "b4c3cc05737b",
@@ -62,8 +74,8 @@
       "reason": "invented example values in place of lifted ones"
     },
     "REQ-EXCALIDRAW-854": {
-      "hash": "440a78e33c0d",
-      "reason": "viewer download saves the live edits; unload warning"
+      "hash": "50ed2b418883",
+      "reason": "--name flag (901), searched sides (913), outside-the-star frame and routed look (914), viewer fits the scene (854)"
     },
     "REQ-EXCALIDRAW-858": {
       "hash": "e068d8377bd0",

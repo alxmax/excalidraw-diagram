@@ -24,7 +24,8 @@
         "The mapping file is written only for a diagram that passed its gates. [[REQ-DATAMODEL-912]]",
         "dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]",
         "The diagram explains itself in plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]",
-        "Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]"
+        "Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]",
+        "Tables the rules could not place and nothing joins are framed as outside the star, and a routed line is not drawn like a review link. [[REQ-DATAMODEL-914]]"
       ],
       "verify": [],
       "notes": [
@@ -60,7 +61,8 @@
         "REQ-DATAMODEL-910",
         "REQ-DATAMODEL-911",
         "REQ-DATAMODEL-912",
-        "REQ-DATAMODEL-913"
+        "REQ-DATAMODEL-913",
+        "REQ-DATAMODEL-914"
       ],
       "members": [
         {
@@ -363,18 +365,19 @@
         "A vendored runtime that is incomplete makes the builder warn and emit the CDN page.",
         "The runtime is vendored, never downloaded: the builder still imports no HTTP client.",
         "The viewer's download button saves the scene as edited in the page. The embedded scene is saved only when the renderer did not load.",
-        "The viewer warns before the page unloads with edits made since the last download."
+        "The viewer warns before the page unloads with edits made since the last download.",
+        "The viewer opens with the whole scene zoomed to fit the window, not at 100% with the scene cut off."
       ],
       "verify": [],
       "notes": [
         "The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A scene renders identically without it. The Mermaid dialog needs it, and `--cdn` serves that case.",
-        "The download and the unload warning run only in a browser. The tests pin their wiring in the page. A headless Chrome run deleted one element and the download dropped from 49 elements to 48."
+        "The download and the unload warning run only in a browser. The tests pin their wiring in the page. A headless Chrome run deleted one element and the download dropped from 49 elements to 48. The fit-to-window call also runs only in a browser, and only after a short delay: called as the renderer mounts, it does nothing. A headless Chrome run on a five-fact schema opened at 100% with most of it off screen, and at 41% with all of it visible after the call."
       ],
       "current_impl": [
         "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
         "`CasesOfflineViewer` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch\n\nCASE-5 — the download button returns the edits\n  Given  a viewer page whose scene the reader has changed\n  When   the download button is pressed\n  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one\n\nCASE-6 — unsaved edits are not dropped silently\n  Given  a viewer page edited since its last download\n  When   the page is about to unload\n  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count\n         as an edit",
+      "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch\n\nCASE-5 — the download button returns the edits\n  Given  a viewer page whose scene the reader has changed\n  When   the download button is pressed\n  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one\n\nCASE-6 — unsaved edits are not dropped silently\n  Given  a viewer page edited since its last download\n  When   the page is about to unload\n  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count\n         as an edit\n\nCASE-7 — a wide scene opens whole\n  Given  a viewer page for a scene wider than the window\n  When   the page has loaded\n  Then   the page asks the renderer to fit the scene to the viewport, so none of it is cut off",
       "input": "",
       "output": "",
       "desc": "",
@@ -395,15 +398,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:160"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:165"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 6,
-      "covered": 6,
+      "clauses": 7,
+      "covered": 7,
       "clarify": []
     },
     {
@@ -699,7 +702,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:142"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:144"
         },
         {
           "role": "implements",
@@ -711,7 +714,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:195"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:200"
         }
       ],
       "test_exempt": null,
@@ -874,7 +877,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1545"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1549"
         },
         {
           "role": "implements",
@@ -1057,7 +1060,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:461"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
         }
       ],
       "test_exempt": null,
@@ -1119,7 +1122,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:463"
         }
       ],
       "test_exempt": null,
@@ -1362,7 +1365,8 @@
         "`graph_from_tables()` merges several foreign keys between the same two tables into one edge labelled with all their columns.",
         "`graph_from_tables()` leaves out a foreign key whose target table is not defined, and `unresolved_fks()` lists it.",
         "`scene_from_ddl(path)` and the `data-model --from-ddl` command save the scene through every gate.",
-        "`graph_from_tables()` sets a fixed seed, so one schema always produces byte-identical files."
+        "`graph_from_tables()` sets a fixed seed, so one schema always produces byte-identical files.",
+        "The `data-model` command takes `--name`, which sets the diagram's title and its output file name instead of the input's own name."
       ],
       "verify": [],
       "notes": [],
@@ -1370,7 +1374,7 @@
         "`graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.",
         "`TestGraph`, `TestScene` and `TestCli` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — one node per table, one edge per relationship\n  Given  the demo schema and a table with two foreign keys to one dimension\n  When   `graph_from_tables()` is called\n  Then   there is one node per table, and the two keys share one edge labelled with both columns\n\nCASE-2 — an unresolved foreign key is listed, not drawn\n  Given  a table whose foreign key names a table the script never defines\n  When   `graph_from_tables()` and `unresolved_fks()` are called\n  Then   the graph holds no edge for it, and `unresolved_fks()` returns that key\n\nCASE-3 — the scene passes every gate\n  Given  the demo, clean and no-prefix schemas\n  When   `scene_from_ddl()` or the `data-model` command is run\n  Then   both files are written without a failed gate, and a call with no input is a usage error\n\nCASE-4 — the output is byte-stable\n  Given  one DDL file\n  When   `scene_from_ddl()` is run twice\n  Then   the two `.excalidraw` files are identical byte for byte",
+      "accept": "CASE-1 — one node per table, one edge per relationship\n  Given  the demo schema and a table with two foreign keys to one dimension\n  When   `graph_from_tables()` is called\n  Then   there is one node per table, and the two keys share one edge labelled with both columns\n\nCASE-2 — an unresolved foreign key is listed, not drawn\n  Given  a table whose foreign key names a table the script never defines\n  When   `graph_from_tables()` and `unresolved_fks()` are called\n  Then   the graph holds no edge for it, and `unresolved_fks()` returns that key\n\nCASE-3 — the scene passes every gate\n  Given  the demo, clean and no-prefix schemas\n  When   `scene_from_ddl()` or the `data-model` command is run\n  Then   both files are written without a failed gate, and a call with no input is a usage error\n\nCASE-4 — the output is byte-stable\n  Given  one DDL file\n  When   `scene_from_ddl()` is run twice\n  Then   the two `.excalidraw` files are identical byte for byte\n\nCASE-5 — the title is chosen, not inherited\n  Given  a dbt project in a folder with an unhelpful name\n  When   the `data-model` command is run with `--name Orders`\n  Then   the files are called Orders and the title reads Orders",
       "input": "",
       "output": "",
       "desc": "",
@@ -1387,19 +1391,19 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:49"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:199"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:214"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4,
+      "clauses": 5,
+      "covered": 5,
       "clarify": [
         {
           "rule": "clause-without-case",
@@ -1407,7 +1411,7 @@
           "basis": "wording",
           "where": "Cases",
           "quote": "",
-          "question": "There are 5 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "question": "There are 6 clauses and 5 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
           "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
         }
       ]
@@ -1581,7 +1585,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
         }
       ],
       "test_exempt": null,
@@ -1634,7 +1638,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
         }
       ],
       "test_exempt": null,
@@ -1754,11 +1758,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:221"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:236"
         },
         {
           "role": "implements",
@@ -1942,7 +1946,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:222"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:237"
         }
       ],
       "test_exempt": null,
@@ -1998,15 +2002,15 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:56"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:57"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:79"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:81"
         }
       ],
       "test_exempt": null,
@@ -2066,7 +2070,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:223"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:238"
         }
       ],
       "test_exempt": null,
@@ -2084,22 +2088,25 @@
       "status": "confirmed",
       "area": "REQ",
       "title": "Facts sharing dimensions on opposite sides of them",
-      "intent": "Two facts that share dimensions drew their arrows across each other, and a bridge or factless table pushed its arrows into long loops round the diagram. Putting every second fact on the other side of the dimensions lets each arrow run straight into the dimension next to it, which is how a star schema is drawn when there is more than one star.",
+      "intent": "Two facts that share dimensions drew their arrows across each other, and a bridge or factless table pushed its arrows into long loops round the diagram. Putting a fact on the other side of the dimensions lets each arrow run straight into the dimension next to it, which is how a star schema is drawn when there is more than one star. Which facts go across is measured on the drawn layout, not assumed to alternate.",
       "contract": [
-        "With two or more fact-like tables, a fact or a bridge, every second one in schema order is laid out on the far side of the dimensions.",
-        "The first fact-like table, and the only one when there is one, is laid out as before.",
+        "With two or more fact-like tables, a fact or a bridge, the layout tries each choice of which sit on the far side of the dimensions and keeps the one with the fewest routed edges, then the fewest crossing pairs.",
+        "The first fact-like table stays on the near side, because a mirrored layout costs the same.",
+        "Every second fact-like table in schema order is the baseline: it wins any tie, and it is the answer when more than eight fact-like tables would have to be searched.",
+        "The only fact-like table, when there is one, is laid out as before.",
         "The foreign-key arrow of a laid-out table still runs from that table to the dimension."
       ],
       "verify": [],
       "notes": [
-        "Measured on the order process before and after: routed edges 3 to 1, crossing pairs 11 to 10. With many facts crossings are a property of the graph, so the layout reduces them and does not remove them. The two-fact case goes from one crossing pair to none.",
-        "The rule alternates in schema order and does not search for the assignment with the fewest crossings."
+        "Measured on the order process: routed edges 3 to 1 and crossing pairs 11 to 10 by alternating, then 10 to 9 by the search. With many facts crossings are a property of the graph, so the layout reduces them and does not remove them. The two-fact case goes from one crossing pair to none.",
+        "On the no-prefix shop, two fact-like tables, alternating gave one routed edge and three crossing pairs, and the search gives none and one.",
+        "Routed edges weigh more than crossings because a line looping round the diagram is the worse defect."
       ],
       "current_impl": [
-        "`_right_side()` and `graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the layout in `pack.py`.",
+        "`best_right()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py`; `_flipped()` and `graph_from_tables()` in `data_model.py`; the layout in `pack.py`.",
         "`TestStarLayout` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
-      "accept": "CASE-1 — two facts, no crossing\n  Given  two fact tables that share two dimensions\n  When   the graph is built and drawn\n  Then   the second fact is flipped, and the drawing has no crossing pair of arrows and no routed edge\n\nCASE-2 — one fact, nothing flipped\n  Given  a schema with one fact table\n  When   the graph is built\n  Then   no edge carries `flip`\n\nCASE-3 — many facts, measured\n  Given  an order process of five fact-like tables and eight dimensions, one dimension reached only by a flipped bridge\n  When   it is drawn\n  Then   at most one edge is routed and at most ten pairs of arrows cross, and that dimension shares its column with the others",
+      "accept": "CASE-1 — two facts, no crossing\n  Given  two fact tables that share two dimensions\n  When   the graph is built and drawn\n  Then   the second fact is flipped, and the drawing has no crossing pair of arrows and no routed edge\n\nCASE-2 — one fact, nothing flipped\n  Given  a schema with one fact table\n  When   the graph is built\n  Then   no edge carries `flip`\n\nCASE-3 — many facts, measured\n  Given  an order process of five fact-like tables and eight dimensions, one dimension reached only by a flipped bridge\n  When   it is drawn\n  Then   at most one edge is routed and at most nine pairs of arrows cross, and that dimension shares its column with the others\n\nCASE-4 — the search beats alternating\n  Given  two fact-like tables for which alternating sides routes an edge round the diagram\n  When   the graph is built and drawn\n  Then   neither table is flipped, and the drawing has no routed edge and one crossing pair\n\nCASE-5 — too many to search\n  Given  more than eight fact-like tables\n  When   the sides are chosen\n  Then   every second one is flipped, and no candidate layout is drawn to measure it",
       "input": "",
       "output": "",
       "desc": "",
@@ -2116,15 +2123,71 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:108"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:122"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py:68"
         }
       ],
       "test_exempt": null,
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 3,
-      "covered": 3,
+      "clauses": 5,
+      "covered": 5,
+      "clarify": []
+    },
+    {
+      "id": "REQ-DATAMODEL-914",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Three kinds of line and one frame for what is outside the star",
+      "intent": "A box with no arrow reads as a table someone forgot to join, and two lines that look alike read as one kind of relationship. The picture sets aside what the rules could not place, and keeps a detour round the diagram from looking like a review note's link.",
+      "contract": [
+        "A table classified unknown that no foreign key and no ref() line joins is drawn inside one frame labelled \"outside the star\".",
+        "An unknown table that something joins is drawn in the star as before, and a schema with no such table has no frame.",
+        "The glossary defines \"Outside the star\" when the frame is drawn and not otherwise.",
+        "A connector that pack() routes round the diagram is grey, and dashed only when its own edge is dashed."
+      ],
+      "verify": [],
+      "notes": [
+        "Seen on a real dbt project: three staging models drawn as isolated boxes, and a routed foreign key drawn the same grey dashed way as a review note's link.",
+        "The routed line keeps its grey so a detour still differs from a straight arrow."
+      ],
+      "current_impl": [
+        "`_outside_star()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, the term in `explain.py`, and `_route()` in `pack.py`.",
+        "`TestOutsideTheStar` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "accept": "CASE-1 — an unplaced table is framed\n  Given  the demo schema, whose staging table no key joins\n  When   the graph is built\n  Then   one group labelled \"outside the star\" holds that table and no other, and the glossary defines the term\n\nCASE-2 — nothing unplaced, no frame\n  Given  the clean schema, which has no unknown table\n  When   the graph is built\n  Then   the graph has no groups and the glossary has no \"Outside the star\" row\n\nCASE-3 — a joined unknown table stays in the star\n  Given  a dbt project whose unknown models are joined to one another\n  When   the graph is built\n  Then   no group is drawn\n\nCASE-4 — a detour does not look like a review link\n  Given  a back edge that is not dashed and one that is, both routed round the diagram\n  When   the graph is packed\n  Then   both are grey, and only the second has a dashed stroke",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:112"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [
+        {
+          "signal": "untested",
+          "advice": "Implemented but no `tested-by` member: write an acceptance test and tag it `# tested-by: <ID>`, or set `test_exempt: <reason>` in the frontmatter to acknowledge it intentionally and silence this signal."
+        }
+      ],
+      "clauses": 4,
+      "covered": 4,
       "clarify": []
     },
     {
@@ -2226,7 +2289,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:171"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:170"
         }
       ],
       "test_exempt": null,
@@ -2445,6 +2508,10 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-914",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ],
@@ -2617,7 +2684,7 @@
     },
     {
       "month": "2026-11",
-      "count": 10,
+      "count": 11,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2630,11 +2697,20 @@
         "v2.14.0",
         "v2.15.0",
         "v2.15.1",
-        "v2.16.0"
+        "v2.16.0",
+        "v2.17.0"
       ],
-      "landmark": "v2.16.0",
-      "headline": "The data-model pictograms are gone",
+      "landmark": "v2.17.0",
+      "headline": "The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose",
       "entries": [
+        {
+          "version": "v2.17.0",
+          "date": "2026-11-07",
+          "headline": "The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose",
+          "body": "**The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose.**\n\n- **The sides of the facts are searched, not alternated.** With two or more fact-like tables,\n  `data-model` packs each choice of which ones go on the far side of the dimensions and keeps the one\n  with the fewest routed edges, then the fewest crossing pairs. Measured: the five-fact order\n  process went from 10 crossing pairs to 9, and a two-fact schema with no name prefixes from 1 routed\n  edge and 3 crossings to none and 1. Every second one in schema order stays the baseline and the\n  answer beyond eight fact-like tables, where trying every choice would take too long.\n- **Outside the star.** A table the rules could not place (role unknown) that no foreign key and no\n  `ref()` line joins is drawn in one frame labelled \"outside the star\", and the glossary says what\n  that means. Before it was a box with no arrow, which read as a forgotten table.\n- **A detour no longer looks like a review link.** A connector `pack()` routes round the diagram was\n  always dashed grey, the same as the line from a review note to its table. It is now grey, and dashed\n  only when its own edge is dashed, as a straight arrow already was. This applies to every graph\n  drawn with `pack()` or `scene --from-json`: a routed edge that is not dashed is now solid grey.\n- **`data-model --name <title>`** sets the title and the output file name. Without it the title was the\n  input's own name, which for a dbt project is its folder's (a picture titled `jaffle_dl`).\n- **The `.html` viewer opens with the whole scene in view.** It used to open at 100%, centred, with a\n  large diagram mostly off screen; after the renderer mounts it now fits the scene to the window.\n  Checked by opening the page in Chrome: a five-fact schema opened at 100% with most of it hidden\n  and opens at 41% with all of it visible.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.16.0",
           "date": "2026-11-07",
@@ -3017,8 +3093,8 @@
     }
   ],
   "design": {
-    "files": 31,
-    "clean_files": 31,
+    "files": 32,
+    "clean_files": 32,
     "score": 100,
     "candidates": {
       "encapsulation": 0,
@@ -3031,23 +3107,31 @@
     "advice": {}
   },
   "health": {
-    "score": 100,
-    "total": 38,
-    "scored": 38,
+    "score": 97,
+    "total": 39,
+    "scored": 39,
     "healthy": 38,
     "exempt": 0,
     "deprecated": 0,
-    "confirmed": 38,
-    "implemented": 37,
+    "confirmed": 39,
+    "implemented": 38,
     "tested": 37,
     "drafts": 0,
     "orphans": 0,
-    "untested": 0,
+    "untested": 1,
     "open_intent": 0,
     "drift": 0,
     "gate_errors": 0,
     "gate_link_sync_clean": true,
-    "unhealthy": [],
+    "unhealthy": [
+      {
+        "id": "REQ-DATAMODEL-914",
+        "status": "confirmed",
+        "why": [
+          "not tested"
+        ]
+      }
+    ],
     "exempt_ids": []
   }
 }

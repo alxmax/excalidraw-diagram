@@ -14,7 +14,6 @@ check_arrow_crossings() empty.
 from .geometry import as_point, fit_text, text_extent
 from .style import Font, Paint
 
-ROUTED = Paint(stroke="grey", dashed=True)
 _DIAMONDS = ("diamond", "decision")
 
 
@@ -357,7 +356,7 @@ class _PackRun(object):
                 continue
             self._route((a, b), (self.layer[src], self.layer[dst]), channel,
                         (far + self.opts.lane_gap * (lane + 1), min(lane * 5.0, 10.0),
-                         link.get("label")))
+                         link.get("label")), dashed=bool(link.get("dashed")))
             lane += 1
 
     def _trunks(self):
@@ -409,7 +408,7 @@ class _PackRun(object):
         if link.get("label"):
             self.scene._path_label(pts[-2:], str(link["label"]), None)
 
-    def _route(self, ends, spans, channel, lane):
+    def _route(self, ends, spans, channel, lane, dashed=False):
         """Route a connector out of one box, along a lane past the diagram, and
         back into the other. Eight points, and every leg is in empty space:
 
@@ -420,7 +419,9 @@ class _PackRun(object):
         Leaving through the row gap rather than out of the box's side is the part
         that matters: a bound arrow carries its label at its own mid-height, the
         height of a box's side, and no gate would see a line through that text.
-        The lane's nudge offsets connectors that share a channel."""
+        The lane's nudge offsets connectors that share a channel. The line is grey and
+        dashed only when its edge is, as a straight arrow is: a detour must not read as
+        a different kind of relationship."""
         lane_at, nudge, label = lane
         sx, sy, sw, sh, _ = self.scene._geom[ends[0]]
         dx, dy, dw, dh, _ = self.scene._geom[ends[1]]
@@ -442,7 +443,7 @@ class _PackRun(object):
             pts = [(sx + sw, sy + sh / 2), (s_out, sy + sh / 2), (s_out, out_c),
                    (lane_at, out_c), (lane_at, in_c),
                    (d_out, in_c), (d_out, dy + dh / 2), (dx + dw, dy + dh / 2)]
-        return self.scene.path(pts, label=label, paint=ROUTED)
+        return self.scene.path(pts, label=label, paint=Paint(stroke="grey", dashed=dashed))
 
 
 class PackMixin(object):

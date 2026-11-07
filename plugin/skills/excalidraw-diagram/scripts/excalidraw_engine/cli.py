@@ -18,10 +18,11 @@ USAGE = """usage: excalidraw_builder.py [<command>]
                                         rebuild the .html viewer from an existing scene
   discover <repo> [out.py]              scan a repo -> a runnable Python generator stub
   data-model (--from-ddl <schema.sql> | --from-dbt <project> [--mapping <file.md>] [--lineage])
-             [-o <dir>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]
+             [-o <dir>] [--name <title>] [--columns] [--roles <roles.yml>] [--cdn] [--svg]
                                         draw the tables of a SQL DDL script or the models of
                                         a dbt project, one node per table and one edge per
-                                        foreign key; --columns lists each table's columns,
+                                        foreign key; --name sets the title and the output
+                                        file name (default: the input's own name); --columns lists each table's columns,
                                         --roles overrides a role, --mapping writes the
                                         source-to-target mapping as Markdown and --lineage
                                         draws each ref() as a dashed line (dbt only)
@@ -100,7 +101,7 @@ def _data_model(args):
     columns, lineage = "--columns" in args, "--lineage" in args
     args = [a for a in args if a not in ("--columns", "--lineage")]
     flags = {"--from-ddl": "ddl", "--from-dbt": "dbt", "-o": "out", "--out": "out",
-             "--roles": "roles", "--mapping": "mapping"}
+             "--roles": "roles", "--mapping": "mapping", "--name": "name"}
     got = {}
     while args:
         key = flags.get(args[0])
@@ -111,14 +112,15 @@ def _data_model(args):
     dbt_only = got.get("mapping") or lineage
     if bool(got.get("ddl")) == bool(got.get("dbt")) or (dbt_only and not got.get("dbt")):
         return _usage_error("data-model (--from-ddl <schema.sql> | --from-dbt <project> "
-                            "[--mapping <file.md>] [--lineage]) [-o <dir>] [--columns] "
-                            "[--roles <roles.yml>] [--cdn] [--svg]")
+                            "[--mapping <file.md>] [--lineage]) [-o <dir>] [--name <title>] "
+                            "[--columns] [--roles <roles.yml>] [--cdn] [--svg]")
     extra = {"mapping_path": got["mapping"]} if got.get("mapping") else {}
     if lineage:
         extra["draw_lineage"] = True
     draw = scene_from_ddl if got.get("ddl") else scene_from_dbt
     print("wrote", *draw(got.get("ddl") or got["dbt"], got.get("out"), offline=offline,
-                         svg=svg, columns=columns, roles_path=got.get("roles"), **extra))
+                         svg=svg, columns=columns, roles_path=got.get("roles"),
+                         name=got.get("name"), **extra))
     return 0
 
 

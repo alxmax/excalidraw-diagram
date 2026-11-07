@@ -111,6 +111,11 @@ window.addEventListener("load", function(){
       gridModeEnabled: false,
       UIOptions: { canvasActions: { loadScene: false } }
     }));
+    // initialData.scrollToContent centres the scene at 100%, which cuts a wide one off. The
+    // fit only takes once the renderer has mounted, so it runs after a short delay.
+    setTimeout(function(){
+      if (api) api.scrollToContent(api.getSceneElements(), {fitToViewport: true, viewportZoomFactor: 0.92});
+    }, 600);
     for (const ev of ["pointerdown", "keydown"])
       document.getElementById("app").addEventListener(ev, function(){ touched = true; },
                                                       true);

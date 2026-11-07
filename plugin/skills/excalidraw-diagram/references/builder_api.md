@@ -171,10 +171,15 @@ table holding the key to the table it references). It builds the same graph desc
   (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
   the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
   evidence; the rest is foreign keys, numeric measures and descriptive columns.
-- **Facts on both sides:** with two or more fact-like tables (facts and bridges) every second one is
-  laid out on the far side of the dimensions, so facts sharing dimensions do not cross each other.
-  With many facts crossings remain: measured on a five-fact schema, 11 crossing pairs became 10 and
-  routed loops 3 became 1; with two facts, 1 became 0.
+- **Facts on both sides:** with two or more fact-like tables (facts and bridges) the layout tries which
+  of them to draw on the far side of the dimensions and keeps the choice with the fewest routed edges,
+  then the fewest crossing pairs; every second one in schema order is the baseline, and the answer
+  beyond eight fact-like tables. With many facts crossings remain: measured on a five-fact schema,
+  11 crossing pairs became 9 and routed loops 3 became 1; with two facts, 1 became 0.
+- **Outside the star:** a table the rules could not place (role unknown) that no foreign key and no
+  `ref()` line joins is drawn in one frame labelled "outside the star", not as a box that looks forgotten.
+  A line routed round the diagram is grey, and dashed only when its own edge is, so it is not mistaken
+  for the dashed link of a review note.
 - **Explains itself:** a stranger needs nothing else. The subtitle says how to read the picture;
   the legend gives each colour a plain meaning; the glossary defines only the terms
   that appear (fact, dimension, PK, SCD type 2 ...) in everyday words, then says "Why X is a
@@ -209,6 +214,8 @@ table holding the key to the table it references). It builds the same graph desc
   read, an unaliased expression or a column no single relation is known to hold is marked
   **needs review** with the reason, never guessed. The file is written only after the scene
   has passed its gates.
+- **`--name <title>`:** the diagram's title and its output file name; without it, the input's own
+  name (a dbt project's folder, a DDL file's stem).
 - **`--columns`:** lists each table's columns under its name, `PK` / `FK` marked, in the
   order the DDL declares them. Off by default; it makes every node taller.
 - **`--roles roles.yml`:** corrects the classifier. Flat `table: role` lines (fact,
