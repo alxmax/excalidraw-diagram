@@ -16,6 +16,7 @@ ROLE_MEANING = {
     "bridge": "links two tables that relate many-to-many",
     "unknown": "the rules could not decide this one",
 }
+OUTSIDE_LABEL = "outside the star"
 NOTE_MEANING = "a modelling problem found on the table it touches"
 
 ROLE_PHRASE = {"fact": "a fact table", "dimension": "a dimension", "bridge": "a bridge",
@@ -71,10 +72,11 @@ def column_line(name, primary, foreign):
     return " ".join(marks + [name])
 
 
-def glossary(tables, roles, issues, columns, lineage_drawn):
+def glossary(tables, roles, issues, columns, lineage_drawn, outside=False):
     """[[term, meaning]] for everything the diagram shows, then why each table has its role.
 
-    `roles` is classify_tables()'s map; `issues` the review's findings. Plain words: no
+    `roles` is classify_tables()'s map; `issues` the review's findings; `outside` is True when
+    a frame of unplaced tables is drawn. Plain words: no
     term is explained with another one that is not defined here."""
     # implements: REQ-DATAMODEL-911
     used = [r for r in ("fact", "dimension", "bridge", "unknown")
@@ -96,6 +98,10 @@ def glossary(tables, roles, issues, columns, lineage_drawn):
         if issue.rule not in seen:
             seen.append(issue.rule)
     rows += [list(_RULE_TERM[r]) for r in seen]
+    if outside:
+        rows.append(["Outside the star", "tables the rules could not place and that no key joins, "
+                                         "such as raw or staging tables; framed so they are not "
+                                         "mistaken for a missing link"])
     if lineage_drawn:
         rows.append(["ref", "a dbt model reads from the model the dashed line points to"])
     rows += [["Why %s is %s" % (t.name, ROLE_PHRASE[roles[t.name].role]), roles[t.name].reason]

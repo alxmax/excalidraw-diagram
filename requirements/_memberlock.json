@@ -2,7 +2,7 @@
   "_schema": 2,
   "members": {
     "ARCH-DATAMODEL-036": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "5ca73bc316e4fd04e92a2063742b74995566f21129b5fb28247e6943c99613d9"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "4e2b753265afbe47494eec26d15e66bded5ccf91cb92534ad8e20c1060cdba4a"
     },
     "ARCH-EXCALIDRAW-030": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
@@ -32,11 +32,15 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py#mapping_markdown": "371cf2e7b1c47b193f2bf4f9e01a0ffe957025dbc426927fc403f19424b6a820"
     },
     "REQ-DATAMODEL-911": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#glossary": "9f08428e45c896b24f616d887561b70d69a95a8abed8bbf43b93dd94673ea862",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#glossary": "5b71b4ca9310001d73a990e2c2b568aaa88b60ba93cf7aaf6a2c6fc38af0c503",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#role_key": "092a47fbad3a43a5cd13105918029617e9fac5c7d175020b9236403496277de9"
     },
     "REQ-DATAMODEL-913": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_right_side": "aedd7b1e1df9358478ce3e07b2bfc000ffcaf57c06a4789815a0ea20c3766b1a"
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_flipped": "30be8919bc041297ffa7a14341776899c3a77549171d462043ee760c5fbdcafb",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py#best_right": "5d1c3a800c41a6d668aa2e5cff0187adbe75728f748d01c3f9f142540dd02188"
+    },
+    "REQ-DATAMODEL-914": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_outside_star": "5b9b6d768d3953d363ce22b1974de338fd12b896594f7b453a183ea6736fdbc2"
     },
     "REQ-EXCALIDRAW-844": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",

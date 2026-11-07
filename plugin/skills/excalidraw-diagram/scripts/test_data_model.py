@@ -27,6 +27,8 @@ from excalidraw_engine.ddl import Column, ForeignKey, Table, parse_ddl  # noqa: 
 from excalidraw_engine.mapping import mapping_markdown  # noqa: E402
 from excalidraw_engine.miniyaml import parse_yaml  # noqa: E402
 from excalidraw_engine.review import review_tables  # noqa: E402
+from excalidraw_engine import sides  # noqa: E402
+from excalidraw_engine.scene import Scene  # noqa: E402
 from excalidraw_engine.roles import parse_roles  # noqa: E402
 
 
@@ -443,6 +445,16 @@ class TestCli(unittest.TestCase):
                              os.path.join(DATA, "shop_demo.sql"), "-o", out])
             self.assertEqual(code, 0)
             self.assertEqual(sorted(os.listdir(out)), ["shop_demo.excalidraw", "shop_demo.html"])
+
+    def test_name_sets_the_title_and_the_file_name(self):  # verifies: REQ-DATAMODEL-901#CASE-5
+        with tempfile.TemporaryDirectory() as out, contextlib.redirect_stdout(io.StringIO()):
+            code = cli.main(["data-model", "--from-ddl", os.path.join(DATA, "shop_demo.sql"),
+                             "-o", out, "--name", "Orders"])
+            self.assertEqual(code, 0)
+            self.assertEqual(sorted(os.listdir(out)), ["Orders.excalidraw", "Orders.html"])
+            with open(os.path.join(out, "Orders.excalidraw"), encoding="utf-8") as fh:
+                texts = [e.get("text") for e in json.load(fh)["elements"]]
+            self.assertIn("Orders", texts)
 
     def test_data_model_without_input_is_a_usage_error(self):  # verifies: REQ-DATAMODEL-901#CASE-3
         with contextlib.redirect_stderr(io.StringIO()):
@@ -1030,16 +1042,58 @@ class TestStarLayout(unittest.TestCase):
         self.assertFalse(any(e.get("flip") for e in single["edges"]))
 
     def test_the_order_process_keeps_its_routed_edges_and_crossings_down(self):  # verifies: REQ-DATAMODEL-913#CASE-3
-        # five facts and eight dimensions: measured at 1 routed edge and 10 crossing pairs
-        # (3 and 11 before the flip). A ratchet: it may fall, it must not rise.
+        # five facts and eight dimensions: measured at 1 routed edge and 9 crossing pairs
+        # (3 and 11 before the flip, 10 with alternating sides). A ratchet: it may fall, it
+        # must not rise.
         routed, pairs = _crossing_pairs(_scene_elements("order_process.sql"))
         self.assertLessEqual(routed, 1)
-        self.assertLessEqual(pairs, 10)
+        self.assertLessEqual(pairs, 9)
+
+    def test_the_sides_are_searched_not_alternated(self):  # verifies: REQ-DATAMODEL-913#CASE-4
+        # two fact-like tables where alternating sides routes one edge round the diagram and
+        # leaves three pairs crossing: both on the left leaves one pair and no routed edge
+        spec = graph_from_tables(parse_ddl(_read("shop_noprefix.sql")))
+        self.assertFalse(any(e.get("flip") for e in spec["edges"]))
+        self.assertEqual(_crossing_pairs(_scene_elements("shop_noprefix.sql")), (0, 1))
+
+    def test_the_search_gives_way_to_alternating_when_there_are_too_many_tables(self):  # verifies: REQ-DATAMODEL-913#CASE-5
+        names = ["fact_%d" % n for n in range(sides.FREE_MAX + 2)]
+
+        def never(_right):
+            raise AssertionError("a search this wide must not pack a single layout")
+        self.assertEqual(sides.best_right(names, never), set(names[1::2]))
 
     def test_a_dimension_only_a_right_hand_table_reaches_sits_beside_it(self):  # verifies: REQ-DATAMODEL-913#CASE-3
         elements = _scene_elements("order_process.sql")
         x = {e["customData"]["id"]: e["x"] for e in elements if e.get("customData")}
         self.assertEqual(x["segment"], x["customer"])           # in the dimensions' column
+
+
+class TestOutsideTheStar(unittest.TestCase):
+    """REQ-DATAMODEL-914: what the rules could not place is framed, and a detour is its own line."""
+
+    def test_an_unplaced_table_is_framed_and_the_term_is_defined(self):  # verifies: REQ-DATAMODEL-914#CASE-1
+        spec = graph_from_tables(parse_ddl(_read("shop_demo.sql")))
+        self.assertEqual(spec["groups"], [{"label": "outside the star", "members": ["stg_payments"]}])
+        self.assertIn("Outside the star", [row[0] for row in spec["glossary"]])
+
+    def test_nothing_unplaced_means_no_frame(self):  # verifies: REQ-DATAMODEL-914#CASE-2
+        spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
+        self.assertNotIn("groups", spec)
+        self.assertNotIn("Outside the star", [row[0] for row in spec["glossary"]])
+
+    def test_unknown_tables_that_are_joined_stay_in_the_star(self):  # verifies: REQ-DATAMODEL-914#CASE-3
+        tables, _ = read_dbt(os.path.join(DATA, "dbt_shop"))
+        self.assertNotIn("groups", graph_from_tables(tables))
+
+    def test_a_routed_connector_is_dashed_only_when_its_edge_is(self):  # verifies: REQ-DATAMODEL-914#CASE-4
+        scene = Scene(seed=1)
+        scene.pack([{"id": "a"}, {"id": "b"}, {"id": "c"}],
+                   [{"src": "a", "dst": "b"}, {"src": "b", "dst": "c"},
+                    {"src": "c", "dst": "a"}, {"src": "c", "dst": "b", "dashed": True}])
+        routed = [e for e in scene.elements if e.get("type") == "arrow" and not e.get("startBinding")]
+        self.assertEqual(sorted(e["strokeStyle"] for e in routed), ["dashed", "solid"])
+        self.assertEqual({e["strokeColor"] for e in routed}, {routed[0]["strokeColor"]})
 
 
 class TestCapability(unittest.TestCase):

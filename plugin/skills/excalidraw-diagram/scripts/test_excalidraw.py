@@ -1506,6 +1506,10 @@ class CasesOfflineViewer(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-854
         # re-measure on load is not mistaken for an edit
         self.assertIn("if (!touched) saved = v;", script)
 
+    def test_the_page_fits_the_scene_to_the_window(self):  # verifies: REQ-EXCALIDRAW-854#CASE-7
+        script = html_page("demo", self.SCENE)
+        self.assertIn("fitToViewport: true", script)
+
     def test_environment_can_opt_out(self):  # verifies: REQ-EXCALIDRAW-854#CASE-2
         with mock.patch.dict(os.environ, {"EXCALIDRAW_DIAGRAM_OFFLINE": "0"}):
             self.assertIn(assets.CDN, html_page("demo", self.SCENE))

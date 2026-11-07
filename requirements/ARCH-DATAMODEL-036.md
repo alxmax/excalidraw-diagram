@@ -32,6 +32,7 @@ Every bullet below is binding.
 - dbt lineage is drawn only on request and labelled, so it cannot bury the foreign keys. [[REQ-DATAMODEL-910]]
 - The diagram explains itself in plain words, so a stranger can read it. [[REQ-DATAMODEL-911]]
 - Facts that share dimensions are drawn on opposite sides of them, so their arrows do not cross. [[REQ-DATAMODEL-913]]
+- Tables the rules could not place and nothing joins are framed as outside the star, and a routed line is not drawn like a review link. [[REQ-DATAMODEL-914]]
 
 ## Cases
 CASE-1

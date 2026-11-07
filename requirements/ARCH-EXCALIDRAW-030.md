@@ -279,6 +279,7 @@ Every bullet below is binding.
 - The viewer's download button saves the scene as edited in the page. The embedded
   scene is saved only when the renderer did not load.
 - The viewer warns before the page unloads with edits made since the last download.
+- The viewer opens with the whole scene zoomed to fit the window, not at 100% with the scene cut off.
 
 ## Cases
 CASE-1 — the default page loads nothing remote
@@ -314,6 +315,11 @@ CASE-6 — unsaved edits are not dropped silently
   Then   a `beforeunload` handler asks first. Loading the fonts alone does not count
          as an edit
 
+CASE-7 — a wide scene opens whole
+  Given  a viewer page for a scene wider than the window
+  When   the page has loaded
+  Then   the page asks the renderer to fit the scene to the viewport, so none of it is cut off
+
 ## Context
 **Notes**
 - The lazily imported `vendor-*.js` chunk (2.96 MB) is deliberately not vendored. A
@@ -322,7 +328,10 @@ CASE-6 — unsaved edits are not dropped silently
 
 - The download and the unload warning run only in a browser. The tests pin their
   wiring in the page. A headless Chrome run deleted one element and the download
-  dropped from 49 elements to 48.
+  dropped from 49 elements to 48. The fit-to-window call also runs only in a browser, and
+  only after a short delay: called as the renderer mounts, it does nothing. A headless
+  Chrome run on a five-fact schema opened at 100% with most of it off screen, and at 41%
+  with all of it visible after the call.
 
 **Current implementation**
 - `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the

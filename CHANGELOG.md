@@ -1,5 +1,29 @@
 # Changelog
 
+## plugin `v2.17.0` — 2026-11-07
+
+**The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose.**
+
+- **The sides of the facts are searched, not alternated.** With two or more fact-like tables,
+  `data-model` packs each choice of which ones go on the far side of the dimensions and keeps the one
+  with the fewest routed edges, then the fewest crossing pairs. Measured: the five-fact order
+  process went from 10 crossing pairs to 9, and a two-fact schema with no name prefixes from 1 routed
+  edge and 3 crossings to none and 1. Every second one in schema order stays the baseline and the
+  answer beyond eight fact-like tables, where trying every choice would take too long.
+- **Outside the star.** A table the rules could not place (role unknown) that no foreign key and no
+  `ref()` line joins is drawn in one frame labelled "outside the star", and the glossary says what
+  that means. Before it was a box with no arrow, which read as a forgotten table.
+- **A detour no longer looks like a review link.** A connector `pack()` routes round the diagram was
+  always dashed grey, the same as the line from a review note to its table. It is now grey, and dashed
+  only when its own edge is dashed, as a straight arrow already was. This applies to every graph
+  drawn with `pack()` or `scene --from-json`: a routed edge that is not dashed is now solid grey.
+- **`data-model --name <title>`** sets the title and the output file name. Without it the title was the
+  input's own name, which for a dbt project is its folder's (a picture titled `jaffle_dl`).
+- **The `.html` viewer opens with the whole scene in view.** It used to open at 100%, centred, with a
+  large diagram mostly off screen; after the renderer mounts it now fits the scene to the window.
+  Checked by opening the page in Chrome: a five-fact schema opened at 100% with most of it hidden
+  and opens at 41% with all of it visible.
+
 ## plugin `v2.16.0` — 2026-11-07
 
 **The data-model pictograms are gone.** v2.12.0 gave every role, key column and review rule an

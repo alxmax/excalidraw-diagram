@@ -18,6 +18,7 @@ from .mapping import mapping_markdown
 from .ddl import parse_ddl
 from .review import review_tables
 from .roles import parse_roles
+from .sides import best_right
 from .spec import scene_from_spec
 
 
@@ -57,7 +58,6 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
     # facts sharing dimensions the arrows cross and their labels pile up, and with columns
     # listed in the boxes the FK lines already name the key.
     named = not columns and sum(c.role == "fact" for c in roles.values()) <= 1
-    right = _right_side(tables, roles)
     edges, seen = [], {}
     for table in tables:
         for fk in table.foreign_keys:
@@ -70,13 +70,13 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
                     seen[key]["label"] += ", " + label
             else:
                 seen[key] = {"src": table.name, "dst": fk.ref_table}
-                if table.name in right:
-                    seen[key]["flip"] = True
                 if named:
                     seen[key]["label"] = label
                 edges.append(seen[key])
+    fk_edges = len(edges)
     drawn = [(a, b) for a, b in lineage if (a, b) not in seen]
     edges += [{"src": a, "dst": b, "dashed": True, "label": "ref"} for a, b in drawn]
+    outside = _outside_star(tables, roles, edges)
     nodes = [{"id": t.name, "label": _label(t, roles[t.name], columns),
               "fill": explain.role_key(roles[t.name].role)} for t in tables]
     used = {c.role for c in roles.values()}
@@ -94,20 +94,35 @@ def graph_from_tables(tables, title=None, seed=1, columns=False, overrides=None,
                 + (explain.SUBTITLE_NOTES if issues else ""))
     spec = {"nodes": nodes, "edges": edges, "seed": seed, "subtitle": subtitle,
             "roles": legend,
-            "glossary": explain.glossary(tables, roles, issues, columns, bool(drawn))}
+            "glossary": explain.glossary(tables, roles, issues, columns, bool(drawn),
+                                         bool(outside))}
+    if outside:
+        spec["groups"] = [{"label": explain.OUTSIDE_LABEL, "members": outside}]
     if title:
         spec["title"] = title
-    return spec
-
-
-def _right_side(tables, roles):
-    """The names of every second fact-like table (a fact or a bridge), which pack() lays out on
-    the far side of the dimensions they share. Alternating puts two facts one on each side of
-    their dimensions, so their arrows do not cross; fewer than two fact-like tables change
-    nothing."""
-    # implements: REQ-DATAMODEL-913
     fact_like = [t.name for t in tables if roles[t.name].role in ("fact", "bridge")]
-    return set(fact_like[1::2]) if len(fact_like) >= 2 else set()
+    return _flipped(spec, fk_edges, best_right(fact_like, lambda far: _flipped(spec, fk_edges, far)))
+
+
+def _outside_star(tables, roles, edges):
+    """The names of the tables the rules could not place and nothing joins: no foreign key
+    in or out, no ref() line. Drawn as boxes with no arrow they read as forgotten; framed
+    together as "outside the star" they read as set aside on purpose, which is what a
+    staging model is."""
+    # implements: REQ-DATAMODEL-914
+    joined = {end for e in edges for end in (e["src"], e["dst"])}
+    return [t.name for t in tables if roles[t.name].role == "unknown" and t.name not in joined]
+
+
+def _flipped(spec, fk_edges, right):
+    """`spec` with the first `fk_edges` edges (the foreign keys) of every table in `right`
+    marked to be laid out on the far side of the dimensions they point at. pack() draws the
+    arrow from the table to the dimension all the same; two facts that share dimensions then
+    sit one on each side, and their arrows need not cross."""
+    # implements: REQ-DATAMODEL-913
+    edges = [dict(e, flip=True) if k < fk_edges and e["src"] in right else e
+             for k, e in enumerate(spec["edges"])]       # `spec` is never changed
+    return dict(spec, edges=edges)
 
 
 def _free_id(wanted, taken):

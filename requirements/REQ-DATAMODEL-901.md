@@ -20,6 +20,7 @@ Every bullet below is binding.
 - `graph_from_tables()` leaves out a foreign key whose target table is not defined, and `unresolved_fks()` lists it.
 - `scene_from_ddl(path)` and the `data-model --from-ddl` command save the scene through every gate.
 - `graph_from_tables()` sets a fixed seed, so one schema always produces byte-identical files.
+- The `data-model` command takes `--name`, which sets the diagram's title and its output file name instead of the input's own name.
 
 ## Cases
 CASE-1 — one node per table, one edge per relationship
@@ -41,6 +42,11 @@ CASE-4 — the output is byte-stable
   Given  one DDL file
   When   `scene_from_ddl()` is run twice
   Then   the two `.excalidraw` files are identical byte for byte
+
+CASE-5 — the title is chosen, not inherited
+  Given  a dbt project in a folder with an unhelpful name
+  When   the `data-model` command is run with `--name Orders`
+  Then   the files are called Orders and the title reads Orders
 
 ## Context
 **Current implementation**

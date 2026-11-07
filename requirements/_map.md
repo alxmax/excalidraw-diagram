@@ -1,9 +1,9 @@
 ---
 generated: 2026-11-07
 engine: 2026-11-02.2
-nodes: 38
+nodes: 39
 edges: 6
-design pass-rate: 100% (31/31 source files without a design candidate)
+design pass-rate: 100% (32/32 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -52,6 +52,7 @@ graph LR
     REQ_DATAMODEL_911["A data-model diagram a stranger can read<br><small>REQ-DATAMODEL-911</small>"]
     REQ_DATAMODEL_912["The mapping file is written only for a diagram that was drawn<br><small>REQ-DATAMODEL-912</small>"]
     REQ_DATAMODEL_913["Facts sharing dimensions on opposite sides of them<br><small>REQ-DATAMODEL-913</small>"]
+    REQ_DATAMODEL_914["Three kinds of line and one frame for what is outside the star<br><small>REQ-DATAMODEL-914</small>"]
     REQ_EXCALIDRAW_849["Colour and term keys: legend() and glossary()<br><small>REQ-EXCALIDRAW-849</small>"]
     REQ_EXCALIDRAW_859["Flipped edges: a source laid out beyond its target<br><small>REQ-EXCALIDRAW-859</small>"]
   end
@@ -122,7 +123,7 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 ```mermaid
 graph LR
   a_ARCH["ARCH<br><small>7 caps</small>"]
-  a_REQ["REQ<br><small>30 caps</small>"]
+  a_REQ["REQ<br><small>31 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 
@@ -132,5 +133,14 @@ _Requirements needing attention: red = unimplemented (confirmed, no code); orang
 
 ```mermaid
 graph LR
-  ok["No risk signals detected"]
+  subgraph sg_misc["misc"]
+    REQ_DATAMODEL_914["Three kinds of line and one frame for what is outside the star<br><small>REQ-DATAMODEL-914</small><br>untested"]
+  end
+  style REQ_DATAMODEL_914 fill:#fff9c4,stroke:#aa0,color:#550
 ```
+
+### Risk Table
+
+| ID | status | members | dependents | risks | recommendation |
+| --- | --- | --- | --- | --- | --- |
+| REQ-DATAMODEL-914 | confirmed | 1 | 0 | untested | Implemented but no `tested-by` member: write an acceptance test and tag it `# tested-by: <ID>`, or set `test_exempt: <reason>` in the frontmatter to acknowledge it intentionally and silence this signal. |
