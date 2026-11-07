@@ -2,8 +2,8 @@
   "_schema": 1,
   "accepted": {
     "ARCH-DATAMODEL-036": {
-      "hash": "2a5a58d7ba9c",
-      "reason": "ARCH-036 links REQ-DATAMODEL-914"
+      "hash": "e8ebaa466551",
+      "reason": "ten review rules (915), keys-only table joining two (916), ARCH-036 and 903 wording"
     },
     "ARCH-EXCALIDRAW-030": {
       "hash": "d6cc8ab05de6",
@@ -32,6 +32,10 @@
     "REQ-DATAMODEL-901": {
       "hash": "e8e1c86f61ac",
       "reason": "--name flag (901), searched sides (913), outside-the-star frame and routed look (914), viewer fits the scene (854)"
+    },
+    "REQ-DATAMODEL-902": {
+      "hash": "5891f69e4f1d",
+      "reason": "ten review rules (915), keys-only table joining two (916), ARCH-036 and 903 wording"
     },
     "REQ-DATAMODEL-913": {
       "hash": "874de45079df",

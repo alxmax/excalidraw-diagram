@@ -49,6 +49,19 @@ _RULE_TERM = {
                                 "not exist"),
     "snowflake": ("Snowflake", "a dimension split into sub-tables; usually simpler folded "
                                "back into one table"),
+    "fk-type": ("Key type mismatch", "a foreign key declared with a different type from the "
+                                     "key it points at, so every join has to convert values"),
+    "degenerate-dimension": ("Degenerate dimension", "a key that describes nothing else; it is "
+                                                     "kept in the fact table, not in a table of "
+                                                     "its own"),
+    "junk-dimension": ("Junk dimension", "one table holding the many yes/no flags of a fact, "
+                                         "with a row for each combination that occurs"),
+    "conformed-dimension": ("Conformed dimension", "a dimension two fact tables share, which is "
+                                                   "what lets their numbers be read side by "
+                                                   "side"),
+    "many-to-many": ("Many-to-many", "each row of one table can match several rows of another "
+                                     "and the other way round; it is kept in a separate table with one row for "
+                                     "each matching pair"),
 }
 
 

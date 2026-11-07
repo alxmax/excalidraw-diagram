@@ -206,6 +206,34 @@ class TestClassify(unittest.TestCase):
         self.assertEqual(three["cover"].role, "fact")
         self.assertIn("factless fact", three["cover"].reason)
 
+    _TWO_KEYS = ("CREATE TABLE student (student_id int PRIMARY KEY, student_name varchar(40));"
+                 "CREATE TABLE course (course_id int PRIMARY KEY, title varchar(40));"
+                 "CREATE TABLE calendar (date_key int PRIMARY KEY, full_date date);")
+
+    def _joining_two(self, name, other="course (course_id)", column="course_id"):
+        sql = self._TWO_KEYS + ("CREATE TABLE %s (student_id int REFERENCES student (student_id), "
+                                "%s int REFERENCES %s);" % (name, column, other))
+        return classify_tables(parse_ddl(sql))[name]
+
+    def test_a_keys_only_table_joining_two_stays_a_close_call_without_a_hint(self):  # verifies: REQ-DATAMODEL-916#CASE-1
+        c = self._joining_two("student_course")
+        self.assertEqual(c.role, "bridge")
+        self.assertLess(c.confidence, 0.2)
+
+    def test_an_events_name_or_a_date_table_makes_it_a_factless_fact(self):  # verifies: REQ-DATAMODEL-916#CASE-2  # verifies: REQ-DATAMODEL-916#CASE-3
+        named = self._joining_two("course_enrollment")
+        self.assertEqual(named.role, "fact")
+        self.assertIn("name says an event (enrollment)", named.reason)
+        dated = self._joining_two("daily_login", "calendar (date_key)", "date_key")
+        self.assertEqual(dated.role, "fact")
+        self.assertIn("calendar, a date table", dated.reason)
+
+    def test_a_links_name_makes_it_a_bridge_with_more_confidence(self):  # verifies: REQ-DATAMODEL-916#CASE-4
+        plain, named = self._joining_two("student_course"), self._joining_two("student_course_map")
+        self.assertEqual(named.role, "bridge")
+        self.assertIn("name says a link (map)", named.reason)
+        self.assertGreater(named.confidence, plain.confidence)
+
     def test_node_is_coloured_by_role_and_legend_lists_only_roles_in_use(self):  # verifies: REQ-DATAMODEL-902#CASE-5
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
         keys = {explain.role_key("fact"), explain.role_key("dimension")}
@@ -357,6 +385,83 @@ class TestReview(unittest.TestCase):
         spec = graph_from_tables(parse_ddl(_read("shop_clean.sql")))
         self.assertNotIn(NOTE, spec["roles"])
         self.assertEqual([n for n in spec["nodes"] if n["fill"] == NOTE], [])
+
+
+class TestMoreReviewRules(unittest.TestCase):
+    """REQ-DATAMODEL-915: five more rules, each on evidence it can quote."""
+
+    def _hits(self, sql, rule):
+        return sorted({table for table, found in _review(sql) if found == rule})
+
+    def _typed(self, key_type, fk_type):
+        return ("CREATE TABLE dim_a (a_key %s PRIMARY KEY, name varchar(20));"
+                "CREATE TABLE fact_s (s_key serial PRIMARY KEY, d1 %s REFERENCES dim_a (a_key), "
+                "d2 %s REFERENCES dim_a (a_key), amount numeric);" % (key_type, fk_type, fk_type))
+
+    def test_fk_type_fires_when_a_key_and_its_target_differ(self):  # verifies: REQ-DATAMODEL-915#CASE-1
+        self.assertEqual(self._hits(self._typed("bigint", "int"), "fk-type"), ["fact_s"])
+        self.assertEqual(self._hits(self._typed("int", "varchar(10)"), "fk-type"), ["fact_s"])
+
+    def test_fk_type_is_silent_for_aliases_lengths_and_undeclared_types(self):  # verifies: REQ-DATAMODEL-915#CASE-1
+        for key, fk in (("serial", "int"), ("int", "integer"), ("varchar(40)", "varchar(10)"),
+                        ("bigserial", "bigint"), ("numeric(10,2)", "decimal")):
+            self.assertEqual(self._hits(self._typed(key, fk), "fk-type"), [], (key, fk))
+        untyped = ("CREATE TABLE dim_a (a_key PRIMARY KEY, name varchar(20));"
+                   "CREATE TABLE fact_s (s_key serial PRIMARY KEY, d1 int REFERENCES dim_a (a_key), "
+                   "d2 int REFERENCES dim_a (a_key), amount numeric);")
+        self.assertEqual(self._hits(untyped, "fk-type"), [])
+
+    def test_a_dimension_holding_only_its_key_is_degenerate(self):  # verifies: REQ-DATAMODEL-915#CASE-2
+        bare = "CREATE TABLE dim_a (a_key serial PRIMARY KEY);"
+        self.assertEqual(self._hits(bare + _FACT_ON_A, "degenerate-dimension"), ["dim_a"])
+        self.assertEqual(self._hits(_DIM + _FACT_ON_A, "degenerate-dimension"), [])
+
+    def test_a_dimension_holding_only_flags_is_a_junk_dimension(self):  # verifies: REQ-DATAMODEL-915#CASE-3
+        def dim(cols):
+            return "CREATE TABLE dim_a (a_key serial PRIMARY KEY, %s);" % cols
+        self.assertEqual(self._hits(dim("is_gift boolean, rush_flag int") + _FACT_ON_A,
+                                    "junk-dimension"), ["dim_a"])
+        self.assertEqual(self._hits(dim("is_gift boolean, name varchar(20)") + _FACT_ON_A,
+                                    "junk-dimension"), [])
+        self.assertEqual(self._hits(dim("is_gift boolean") + _FACT_ON_A, "junk-dimension"), [])
+
+    def test_facts_sharing_no_dimension_are_flagged_and_sharing_one_is_not(self):  # verifies: REQ-DATAMODEL-915#CASE-4
+        dims = ("CREATE TABLE dim_a (a_key serial PRIMARY KEY, name varchar(20));"
+                "CREATE TABLE dim_b (b_key serial PRIMARY KEY, name varchar(20));"
+                "CREATE TABLE dim_c (c_key serial PRIMARY KEY, name varchar(20));"
+                "CREATE TABLE dim_d (d_key serial PRIMARY KEY, name varchar(20));")
+
+        def fact(name, x, y):
+            return ("CREATE TABLE %s (k serial PRIMARY KEY, x int REFERENCES dim_%s, "
+                    "y int REFERENCES dim_%s, amount numeric);" % (name, x, y))
+        apart = dims + fact("fact_one", "a", "b") + fact("fact_two", "c", "d")
+        self.assertEqual(self._hits(apart, "conformed-dimension"), ["fact_one", "fact_two"])
+        shared = dims + fact("fact_one", "a", "b") + fact("fact_two", "b", "d")
+        self.assertEqual(self._hits(shared, "conformed-dimension"), [])
+        self.assertEqual(self._hits(dims + fact("fact_one", "a", "b"), "conformed-dimension"), [])
+
+    def test_several_keys_in_one_column_is_a_many_to_many_without_a_bridge(self):  # verifies: REQ-DATAMODEL-915#CASE-5
+        def table(cols):
+            return "CREATE TABLE post (post_key serial PRIMARY KEY, %s);" % cols
+        for cols in ("tag_ids text", "tag_keys varchar(200)", "tag_id int[]"):
+            self.assertEqual(self._hits(table(cols), "many-to-many"), ["post"], cols)
+        for cols in ("tags text[]", "author_id int", "title varchar(20)"):
+            self.assertEqual(self._hits(table(cols), "many-to-many"), [], cols)
+
+    def test_the_shipped_examples_raise_none_of_the_five(self):  # verifies: REQ-DATAMODEL-915#CASE-6
+        new = {"fk-type", "degenerate-dimension", "junk-dimension", "conformed-dimension",
+               "many-to-many"}
+        for fixture in ("shop_demo.sql", "shop_clean.sql", "shop_noprefix.sql", "order_process.sql"):
+            self.assertEqual({r for _, r in _review(_read(fixture))} & new, set(), fixture)
+        tables, _ = read_dbt(os.path.join(DATA, "dbt_shop"))
+        found = {i.rule for i in review_tables(tables, classify_tables(tables))}
+        self.assertEqual(found & new, set())
+
+    def test_each_new_rule_is_defined_in_the_glossary(self):  # verifies: REQ-DATAMODEL-915#CASE-7
+        for rule in ("fk-type", "degenerate-dimension", "junk-dimension", "conformed-dimension",
+                     "many-to-many"):
+            self.assertIn(rule, explain._RULE_TERM)
+            self.assertTrue(explain._RULE_TERM[rule][1].strip())
 
 
 class TestGraph(unittest.TestCase):
@@ -1115,6 +1220,32 @@ class TestCapability(unittest.TestCase):
 
     def test_clean_schema_is_drawn_with_no_note_and_no_note_legend(self):  # verifies: ARCH-DATAMODEL-036#CASE-2
         self.assertEqual(self._notes("shop_clean.sql"), [])
+
+    _SCHOOL = (
+        "CREATE TABLE dim_student (student_key serial PRIMARY KEY, student_name varchar(40));"
+        "CREATE TABLE dim_course (course_key bigint PRIMARY KEY, title varchar(60));"
+        "CREATE TABLE dim_room (room_key serial PRIMARY KEY);"
+        "CREATE TABLE dim_flags (flags_key serial PRIMARY KEY, is_online boolean, is_paid boolean);"
+        "CREATE TABLE dim_calendar (date_key serial PRIMARY KEY, full_date date);"
+        "CREATE TABLE fact_grade (grade_key serial PRIMARY KEY,"
+        " student_key int REFERENCES dim_student (student_key),"
+        " course_key int REFERENCES dim_course (course_key),"
+        " room_key int REFERENCES dim_room (room_key),"
+        " flags_key int REFERENCES dim_flags (flags_key), score numeric);"
+        "CREATE TABLE fact_budget (budget_key serial PRIMARY KEY, amount numeric, approver_ids text);"
+        "CREATE TABLE class_attendance (student_key int REFERENCES dim_student (student_key),"
+        " date_key int REFERENCES dim_calendar (date_key));")
+
+    def test_every_new_rules_note_is_drawn_through_all_the_gates(self):  # verifies: ARCH-DATAMODEL-036#CASE-1
+        with tempfile.TemporaryDirectory() as d, contextlib.redirect_stdout(io.StringIO()):
+            src = os.path.join(d, "school.sql")
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write(self._SCHOOL)
+            self.assertEqual(cli.main(["data-model", "--from-ddl", src, "-o", d, "--columns"]), 0)
+            with open(os.path.join(d, "school.excalidraw"), encoding="utf-8") as fh:
+                texts = [e.get("text", "") for e in json.load(fh)["elements"] if e["type"] == "text"]
+        for rule in ("fk-type", "degenerate-dimension", "junk-dimension", "many-to-many", "grain"):
+            self.assertTrue(any(t.startswith(rule + ":") for t in texts), rule)
 
     def test_unreadable_ddl_exits_non_zero_names_the_file_and_writes_nothing(self):  # verifies: ARCH-DATAMODEL-036#CASE-3
         with tempfile.TemporaryDirectory() as d:

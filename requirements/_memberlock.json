@@ -42,6 +42,16 @@
     "REQ-DATAMODEL-914": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_outside_star": "5b9b6d768d3953d363ce22b1974de338fd12b896594f7b453a183ea6736fdbc2"
     },
+    "REQ-DATAMODEL-915": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_conformed_dimension": "f6e5c38c6aa5d4f3460053ad094feab40c923d9527f46f20fdc315fa6e84cfd3",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_degenerate_dimension": "60b8996c19e8f30745b308837638a6a60d0c3fe0be5bd9548a2da4cb3cbbf1a2",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_fk_type": "952b070b4c0166e3b0452b60bc647fce075127b54a0a035bee14ba8e45233b09",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_junk_dimension": "c15a5f6e0e7c44e408bd17923d80609f057451630d3afee610d2787b349cd537",
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_many_to_many": "58b8b82f2868b2271fd9f41c68c0c6304652135b2e340337a0ba3a68839161f2"
+    },
+    "REQ-DATAMODEL-916": {
+      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py#_tell_bridge_from_event": "349cb6539bc19b6d60771e7a2eb5db81eaeb9c928dca4a82fe9ac28310181b9e"
+    },
     "REQ-EXCALIDRAW-844": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#Rect": "b4a039bf9d544d542dbd714332e7ef2ebfd28934554bb5d448fabbda26177305",

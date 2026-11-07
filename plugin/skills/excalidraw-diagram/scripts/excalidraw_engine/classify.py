@@ -34,6 +34,14 @@ _NUMERIC = re.compile(r"^(?:small|big|tiny|medium)?(?:int|integer|serial|numeric
 _DESCRIPTIVE = re.compile(r"^(?:n?var)?char|^character|^n?text|^citext|^string|^date|^time|"
                           r"^bool", re.I)
 _KEYLIKE = re.compile(r"(^id$|_id$|_key$|_sk$|_fk$|_no$|_num$|_number$|_code$)", re.I)
+# Evidence for the one ambiguous shape, a table of only keys that joins two tables: it is a
+# bridge (a many-to-many link) or a factless fact (an event with nothing to measure). Its
+# name and what it joins can tell them apart; with neither it stays a close call.
+_TIME_TABLE = re.compile(r"(^|_)(date|dates|calendar|time|day|days|period)(_|$)", re.I)
+_EVENT_NAME = re.compile(r"(^|_)(enrol+ments?|attendance|registrations?|participation|coverage|"
+                         r"bookings?|visits?|events?)(_|$)", re.I)
+_LINK_NAME = re.compile(r"(^|_)(link|links|map|mapping|xref|assoc|association|junction|x)(_|$)",
+                        re.I)
 _CALENDAR = re.compile(r"^(year|month|day|week|quarter|hour|minute|fiscal_\w+|day_of_\w+)$", re.I)
 # Only for a column with NO declared type (a dbt schema.yml usually has none): the name is all
 # there is to read, so it is read, and the reason says the call was a guess.
@@ -122,10 +130,26 @@ def _evidence(table, p):
         if p["fk_out"] == 2:
             ev["bridge"].append((4, "every column is a key and it joins two tables "
                                     "(a factless fact is the alternative)"))
+            _tell_bridge_from_event(table, ev)
         elif p["fk_out"] >= 3:
             ev["fact"].append((3, "every column is a key and it joins %d tables: an event with "
                                   "nothing to measure (a factless fact)" % p["fk_out"]))
     return ev
+
+
+def _tell_bridge_from_event(table, ev):
+    """Add the evidence that settles a keys-only table joining two tables: a date table among
+    the two, or an event's name, says factless fact; a link's name says bridge."""
+    # implements: REQ-DATAMODEL-916
+    when = sorted(n for n in {fk.ref_table for fk in table.foreign_keys}
+                  if n != table.name and _TIME_TABLE.search(n))
+    if when:
+        ev["fact"].append((3, "it joins %s, a date table: an event on a day, so a factless fact" % when[0]))
+    event, link = _EVENT_NAME.search(table.name), _LINK_NAME.search(table.name)
+    if event:
+        ev["fact"].append((3, "its name says an event (%s), so a factless fact" % event.group(2).lower()))
+    if link:
+        ev["bridge"].append((3, "its name says a link (%s)" % link.group(2).lower()))
 
 
 def _decide(name, ev):

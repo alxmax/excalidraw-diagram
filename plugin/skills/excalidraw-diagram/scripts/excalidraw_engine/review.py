@@ -1,12 +1,17 @@
 """Tables -> modelling problems: the review half of the data-model module.
 
-Five rules, one function each, run over the tables and the roles classify.py gave them:
+Ten rules, one function each, run over the tables and the roles classify.py gave them:
 
-    grain          a fact with no primary key states no grain
-    surrogate-key  a dimension whose key is not an artificial one
-    scd2           a dimension with changing attributes and no valid_from / valid_to
-    orphan-fk      a foreign key to a table or column that does not exist
-    snowflake      a dimension normalised into sub-dimensions
+    grain                  a fact with no primary key states no grain
+    surrogate-key          a dimension whose key is not an artificial one
+    scd2                   a dimension with changing attributes and no valid_from / valid_to
+    orphan-fk              a foreign key to a table or column that does not exist
+    snowflake              a dimension normalised into sub-dimensions
+    fk-type                a foreign key whose type is not the type of the key it points at
+    degenerate-dimension   a dimension that holds nothing but its key
+    junk-dimension         a dimension that holds nothing but flags
+    conformed-dimension    a fact that shares no dimension with any other fact
+    many-to-many           several keys in one column, with no bridge table
 
 Every Issue carries the sentence that says WHY, not just a label. A rule fires only on
 evidence it can name, so a clean schema stays silent: the rules lean towards missing a
@@ -26,6 +31,16 @@ _KEYISH = re.compile(r"(^id$|_id$|_key$|_sk$|_fk$|_code$)", re.I)
 _LABEL = ("name", "label", "title", "description")
 _VALID_FROM = re.compile(r"^(valid_from|effective_from|effective_date|row_start|start_date)$", re.I)
 _VALID_TO = re.compile(r"^(valid_to|effective_to|row_end|end_date)$", re.I)
+_FLAG_NAME = re.compile(r"^(is|has|can)_|_(flag|ind)$", re.I)
+_FLAG_TYPE = re.compile(r"^(bool|boolean|bit)\b", re.I)
+_KEY_LIST = re.compile(r"_(ids|keys|codes)$", re.I)
+_ARRAY = re.compile(r"\[\s*\d*\s*\]|\barray\b", re.I)
+# the same type under its other names, so `int` and `integer` are not a mismatch and a serial
+# primary key can be pointed at by a plain integer
+_SAME_TYPE = {"integer": "int", "int4": "int", "serial": "int", "serial4": "int",
+              "int8": "bigint", "bigserial": "bigint", "serial8": "bigint",
+              "int2": "smallint", "smallserial": "smallint", "decimal": "numeric",
+              "character varying": "varchar", "character": "char", "bool": "boolean"}
 
 
 class Issue(object):
@@ -157,7 +172,103 @@ def _snowflake(schema):
     return out
 
 
-RULES = (_grain, _surrogate_key, _scd2, _orphan_fk, _snowflake)
+def _base_type(declared):
+    """A declared type reduced to what a join compares: lower case, no length or precision,
+    one name for the usual aliases. `varchar(20)` and `varchar(40)` are the same type."""
+    name = " ".join(re.sub(r"\(.*?\)", "", declared.lower()).split())
+    return _SAME_TYPE.get(name, name)
+
+
+def _fk_type(schema):
+    # implements: REQ-DATAMODEL-915
+    out = []
+    for t in schema.tables:
+        for fk in t.foreign_keys:
+            target = schema.by_name.get(fk.ref_table)
+            if target is None:
+                continue
+            refs = fk.ref_columns or (target.primary_key
+                                      if len(target.primary_key) == len(fk.columns) else [])
+            for name, ref in zip(fk.columns, refs):
+                col, key = t.column(name), target.column(ref)
+                if col is None or key is None or not col.type or not key.type:
+                    continue                    # a type nobody declared is not a mismatch
+                if _base_type(col.type) != _base_type(key.type):
+                    out.append(Issue(t.name, "fk-type",
+                                     "%s is %s but it points at %s.%s, which is %s; a join "
+                                     "across two types converts every value or skips the index"
+                                     % (name, col.type, fk.ref_table, ref, key.type)))
+    return out
+
+
+def _non_key_columns(table):
+    """The columns of `table` that are neither in a key nor named like one."""
+    keys = set(table.primary_key) | {c for fk in table.foreign_keys for c in fk.columns}
+    return [c for c in table.columns if c.name not in keys and not _KEYISH.search(c.name)]
+
+
+def _degenerate_dimension(schema):
+    # implements: REQ-DATAMODEL-915
+    return [Issue(t.name, "degenerate-dimension",
+                  "dimension holds nothing but its key (%s); a key with no attributes of its "
+                  "own belongs in the fact, as a degenerate dimension, not in a table"
+                  % ", ".join(c.name for c in t.columns))
+            for t in schema.of_role("dimension") if t.columns and not _non_key_columns(t)]
+
+
+def _junk_dimension(schema):
+    # implements: REQ-DATAMODEL-915
+    out = []
+    for t in schema.of_role("dimension"):
+        plain = _non_key_columns(t)
+        if len(plain) >= 2 and all(_FLAG_NAME.search(c.name) or _FLAG_TYPE.match(c.type or "")
+                                   for c in plain):
+            out.append(Issue(t.name, "junk-dimension",
+                             "dimension holds only flags (%s); as a junk dimension its rows must be "
+                             "the combinations that occur, otherwise keep the flags in the fact"
+                             % ", ".join(c.name for c in plain[:4])))
+    return out
+
+
+def _conformed_dimension(schema):
+    # implements: REQ-DATAMODEL-915
+    facts = schema.of_role("fact")
+    if len(facts) < 2:
+        return []
+
+    def dimensions(table):
+        return {fk.ref_table for fk in table.foreign_keys
+                if fk.ref_table in schema.roles and schema.roles[fk.ref_table].role == "dimension"}
+
+    out = []
+    for fact in facts:
+        own, others = dimensions(fact), [f for f in facts if f is not fact]
+        if own and not any(own & dimensions(other) for other in others):
+            out.append(Issue(fact.name, "conformed-dimension",
+                             "shares no dimension with %s, so its numbers cannot be read beside "
+                             "theirs; point both at a common dimension such as date or customer"
+                             % ", ".join(f.name for f in others[:3])))
+    return out
+
+
+def _many_to_many(schema):
+    # implements: REQ-DATAMODEL-915
+    out = []
+    for t in schema.tables:
+        keys = set(t.primary_key) | {c for fk in t.foreign_keys for c in fk.columns}
+        for c in t.columns:
+            several = _KEY_LIST.search(c.name) or (
+                _ARRAY.search(c.type or "") and _KEYISH.search(c.name))
+            if several and c.name not in keys:
+                out.append(Issue(t.name, "many-to-many",
+                                 "%s holds several keys in one column, a many-to-many relation "
+                                 "with no bridge table; add a table with one row for each pair"
+                                 % c.name))
+    return out
+
+
+RULES = (_grain, _surrogate_key, _scd2, _orphan_fk, _snowflake, _fk_type, _degenerate_dimension,
+         _junk_dimension, _conformed_dimension, _many_to_many)
 
 
 def review_tables(tables, roles):

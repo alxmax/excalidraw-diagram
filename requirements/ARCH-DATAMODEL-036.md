@@ -22,6 +22,8 @@ Every bullet below is binding.
 - The graph builder turns those records into the graph description that `scene --from-json` takes, so layout and gates stay unchanged. [[REQ-DATAMODEL-901]]
 - The classifier gives each table a role, a confidence and a written reason from names and structure alone. [[REQ-DATAMODEL-902]]
 - The review runs five rules over the classified tables. [[REQ-DATAMODEL-903]]
+- Five more rules look at key types, dimensions, shared dimensions and lists of keys. [[REQ-DATAMODEL-915]]
+- A keys-only table joining two tables is told apart as a bridge or a factless fact by its name and by what it joins. [[REQ-DATAMODEL-916]]
 - Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]
 - A table can list its columns on request. [[REQ-DATAMODEL-905]]
 - A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]

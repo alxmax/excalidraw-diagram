@@ -68,6 +68,6 @@ CASE-7 — snowflake
   is the table a modeller would fold away.
 
 **Current implementation**
-- `review_tables()` and its five rules in
+- `review_tables()` and its first five rules in
   `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.
 - `TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
