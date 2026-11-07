@@ -15,6 +15,8 @@
         "The graph builder turns those records into the graph description that `scene --from-json` takes, so layout and gates stay unchanged. [[REQ-DATAMODEL-901]]",
         "The classifier gives each table a role, a confidence and a written reason from names and structure alone. [[REQ-DATAMODEL-902]]",
         "The review runs five rules over the classified tables. [[REQ-DATAMODEL-903]]",
+        "Five more rules look at key types, dimensions, shared dimensions and lists of keys. [[REQ-DATAMODEL-915]]",
+        "A keys-only table joining two tables is told apart as a bridge or a factless fact by its name and by what it joins. [[REQ-DATAMODEL-916]]",
         "Each finding is explained in a sentence and drawn as an amber note joined to its table. [[REQ-DATAMODEL-904]]",
         "A table can list its columns on request. [[REQ-DATAMODEL-905]]",
         "A roles file overrides the classifier, and the diagram says which roles were set by hand. [[REQ-DATAMODEL-906]]",
@@ -62,7 +64,9 @@
         "REQ-DATAMODEL-911",
         "REQ-DATAMODEL-912",
         "REQ-DATAMODEL-913",
-        "REQ-DATAMODEL-914"
+        "REQ-DATAMODEL-914",
+        "REQ-DATAMODEL-915",
+        "REQ-DATAMODEL-916"
       ],
       "members": [
         {
@@ -1463,7 +1467,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:152"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:176"
         }
       ],
       "test_exempt": null,
@@ -1508,7 +1512,7 @@
         "`snowflake` flags the sub-dimension, not the dimension that points at it, because that is the table a modeller would fold away."
       ],
       "current_impl": [
-        "`review_tables()` and its five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
+        "`review_tables()` and its first five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
         "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with an `address` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
@@ -1528,7 +1532,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:165"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:276"
         }
       ],
       "test_exempt": null,
@@ -1700,7 +1704,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:153"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:177"
         },
         {
           "role": "implements",
@@ -2006,11 +2010,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:57"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:70"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:81"
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:94"
         }
       ],
       "test_exempt": null,
@@ -2189,6 +2193,163 @@
       "clauses": 4,
       "covered": 4,
       "clarify": []
+    },
+    {
+      "id": "REQ-DATAMODEL-915",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Five more review rules: key types, dimensions, shared dimensions, lists of keys",
+      "intent": "The first five rules look at one table's keys and history. These five look at what a relationship is made of and how the tables fit together. Each fires only on evidence it can quote, so a clean schema stays silent: an invented warning costs more trust than a missed one.",
+      "contract": [
+        "The `fk-type` rule flags a foreign key column whose declared type differs from the type of the key it points at.",
+        "Two types are the same when they differ only in length, precision or an alias such as `int` and `integer`, or a `serial` key and an `int`.",
+        "The `fk-type` rule is silent when either column has no declared type.",
+        "The `degenerate-dimension` rule flags a dimension whose columns are all keys, so it holds nothing but its key.",
+        "The `junk-dimension` rule flags a dimension with two or more non-key columns that are all flags.",
+        "A flag is a boolean column, or one named `is_*`, `has_*`, `can_*`, `*_flag` or `*_ind`.",
+        "The `conformed-dimension` rule flags a fact that has dimensions and shares none of them with any other fact.",
+        "The `many-to-many` rule flags a column named `*_ids`, `*_keys` or `*_codes`, or an array column named like a key, that is not itself a key.",
+        "Each new rule has a plain-words term in the glossary, shown when a note of that rule is drawn."
+      ],
+      "verify": [],
+      "notes": [
+        "`degenerate-dimension` reports a table nobody needs: an order number kept in a table of its own. The correct shape, the key kept in the fact, raises nothing.",
+        "`conformed-dimension` skips a fact with no dimensions at all, so an orphan key is reported once, by `orphan-fk`, and not twice. Two unrelated subject areas in one schema will be flagged; the note says what to add if they were meant to be compared.",
+        "`many-to-many` reads names and array types only. A column holding a list of values that are not keys, such as `tags text[]`, is left alone.",
+        "The rules were run over the shipped examples before they were written down: none raised anything, which is what CASE-6 pins."
+      ],
+      "current_impl": [
+        "The five rules and `RULES` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`; the terms in `explain.py`.",
+        "`TestMoreReviewRules` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "accept": "CASE-1 — foreign key types\n  Given  a foreign key declared `int` to a `bigint` key, one to a `varchar` key, and ones that differ only by alias, length or an undeclared type\n  When   `review_tables()` is run\n  Then   the first two raise `fk-type` and the others do not\n\nCASE-2 — degenerate dimension\n  Given  a dimension holding only its key, and one that also holds a name\n  When   `review_tables()` is run\n  Then   only the first raises `degenerate-dimension`\n\nCASE-3 — junk dimension\n  Given  a dimension of two flags, one of a flag and a name, and one of a single flag\n  When   `review_tables()` is run\n  Then   only the first raises `junk-dimension`\n\nCASE-4 — shared dimensions\n  Given  two facts with no dimension in common, two that share one, and a schema with one fact\n  When   `review_tables()` is run\n  Then   both facts of the first pair raise `conformed-dimension` and nothing else does\n\nCASE-5 — several keys in one column\n  Given  columns `tag_ids`, `tag_keys` and an `int[]` named `tag_id`, and columns `tags text[]`, `author_id` and `title`\n  When   `review_tables()` is run\n  Then   the first three raise `many-to-many` and the others do not\n\nCASE-6 — no new alarm on the shipped examples\n  Given  the demo, clean, no-prefix and order-process schemas and the dbt example\n  When   `review_tables()` is run on each\n  Then   none of the five new rules fires\n\nCASE-7 — every new rule is explained\n  Given  a note of any of the five rules\n  When   the glossary is built\n  Then   it defines that rule's term in plain words",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:183"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:211"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:220"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:234"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:255"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [
+        {
+          "signal": "untested",
+          "advice": "Implemented but no `tested-by` member: write an acceptance test and tag it `# tested-by: <ID>`, or set `test_exempt: <reason>` in the frontmatter to acknowledge it intentionally and silence this signal."
+        }
+      ],
+      "clauses": 7,
+      "covered": 7,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 9 clauses and 7 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
+    },
+    {
+      "id": "REQ-DATAMODEL-916",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "A keys-only table joining two: bridge or factless fact",
+      "intent": "A table of only keys that joins two tables is either a bridge, a many-to-many link, or a factless fact, an event with nothing to measure. Structure alone cannot tell them apart, so the rules read what the table's name says and what it joins, and where they find nothing the answer stays a close call and says so.",
+      "contract": [
+        "A keys-only table that joins two tables is a factless fact when its name says an event, such as enrollment, attendance or booking.",
+        "A keys-only table that joins two tables is a factless fact when one of the two is a date table, such as a calendar.",
+        "A keys-only table that joins two tables is a bridge with more confidence when its name says a link, such as `map` or `xref`.",
+        "With none of these hints the table stays a bridge at low confidence, and its reason names the factless fact as the alternative.",
+        "Each hint is written into the reason, so the call can be checked."
+      ],
+      "verify": [],
+      "notes": [
+        "Each hint adds three points, the weight of a name prefix. A hint therefore moves a close call to about twenty-five percent for a fact and fifty for a bridge, not to certainty.",
+        "Three or more keys still decide a factless fact on structure alone, as before."
+      ],
+      "current_impl": [
+        "`_tell_bridge_from_event()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
+        "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+      ],
+      "accept": "CASE-1 — no hint, a close call\n  Given  a keys-only table joining two tables, named for neither an event nor a link\n  When   `classify_tables()` is run\n  Then   it is a bridge with a confidence below twenty percent\n\nCASE-2 — an event's name\n  Given  a keys-only table named `course_enrollment` joining two tables\n  When   `classify_tables()` is run\n  Then   it is a fact, and the reason says its name says an event\n\nCASE-3 — a date table among the two\n  Given  a keys-only table joining a student table and a calendar\n  When   `classify_tables()` is run\n  Then   it is a fact, and the reason names the calendar as a date table\n\nCASE-4 — a link's name\n  Given  the first table with `_map` added to its name\n  When   `classify_tables()` is run\n  Then   it is a bridge with more confidence than the first, and the reason says its name says a link",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-DATAMODEL-036"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "implements",
+          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:143"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [
+        {
+          "signal": "untested",
+          "advice": "Implemented but no `tested-by` member: write an acceptance test and tag it `# tested-by: <ID>`, or set `test_exempt: <reason>` in the frontmatter to acknowledge it intentionally and silence this signal."
+        }
+      ],
+      "clauses": 4,
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 5 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        },
+        {
+          "rule": "case-monoculture",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "3 of 4 Given lines open on the same word (\"keys-only\"). Do the cases cover the other kinds of input a caller can supply?",
+          "suggest": "Read the Givens in context: a repeated word need not be a repeated kind of input. Add a case from the caller's side only if a kind is missing."
+        }
+      ]
     },
     {
       "id": "REQ-EXCALIDRAW-849",
@@ -2512,6 +2673,14 @@
       "ARCH-DATAMODEL-036"
     ],
     [
+      "REQ-DATAMODEL-915",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
+      "REQ-DATAMODEL-916",
+      "ARCH-DATAMODEL-036"
+    ],
+    [
       "REQ-EXCALIDRAW-849",
       "ARCH-EXCALIDRAW-033"
     ],
@@ -2684,7 +2853,7 @@
     },
     {
       "month": "2026-11",
-      "count": 11,
+      "count": 12,
       "first": "2026-11-06",
       "last": "2026-11-07",
       "versions": [
@@ -2698,11 +2867,20 @@
         "v2.15.0",
         "v2.15.1",
         "v2.16.0",
-        "v2.17.0"
+        "v2.17.0",
+        "v2.18.0"
       ],
-      "landmark": "v2.17.0",
-      "headline": "The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose",
+      "landmark": "v2.18.0",
+      "headline": "Five more review rules, and a better call on a table of only keys",
       "entries": [
+        {
+          "version": "v2.18.0",
+          "date": "2026-11-07",
+          "headline": "Five more review rules, and a better call on a table of only keys",
+          "body": "**Five more review rules, and a better call on a table of only keys.**\n\n- **`fk-type`:** a foreign key declared with a different type from the key it points at (`int`\n  to a `bigint` key). `int` and `integer`, a `serial` key and an `int`, and two lengths of one\n  `varchar` are the same type; a column with no declared type is never a mismatch.\n- **`degenerate-dimension`:** a dimension whose columns are all keys, so it holds nothing but its\n  key. That key belongs in the fact.\n- **`junk-dimension`:** a dimension with two or more non-key columns that are all flags (boolean, or\n  named `is_*`, `has_*`, `can_*`, `*_flag`, `*_ind`).\n- **`conformed-dimension`:** a fact with dimensions that shares none of them with any other fact,\n  so its numbers cannot be read beside theirs.\n- **`many-to-many`:** a column named `*_ids`, `*_keys` or `*_codes`, or an array column named like\n  a key, that is not itself a key: several keys in one column with no bridge table.\n\nEach rule fires only on evidence it quotes. Run over the demo, clean, no-prefix and order-process\nschemas and the dbt example before they were written down, none raised anything, and a test pins that.\nEach new rule has a plain-words term in the glossary.\n\n**A table of only keys that joins two tables.** It is a bridge or a factless fact and structure cannot\ntell which, so it sat at about 12% bridge. Now a calendar among the two, or a name that says an\nevent (`enrollment`, `attendance`, `booking`), makes it a factless fact; a name that says a link\n(`map`, `xref`, `link`) makes it a bridge at about 50%. With no hint it stays a close call, on\npurpose, and the reason says what would settle it.",
+          "first_commit": "2026-11-07",
+          "last_commit": "2026-11-07"
+        },
         {
           "version": "v2.17.0",
           "date": "2026-11-07",
@@ -3107,18 +3285,18 @@
     "advice": {}
   },
   "health": {
-    "score": 97,
-    "total": 39,
-    "scored": 39,
+    "score": 93,
+    "total": 41,
+    "scored": 41,
     "healthy": 38,
     "exempt": 0,
     "deprecated": 0,
-    "confirmed": 39,
-    "implemented": 38,
+    "confirmed": 41,
+    "implemented": 40,
     "tested": 37,
     "drafts": 0,
     "orphans": 0,
-    "untested": 1,
+    "untested": 3,
     "open_intent": 0,
     "drift": 0,
     "gate_errors": 0,
@@ -3126,6 +3304,20 @@
     "unhealthy": [
       {
         "id": "REQ-DATAMODEL-914",
+        "status": "confirmed",
+        "why": [
+          "not tested"
+        ]
+      },
+      {
+        "id": "REQ-DATAMODEL-915",
+        "status": "confirmed",
+        "why": [
+          "not tested"
+        ]
+      },
+      {
+        "id": "REQ-DATAMODEL-916",
         "status": "confirmed",
         "why": [
           "not tested"

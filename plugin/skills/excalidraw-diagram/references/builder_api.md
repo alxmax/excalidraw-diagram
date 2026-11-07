@@ -170,7 +170,10 @@ table holding the key to the table it references). It builds the same graph desc
 - **Roles:** each table is a fact (blue), dimension (green), bridge (violet) or unknown
   (grey), shown under its name with a confidence, e.g. `fact · 100%`. The glossary holds
   the reason for every role. The name prefix (`fact_`, `dim_`, `stg_`) is one piece of
-  evidence; the rest is foreign keys, numeric measures and descriptive columns.
+  evidence; the rest is foreign keys, numeric measures and descriptive columns. A table of only keys
+  that joins two tables is a bridge or a factless fact: a calendar among the two or an event's name
+  (`enrollment`, `attendance`) says factless fact, a link's name (`map`, `xref`) says bridge, and
+  with no hint it stays a bridge at about 12%.
 - **Facts on both sides:** with two or more fact-like tables (facts and bridges) the layout tries which
   of them to draw on the far side of the dimensions and keeps the choice with the fewest routed edges,
   then the fewest crossing pairs; every second one in schema order is the baseline, and the answer
@@ -189,7 +192,11 @@ table holding the key to the table it references). It builds the same graph desc
 - **Review:** amber notes joined by a dashed line to the table they concern. Rules:
   `grain` (a fact without a primary key), `surrogate-key` (a dimension keyed by a source
   id), `scd2` (changing attributes with no `valid_from` / `valid_to`), `orphan-fk` (a key
-  to a missing table or column), `snowflake` (a dimension normalised into sub-dimensions).
+  to a missing table or column), `snowflake` (a dimension normalised into sub-dimensions),
+  `fk-type` (a key whose type differs from the key it points at; aliases and lengths do not count),
+  `degenerate-dimension` (a dimension holding nothing but its key), `junk-dimension` (a dimension
+  holding only flags), `conformed-dimension` (a fact sharing no dimension with any other fact) and
+  `many-to-many` (a `*_ids` column, or an array named like a key, with no bridge table).
 - **`--from-dbt <project>`:** draws a dbt project instead of a DDL file (exactly one of the
   two). One node per model under `models/` (a `.sql` file or a `schema.yml` entry). A
   `relationships` test on a column becomes a foreign key, so it is classified and reviewed

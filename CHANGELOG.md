@@ -1,5 +1,31 @@
 # Changelog
 
+## plugin `v2.18.0` — 2026-11-07
+
+**Five more review rules, and a better call on a table of only keys.**
+
+- **`fk-type`:** a foreign key declared with a different type from the key it points at (`int`
+  to a `bigint` key). `int` and `integer`, a `serial` key and an `int`, and two lengths of one
+  `varchar` are the same type; a column with no declared type is never a mismatch.
+- **`degenerate-dimension`:** a dimension whose columns are all keys, so it holds nothing but its
+  key. That key belongs in the fact.
+- **`junk-dimension`:** a dimension with two or more non-key columns that are all flags (boolean, or
+  named `is_*`, `has_*`, `can_*`, `*_flag`, `*_ind`).
+- **`conformed-dimension`:** a fact with dimensions that shares none of them with any other fact,
+  so its numbers cannot be read beside theirs.
+- **`many-to-many`:** a column named `*_ids`, `*_keys` or `*_codes`, or an array column named like
+  a key, that is not itself a key: several keys in one column with no bridge table.
+
+Each rule fires only on evidence it quotes. Run over the demo, clean, no-prefix and order-process
+schemas and the dbt example before they were written down, none raised anything, and a test pins that.
+Each new rule has a plain-words term in the glossary.
+
+**A table of only keys that joins two tables.** It is a bridge or a factless fact and structure cannot
+tell which, so it sat at about 12% bridge. Now a calendar among the two, or a name that says an
+event (`enrollment`, `attendance`, `booking`), makes it a factless fact; a name that says a link
+(`map`, `xref`, `link`) makes it a bridge at about 50%. With no hint it stays a close call, on
+purpose, and the reason says what would settle it.
+
 ## plugin `v2.17.0` — 2026-11-07
 
 **The data-model picture: fewer crossings, no forgotten-looking boxes, a title you choose.**
