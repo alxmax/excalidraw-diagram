@@ -57,3 +57,8 @@ docs/local_*.html
 # obligation twice.
 README.md
 plugin/README.md
+
+# The instructions-only edition for the plugin directory: Markdown, JSON and the icon.
+# Its SKILL.md restates the contract ARCH-EXCALIDRAW-030/031/034 already own as rules
+# followed by hand rather than enforced by code, so it implements nothing of its own.
+directory-plugin/**

@@ -1,5 +1,26 @@
 # Changelog
 
+## plugin `v2.19.0` — 2026-11-14
+
+**An instructions-only edition for the Claude plugin directory.**
+
+The directory refused 2.18.0. It accepts local MCP servers, scripts, fonts and other
+non-text files only from Verified organizations, and its security scan cannot read a
+minified bundle. The full plugin ships all four: the stdio MCP server, the Python builder,
+the `.woff2` fonts and `excalidraw.production.min.js`.
+
+- **`directory-plugin/`** is a second edition holding only Markdown, JSON and the icon.
+  Its `SKILL.md` is a contract for writing the scene JSON by hand. It states the format
+  invariants the builder owns: unique ids, distinct seeds and nonces, and two-way text and
+  arrow bindings. It gives the sizing and column rules as arithmetic, and the seven gates
+  as checks Claude runs on its own coordinates before saving.
+- **`references/example_scene.json`** is a scene the builder emitted under
+  `Gates.strict()`, so the shape Claude copies is one the gates passed.
+- **`references/viewer_template.md`** is the CDN viewer page (`@excalidraw/excalidraw@0.17.6`,
+  React 18.2.0, the versions the full edition vendors). It escapes `</` in the embedded scene.
+- `plugin/` is unchanged and remains what the GitHub marketplace installs. When the full
+  edition's MCP tools are present, the directory edition defers to them.
+
 ## plugin `v2.18.0` — 2026-11-07
 
 **Five more review rules, and a better call on a table of only keys.**
