@@ -71,6 +71,6 @@ CASE-7 — a wide legend
   things like "descriptive columns"; the glossary defines the roles those words lead to.
 
 **Current implementation**
-- Text in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`;
+- Text in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`;
   label policy in `data_model.py`; the glossary position in `spec.py`.
-- `TestExplain` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestExplain` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

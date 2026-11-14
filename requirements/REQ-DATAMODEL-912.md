@@ -47,6 +47,6 @@ CASE-4 — an unreadable project leaves nothing
   the file itself is written after the gates, so a drawing that fails them never gets one.
 
 **Current implementation**
-- `scene_from_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`;
+- `scene_from_dbt()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`;
   the `--mapping` flag in `cli.py`.
-- `TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestMapping` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

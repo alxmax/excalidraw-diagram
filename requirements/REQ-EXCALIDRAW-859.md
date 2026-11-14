@@ -49,5 +49,5 @@ CASE-4 — nothing changes without the key
 
 **Current implementation**
 - `_laid()` and `_pull_flipped_targets()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
-- `CasesExcalidrawFlip` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
+- `CasesExcalidrawFlip` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

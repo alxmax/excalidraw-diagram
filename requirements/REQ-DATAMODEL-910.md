@@ -49,5 +49,5 @@ CASE-4 — the mapping does not depend on the flag
 
 **Current implementation**
 - `scene_from_dbt(draw_lineage=...)` and `graph_from_tables()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.
-- `TestLineageFlag` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.
+- `TestLineageFlag` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

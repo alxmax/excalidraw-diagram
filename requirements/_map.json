@@ -35,8 +35,8 @@
         "This is a module of the existing plugin, not a second plugin: it emits the graph the builder already draws and adds no layout or renderer of its own."
       ],
       "current_impl": [
-        "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with `ddl.py`, `classify.py` and `review.py` beside it.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with `ddl.py`, `classify.py` and `review.py` beside it.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1\n  Given  the demo shop schema with six tables and four planted problems\n  When   `data-model --from-ddl` is run on it\n  Then   a `.excalidraw` scene and an `.html` viewer are written, with four amber notes\n\nCASE-2\n  Given  the same schema with every planted problem fixed\n  When   `data-model --from-ddl` is run on it\n  Then   the diagram shows no amber note and no review-note entry in its legend\n\nCASE-3\n  Given  a DDL script the parser cannot read\n  When   `data-model --from-ddl` is run on it\n  Then   the command exits non-zero and names the file and the statement, writing no output",
       "input": "",
@@ -71,11 +71,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"
         }
       ],
       "test_exempt": null,
@@ -102,11 +102,11 @@
       ],
       "verify": [],
       "notes": [
-        "The authoritative usage reference is `plugin/skills/excalidraw-diagram/SKILL.md`.",
+        "The authoritative usage reference is `plugin-full/skills/excalidraw-diagram/SKILL.md`.",
         "`save()` overlap detection raises on any two non-container shapes that overlap (co-ordinates checked after all shapes are added)."
       ],
       "current_impl": [
-        "`Scene` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`, assembled from one mixin per call family (`shapes.py`, `connectors.py`, `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable import name and the command line."
+        "`Scene` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`, assembled from one mixin per call family (`shapes.py`, `connectors.py`, `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable import name and the command line."
       ],
       "accept": "CASE-1\n  Given  a `Scene` with at least one `box` and one `arrow`\n  When   `.save()` is called\n  Then   both `<basename>.excalidraw` and `<basename>.html` are written and the\n         `.excalidraw` file parses as valid JSON with `type: \"excalidraw\"`\n\nCASE-2\n  Given  two `box` shapes placed at overlapping coordinates\n  When   `.save()` is called with the default `Gates()`\n  Then   a `ValueError` is raised naming the overlapping shapes\n\nCASE-3\n  Given  `Scene(seed=42)` with identical shape declarations run twice\n  When   both outputs are compared byte-for-byte\n  Then   they are identical\n\nCASE-4\n  Given  `.save()` has already been called once on a `Scene`\n  When   `.save()` is called again\n  Then   a `RuntimeError` is raised\n\nCASE-5\n  Given  a `pipeline([...])` call with step dicts\n  When   `.save()` is called\n  Then   the resulting scene contains connected flowchart nodes with no\n         overlapping shapes",
       "input": "",
@@ -132,15 +132,15 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py:1"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py:1"
         }
       ],
       "test_exempt": null,
@@ -182,35 +182,35 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:58"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:58"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:8"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:8"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py:19"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py:19"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:36"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:36"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:133"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:133"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:151"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:151"
         }
       ],
       "test_exempt": null,
@@ -251,23 +251,23 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py:21"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py:21"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:73"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:73"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
         }
       ],
       "test_exempt": null,
@@ -307,8 +307,8 @@
         "A bare paint string is the element's natural colour: a shape's fill, a connector's stroke. That is why `paint=\"red\"` on an arrow colours its line."
       ],
       "current_impl": [
-        "`Paint` and `Font` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in `excalidraw_engine/arrange.py`.",
-        "`CasesExcalidrawValues` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "`Paint` and `Font` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in `excalidraw_engine/arrange.py`.",
+        "`CasesExcalidrawValues` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
       "accept": "CASE-1 — the three forms of `at` place a shape identically\n  Given  a `Rect(10, 20, 170, 64)`, the tuple `(10, 20, 170, 64)`, and the point\n         `(10, 20)` given to `process()`, whose default size is 170 x 64\n  When   each places one shape in its own scene\n  Then   the three shape elements carry the same x, y, width and height\n\nCASE-2 — a shorthand value means what the full object would\n  Given  a caller writing `paint=\"blue\"` and `font=20` on `box()`, and `font=Font(20)`\n         on `label()`\n  When   the elements are built\n  Then   the box has blue's fill and 20px text, and the label keeps its grey colour\n\nCASE-3 — a mistyped option is refused, not ignored\n  Given  a 1.x-style item `{\"text\": \"a\", \"fill\": \"blue\"}` passed to `row()`\n  When   the row is placed\n  Then   `ValueError` is raised naming `fill` and listing the accepted names\n\nCASE-4 — a label on a dark fill stays readable\n  Given  a box filled `#5c2d91`, a box with a palette tint, and a dark box given a colour\n  When   the elements are built\n  Then   the first label is white at 4.5:1 or more. The tint keeps black, and the given colour wins",
@@ -324,27 +324,27 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:790"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:790"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:27"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:27"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:56"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py:56"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:63"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:63"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:72"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:72"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:100"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py:100"
         }
       ],
       "test_exempt": null,
@@ -378,8 +378,8 @@
         "The download and the unload warning run only in a browser. The tests pin their wiring in the page. A headless Chrome run deleted one element and the download dropped from 49 elements to 48. The fit-to-window call also runs only in a browser, and only after a short delay: called as the renderer mounts, it does nothing. A headless Chrome run on a five-fact schema opened at 100% with most of it off screen, and at 41% with all of it visible after the call."
       ],
       "current_impl": [
-        "`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
-        "`CasesOfflineViewer` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and `html_page()` in `excalidraw_engine/viewer.py`.",
+        "`CasesOfflineViewer` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "accept": "CASE-1 — the default page loads nothing remote\n  Given  a scene saved with no viewer options\n  When   the written `.html` is inspected\n  Then   no `script` or `link` tag in its markup carries an `http` source, and the\n         fonts are present as `data:` URIs\n\nCASE-2 — the CDN page stays available on request\n  Given  the same scene\n  When   it is saved with `offline=False` or rendered with `--cdn`\n  Then   the page links the pinned unpkg build and is an order of magnitude smaller\n\nCASE-3 — a missing runtime degrades loudly\n  Given  a vendored runtime whose files are absent\n  When   a viewer page is built with the default options\n  Then   the CDN page is written and a `WARNING [viewer]` line names the fallback\n\nCASE-4 — the asset path never falls back to the CDN\n  Given  an offline page\n  When   `window.EXCALIDRAW_ASSET_PATH` is read\n  Then   it is a truthy local path, because the bundle reads it as\n         `EXCALIDRAW_ASSET_PATH || <unpkg>` and an empty string would fetch\n\nCASE-5 — the download button returns the edits\n  Given  a viewer page whose scene the reader has changed\n  When   the download button is pressed\n  Then   the file holds the live scene through `serializeAsJSON`, not the embedded one\n\nCASE-6 — unsaved edits are not dropped silently\n  Given  a viewer page edited since its last download\n  When   the page is about to unload\n  Then   a `beforeunload` handler asks first. Loading the fonts alone does not count\n         as an edit\n\nCASE-7 — a wide scene opens whole\n  Given  a viewer page for a scene wider than the window\n  When   the page has loaded\n  Then   the page asks the renderer to fit the scene to the viewport, so none of it is cut off",
       "input": "",
@@ -394,15 +394,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py:29"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py:29"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:165"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:165"
         }
       ],
       "test_exempt": null,
@@ -431,8 +431,8 @@
         "Until 2.0.0 the gates were five `*_check=` keyword arguments plus `allow_overlap=` / `allow_short_arrows=`. One `Gates` value replaced the seven."
       ],
       "current_impl": [
-        "The seven `check_*` methods in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`, and `Gates` with the `save()` gate dispatch in `excalidraw_engine/gates.py`.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
+        "The seven `check_*` methods in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`, and `Gates` with the `save()` gate dispatch in `excalidraw_engine/gates.py`.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
         "-------------------"
       ],
       "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` is raised; with the default `Gates()` a warning is\n         printed and the files are written\n\nCASE-2\n  Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five\n         advisory gates and both hard gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(gates=Gates(short_arrows=\"off\"))` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
@@ -455,11 +455,11 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:3"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:3"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:3"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:3"
         }
       ],
       "test_exempt": null,
@@ -501,23 +501,23 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:96"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:96"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:133"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:133"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:153"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:153"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
         }
       ],
       "test_exempt": null,
@@ -560,31 +560,31 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:922"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:922"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:32"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:32"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:171"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:171"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:189"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:189"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:207"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:207"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:95"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:95"
         }
       ],
       "test_exempt": null,
@@ -626,10 +626,10 @@
         "`scene` is deliberately not a second authoring language. Every key it accepts maps to one `Scene` call, so the JSON cannot drift away from the Python API. A caller who wants control over the layout writes a generator instead."
       ],
       "current_impl": [
-        "`main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html` (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).",
+        "`main(argv)` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html` (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).",
         "`svg.py` beside it for the SVG a caller can ask for.",
-        "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class, and `CasesExcalidrawSceneVerb` for the `scene` verb).",
+        "`plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class, and `CasesExcalidrawSceneVerb` for the `scene` verb).",
         "-------------------"
       ],
       "accept": "CASE-1\n  Given  no arguments\n  When   `python excalidraw_builder.py` is run\n  Then   it exits 0 and stdout contains a success/summary line (not an error)\n\nCASE-2\n  Given  a valid `.excalidraw` file at `<path>`\n  When   `render <path>` is run\n  Then   a `<basename>.html` is written; the source `.excalidraw` is unchanged\n\nCASE-3\n  Given  a directory containing at least one `.py` source file\n  When   `discover <dir>` is run\n  Then   a runnable Python stub is emitted that imports `excalidraw_builder`\n         and calls `.save()`\n\nCASE-4\n  Given  an unknown verb such as `frobnicate`\n  When   `python excalidraw_builder.py frobnicate`\n  Then   the process exits with code 2 and prints usage\n\nCASE-5\n  Given  a `graph.json` describing nodes and edges with no coordinates\n  When   `scene --from-json graph.json -o <dir>` is run\n  Then   both `<name>.excalidraw` and `<name>.html` are written into `<dir>`\n\nCASE-6\n  Given  an MCP client connected to `mcp_server.py`\n  When   it calls `build_scene` with a graph description\n  Then   both files are written, as they would be by `scene --from-json`",
@@ -652,15 +652,15 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:4"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:4"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:4"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:4"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
         }
       ],
       "test_exempt": null,
@@ -702,23 +702,23 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:495"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:495"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:144"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py:144"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:184"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py:184"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py:1"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py:1"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:200"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py:200"
         }
       ],
       "test_exempt": null,
@@ -749,8 +749,8 @@
         "`json.JSONDecodeError` is a subclass of `ValueError`, which is what lets a malformed file take the same exit path as a malformed description."
       ],
       "current_impl": [
-        "`scene_from_spec()` and `scene_from_json()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the `scene` verb in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.",
-        "`CasesExcalidrawSceneVerb` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "`scene_from_spec()` and `scene_from_json()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the `scene` verb in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.",
+        "`CasesExcalidrawSceneVerb` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
       "accept": "CASE-1 — a coordinate-free description writes both files\n  Given  a `graph.json` naming four nodes, four edges and one group, with no\n         coordinate anywhere in it\n  When   `scene --from-json graph.json -o <dir>` runs\n  Then   both files exist in `<dir>` and the scene parses as JSON with\n         `type: \"excalidraw\"` and a non-empty `elements` list\n\nCASE-2 — a seeded description is byte-identical on re-run\n  Given  a description carrying a `seed`\n  When   it is built twice into separate directories\n  Then   the two `.excalidraw` files are byte-for-byte identical\n\nCASE-3 — the title, legend and glossary reach the canvas\n  Given  a description with a `title`, declared `roles` and a `glossary` entry\n  When   it is built\n  Then   the scene contains the title text, the legend's heading, and the\n         glossary line for that entry\n\nCASE-4 — a malformed description exits 1 with one readable line\n  Given  five broken files. One is not JSON. One holds an array, not an object.\n         One has no nodes. One names an unknown node in an edge. One has an\n         `edges` value that is not a list\n  When   the `scene` verb runs on each\n  Then   the process exits 1 and stderr holds one line starting `error: `, with\n         no traceback\n\nCASE-5 — the verb without a description prints usage and exits 2\n  Given  `scene`, or `scene --from-json` with nothing after it\n  When   the CLI runs\n  Then   it exits 2 and prints a usage line",
@@ -766,15 +766,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1287"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1287"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:56"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:56"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:88"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:88"
         }
       ],
       "test_exempt": null,
@@ -799,7 +799,7 @@
         "A tool whose input is valid but whose work fails returns `isError: true` with a one-line message. An unknown tool or an invalid argument is a JSON-RPC error instead.",
         "`graph_schema` reads the format from `references/builder_api.md` at call time. The documented schema is the single source, so the tool cannot drift from it.",
         "`mcp_server.py` writes only protocol messages to stdout. Text the builder prints during a call is captured and returned inside that call's result.",
-        "`plugin/.mcp.json` registers the server, so installing the plugin makes the tools available with no further setup."
+        "`plugin-full/.mcp.json` registers the server, so installing the plugin makes the tools available with no further setup."
       ],
       "verify": [],
       "notes": [
@@ -807,8 +807,8 @@
         "Relative paths in tool arguments resolve against the server process's working directory."
       ],
       "current_impl": [
-        "`plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin-full/.mcp.json`.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py`.",
         "-------------------"
       ],
       "accept": "CASE-1 — the handshake and the tool list\n  Given  a client that sends `initialize`, the `initialized` notification and\n         `tools/list`\n  When   the server handles them\n  Then   it answers the request with its capabilities, sends nothing for the\n         notification, and lists exactly the four tools\n\nCASE-2 — build_scene writes both files\n  Given  a three-node graph description and an output directory\n  When   `tools/call` runs `build_scene`\n  Then   both files exist and the result is not an error\n\nCASE-3 — a failing build is a tool error, not a crash\n  Given  a description with an edge to a node that does not exist\n  When   `build_scene` runs\n  Then   the result carries `isError: true` and one line, and the server keeps\n         serving\n\nCASE-4 — render_html and discover_repo reach the builder\n  Given  a scene the server just built, and a directory holding one `.py` file\n  When   `render_html` and `discover_repo` run on them\n  Then   the viewer page and the generator stub are written\n\nCASE-5 — graph_schema comes from the documentation\n  Given  the plugin as shipped\n  When   `graph_schema` runs\n  Then   the text names `nodes` and `edges`; with the reference file missing, the\n         result is an error saying so\n\nCASE-6 — stdout carries only protocol\n  Given  the server started as a subprocess\n  When   it receives an initialize, a notification, a tools/list and a malformed\n         line, and then stdin closes\n  Then   every stdout line parses as JSON-RPC and the process exits 0",
@@ -824,11 +824,11 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/mcp_server.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py:2"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"
         }
       ],
       "test_exempt": null,
@@ -860,9 +860,9 @@
         "A PNG is not offered: rasterising text in the hand-drawn typeface needs a font rasteriser, which the standard library does not have."
       ],
       "current_impl": [
-        "`scene_svg` and `render_svg` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.",
-        "`save(svg=True)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.",
-        "`plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
+        "`scene_svg` and `render_svg` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.",
+        "`save(svg=True)` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.",
+        "`plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and `plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py`."
       ],
       "accept": "CASE-1 — save writes the SVG only when asked\n  Given  two identical scenes\n  When   one is saved with `svg=True` and the other without\n  Then   the first returns three paths including a `.svg`\n  Then   the second returns two paths and writes no `.svg`\n\nCASE-2 — the SVG is well-formed and carries every label\n  Given  a scene whose labels hold `<`, `&` and quotes\n  When   it is saved with `svg=True`\n  Then   the SVG parses as XML, and every label's text appears in it\n\nCASE-3 — the same scene gives the same bytes\n  Given  a scene built with a fixed seed\n  When   it is rendered to SVG twice\n  Then   the two documents are identical\n\nCASE-4 — render and the scene verb take --svg\n  Given  an existing `.excalidraw` file and a graph description file\n  When   `render <scene> --svg` and `scene --from-json <graph> --svg` run\n  Then   each writes a `.svg` beside its other output\n\nCASE-5 — typefaces are embedded only where used\n  Given  one scene in the hand-drawn typeface and one in the default typeface\n  When   both are rendered to SVG\n  Then   the first carries an embedded `@font-face` and the second carries none\n\nCASE-6 — the MCP tool takes the option\n  Given  a three-node graph description and an output directory\n  When   `build_scene` runs with `svg: true`\n  Then   the `.svg` exists and its path is in the result",
       "input": "",
@@ -877,19 +877,19 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:7"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:7"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1549"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1549"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:202"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:202"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:238"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py:238"
         }
       ],
       "test_exempt": null,
@@ -919,8 +919,8 @@
         "The `legend` gate ([[REQ-EXCALIDRAW-846]]) is the mechanical half: once a legend is rendered, a fill it does not decode fails the build."
       ],
       "current_impl": [
-        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
-        "`plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
+        "`Scene.legend()` and `Scene.glossary()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
+        "`plugin-full/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
         "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`."
       ],
       "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `Gates(legend=\"error\")`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
@@ -940,15 +940,15 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:6"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
         }
       ],
       "test_exempt": null,
@@ -980,8 +980,8 @@
         "A routed connector leaves through the gap between rows rather than the side of its box. A bound arrow carries its label at exactly the height of a box's side, and no gate would catch a line drawn through that text: `check_text_overlaps()` excludes bound labels by design."
       ],
       "current_impl": [
-        "`pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`, `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
-        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`, `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
+        "`CasesExcalidraw034` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once\n         with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong",
       "input": "",
@@ -1003,11 +1003,11 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"
         }
       ],
       "test_exempt": null,
@@ -1043,8 +1043,8 @@
         "`_straight_hits()` is the id-level form of `check_arrow_crossings()`. The gate reports by label, which is not unique; `pack()` needs ids, and both read the same geometry so the layout cannot disagree with the check that judges it."
       ],
       "current_impl": [
-        "`pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.",
-        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "`pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.",
+        "`CasesExcalidraw034` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
         "-------------------"
       ],
       "accept": "CASE-1 — a back edge becomes a routed connector, never a straight arrow\n  Given  a three-node cycle\n  When   `pack()` lays it out\n  Then   the two forward edges are bound arrows and the cycle-closing edge is an\n         unbound routed connector with more than two points\n\nCASE-2 — layering a 200-node chain does not recurse\n  Given  200 nodes chained one to the next\n  When   `pack()` lays them out\n  Then   every node is placed, no check reports an offender, and no\n         `RecursionError` is raised\n\nCASE-3 — a long edge label widens its gap instead of crowding its arrow\n  Given  two nodes joined by an edge labelled with a phrase wider than the\n         default gap\n  When   `pack()` lays them out\n  Then   `check_arrow_label_fit()` returns empty\n\nCASE-4 — a node's declared role and shape reach the element\n  Given  a node declaring `kind: \"decision\"` and a fill naming a declared role\n  When   `pack()` places it\n  Then   the scene contains a diamond element carrying that role's colour\n\nCASE-5 — an unlayoutable description raises ValueError\n  Given  six broken descriptions. One has no nodes. One repeats an id. One has an\n         empty id. One names an unknown node in an edge. One carries a self-edge.\n         One asks for a direction that is neither `\"LR\"` nor `\"TB\"`\n  When   `pack()` runs on each\n  Then   `ValueError` is raised every time\n\nCASE-6 — a node outside a group stays outside its frame\n  Given  a top-to-bottom graph whose group spans three layers, with a non-member in the middle one\n  When   `pack()` lays it out\n  Then   `check_overlaps()` returns empty\n\nCASE-7 — a frame caption dodges the arrows entering the group\n  Given  a top-to-bottom group whose members receive three arrows through the caption's usual spot\n  When   `pack()` lays it out\n  Then   `check_arrow_crossings()` returns empty",
@@ -1060,11 +1060,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
         }
       ],
       "test_exempt": null,
@@ -1106,8 +1106,8 @@
         "`customData` survives the viewer. A headless Chrome run deleted an arrow and downloaded the scene, and all four node ids came back."
       ],
       "current_impl": [
-        "`diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`, `_PackRun._trunks()` and `_PackRun._bus()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `scene_from_spec()` in `excalidraw_engine/spec.py`.",
-        "`CasesExcalidraw034` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`, `_PackRun._trunks()` and `_PackRun._bus()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `scene_from_spec()` in `excalidraw_engine/spec.py`.",
+        "`CasesExcalidraw034` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "accept": "CASE-1 — a node's font reaches its label\n  Given  a node with a `font` dict of size 20 and a colour, and a dark node with no font\n  When   `pack()` lays them out\n  Then   the first label has that size and colour, and the second is white\n\nCASE-2 — a two-line question fits its diamond\n  Given  a decision node whose label wraps to two lines\n  When   `pack()` sizes it\n  Then   the text box's width share plus its height share of the rhombus is at most 0.86\n\nCASE-3 — a graph description reaches the same font\n  Given  a `graph.json` node carrying a `font` dict, beside a node with none\n  When   `scene_from_spec()` builds it\n  Then   the first label has that size and colour, and the second keeps 13px\n\nCASE-4 — a wide fan-out becomes a bus\n  Given  one node fanning out to eight, laid out once `\"LR\"` and once `\"TB\"`\n  When   `pack()` runs with `edge_style=\"orthogonal\"`\n  Then   all seven checks return empty, and every leg is square and cuts no box\n\nCASE-5 — a nested bus does not cross the one around it\n  Given  a fan-out whose child c0 spans the targets of a sibling c5\n  When   `pack()` lays it out orthogonally in both directions\n  Then   no leg of one bus properly crosses a leg of the other\n\nCASE-6 — a graph description picks the edge style\n  Given  a `graph.json` whose `edge_style` is `\"orthogonal\"`, then the same with `\"curvy\"`\n  When   `scene_from_spec()` builds each\n  Then   the first draws only unbound bus legs, and the second raises `ValueError`\n\nCASE-7 — every placed node carries its id\n  Given  a description with a process, a decision and a data node\n  When   `scene_from_spec()` writes the scene\n  Then   each node's shape carries `customData.id` equal to its id, on the element holding its label",
       "input": "",
@@ -1122,11 +1122,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:463"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:463"
         }
       ],
       "test_exempt": null,
@@ -1146,14 +1146,14 @@
       "title": "A released version reaches the people who installed it",
       "intent": "The version number is written in five places and read from one of them. If a bump misses a copy, nothing errors, no test fails and the release looks shipped — it simply never arrives: an installed plugin keeps running the old build because the marketplace entry still advertises the old number. That is the worst shape a defect can take, silent and invisible from inside the repo, so it gets a check of its own rather than a line in a checklist.",
       "contract": [
-        "`plugin/.claude-plugin/plugin.json` is the source of truth, and every other copy of the version equals it. [[REQ-RELEASE-855]] details the check.",
+        "`plugin-full/.claude-plugin/plugin.json` is the source of truth, and every other copy of the version equals it. [[REQ-RELEASE-855]] details the check.",
         "CI runs the version check on every push and every pull request, so a mismatch cannot be merged.",
         "CI fails a pull request that bumps the version without a matching CHANGELOG heading.",
         "A release starts with one command that raises every copy together. [[REQ-RELEASE-857]]"
       ],
       "verify": [],
       "notes": [
-        "This is a repo capability, not a shipped one: `scripts/` sits outside `plugin/` and never reaches an installed copy. It satisfies the diagram need indirectly — a fix nobody receives is a fix that did not happen."
+        "This is a repo capability, not a shipped one: `scripts/` sits outside `plugin-full/` and never reaches an installed copy. It satisfies the diagram need indirectly — a fix nobody receives is a fix that did not happen."
       ],
       "current_impl": [
         "`scripts/check_versions.py` and `scripts/test_check_versions.py`.",
@@ -1202,7 +1202,7 @@
       "title": "check_versions.py: every copy of the version agrees",
       "intent": "The copies exist only to be identical, so the check compares them, names every one that disagrees, and can rewrite them from the source of truth instead of asking someone to retype a number by hand.",
       "contract": [
-        "`scripts/check_versions.py` compares the version in `plugin/.claude-plugin/plugin.json` against `directory-plugin/.claude-plugin/plugin.json` and every copy in `.claude-plugin/marketplace.json`: the top level and each `plugins[]` entry.",
+        "`scripts/check_versions.py` compares the version in `plugin-full/.claude-plugin/plugin.json` against `plugin/.claude-plugin/plugin.json` and every copy in `.claude-plugin/marketplace.json`: the top level and each `plugins[]` entry.",
         "The script exits 0 when all copies agree, and 1 when any disagrees.",
         "A failure names every copy that disagreed and the value it holds.",
         "`--fix` rewrites every other copy from `plugin.json` instead of failing."
@@ -1216,7 +1216,7 @@
         "`TestCheckVersions` in `scripts/test_check_versions.py`.",
         "-------------------"
       ],
-      "accept": "CASE-1 — matching versions pass\n  Given  both `plugin.json` files and every `marketplace.json` copy at the same version\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across five locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  the top-level versions agreeing while one entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  every other copy disagreeing with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the files now agree\n\nCASE-5 — a stale directory edition fails, and says so\n  Given  `directory-plugin/.claude-plugin/plugin.json` left behind a bump\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the directory-plugin copy and the value it holds",
+      "accept": "CASE-1 — matching versions pass\n  Given  both `plugin.json` files and every `marketplace.json` copy at the same version\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across five locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  the top-level versions agreeing while one entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  every other copy disagreeing with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the files now agree\n\nCASE-5 — a stale directory edition fails, and says so\n  Given  `plugin/.claude-plugin/plugin.json` left behind a bump\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the plugin copy and the value it holds",
       "input": "",
       "output": "",
       "desc": "",
@@ -1325,8 +1325,8 @@
         "A `CREATE TABLE ... AS SELECT` is refused rather than skipped: skipping it would hide a table."
       ],
       "current_impl": [
-        "`parse_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.",
-        "`TestParseDdl` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`parse_ddl()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.",
+        "`TestParseDdl` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — tables and primary keys\n  Given  the six-table demo schema\n  When   `parse_ddl()` reads it\n  Then   six tables come back in order, each with the primary key it declares\n\nCASE-2 — foreign keys in every form\n  Given  foreign keys written inline, as table constraints and through `ALTER TABLE`\n  When   `parse_ddl()` reads them\n  Then   each table lists its foreign keys with the referenced table and columns\n\nCASE-3 — names, comments and index keywords\n  Given  a quoted schema-qualified name, comments holding semicolons and a MySQL `KEY` index\n  When   `parse_ddl()` reads the script\n  Then   the table is named without its schema and the index is not taken for a column\n\nCASE-4 — an unreadable script is refused\n  Given  `CREATE TABLE t AS SELECT 1`, a duplicate table or an `ALTER TABLE` on an unknown table\n  When   `parse_ddl()` reads it\n  Then   `ValueError` is raised naming the offending statement or table",
       "input": "",
@@ -1341,11 +1341,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py:229"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py:229"
         }
       ],
       "test_exempt": null,
@@ -1385,8 +1385,8 @@
       "verify": [],
       "notes": [],
       "current_impl": [
-        "`graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.",
-        "`TestGraph`, `TestScene` and `TestCli` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.",
+        "`TestGraph`, `TestScene` and `TestCli` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — one node per table, one edge per relationship\n  Given  the demo schema and a table with two foreign keys to one dimension\n  When   `graph_from_tables()` is called\n  Then   there is one node per table, and the two keys share one edge labelled with both columns\n\nCASE-2 — an unresolved foreign key is listed, not drawn\n  Given  a table whose foreign key names a table the script never defines\n  When   `graph_from_tables()` and `unresolved_fks()` are called\n  Then   the graph holds no edge for it, and `unresolved_fks()` returns that key\n\nCASE-3 — the scene passes every gate\n  Given  the demo, clean and no-prefix schemas\n  When   `scene_from_ddl()` or the `data-model` command is run\n  Then   both files are written without a failed gate, and a call with no input is a usage error\n\nCASE-4 — the output is byte-stable\n  Given  one DDL file\n  When   `scene_from_ddl()` is run twice\n  Then   the two `.excalidraw` files are identical byte for byte\n\nCASE-5 — the title is chosen, not inherited\n  Given  a dbt project in a folder with an unhelpful name\n  When   the `data-model` command is run with `--name Orders`\n  Then   the files are called Orders and the title reads Orders",
       "input": "",
@@ -1401,15 +1401,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:214"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:214"
         }
       ],
       "test_exempt": null,
@@ -1457,8 +1457,8 @@
         "A table with only key columns is a bridge by structure but may be a factless fact; the reason says so."
       ],
       "current_impl": [
-        "`classify_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
-        "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`classify_tables()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
+        "`TestClassify` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — accuracy on the test set\n  Given  every table of the demo, clean, no-prefix and order-process schemas with the role a modeller expects\n  When   `classify_tables()` is run on each schema\n  Then   at least ninety percent of the tables get the expected role\n\nCASE-2 — structure alone is enough\n  Given  a shop schema whose tables carry no `fact_` or `dim_` prefix\n  When   `classify_tables()` is run\n  Then   the sales table is a fact, the customers table is a dimension, and no reason cites a prefix\n\nCASE-3 — every role is explained\n  Given  any classified table\n  When   its classification is read\n  Then   the reason is not empty and the confidence lies between 0 and 1\n\nCASE-4 — no evidence means unknown\n  Given  a table with one key and one text column, a staging table shaped like a fact, a table with equal fact and dimension scores\n  When   `classify_tables()` is run\n  Then   all three are unknown with confidence 0, and the reason says why\n\nCASE-5 — colour and legend follow the role\n  Given  a schema holding only facts and dimensions\n  When   `graph_from_tables()` is called\n  Then   nodes are filled fact or dimension, and the legend holds those two roles only\n\nCASE-6 — confidence reflects lead and evidence\n  Given  a table with strong evidence and no rival, and one with thin evidence\n  When   `classify_tables()` is run\n  Then   the first has confidence 1, and the second has a lower one\n\nCASE-7 — names stand in for missing types\n  Given  a table whose columns carry no types, and the same table with types declared\n  When   `classify_tables()` is run on each\n  Then   the untyped one is a fact whose reason says it was guessed from names, and the typed one is not",
       "input": "",
@@ -1473,11 +1473,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:176"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:176"
         }
       ],
       "test_exempt": null,
@@ -1522,8 +1522,8 @@
         "`snowflake` flags the sub-dimension, not the dimension that points at it, because that is the table a modeller would fold away."
       ],
       "current_impl": [
-        "`review_tables()` and its first five rules in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
-        "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`review_tables()` and its first five rules in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.",
+        "`TestReview` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — every planted problem is found\n  Given  the demo schema with a missing SCD2 history, a source-id key, a needless snowflake and an orphan key\n  When   `review_tables()` is run\n  Then   exactly those four issues are returned, each on its table\n\nCASE-2 — a clean schema raises no alarm\n  Given  the demo schema with every problem fixed\n  When   `review_tables()` is run\n  Then   no issue is returned\n\nCASE-3 — grain\n  Given  a fact with no primary key, and the same fact with one\n  When   `review_tables()` is run on each\n  Then   only the first raises a `grain` issue\n\nCASE-4 — surrogate key\n  Given  dimensions keyed by a source id, by a composite, by nothing, and by `*_key` or `*_sk`\n  When   `review_tables()` is run\n  Then   the first three raise `surrogate-key` and the last does not\n\nCASE-5 — SCD type 2\n  Given  a dimension with an `address` column, one with half a history, and ones with a full history or stable attributes\n  When   `review_tables()` is run\n  Then   the first two raise `scd2` and the others do not\n\nCASE-6 — orphan foreign key\n  Given  a foreign key to a missing table, one to a missing column, and one to an existing target\n  When   `review_tables()` is run\n  Then   the first two raise `orphan-fk` and the third does not\n\nCASE-7 — snowflake\n  Given  a sub-dimension, a three-level chain, and an outrigger shared by two dimensions\n  When   `review_tables()` is run\n  Then   the sub-dimension is flagged, the chain end is called deep, and the shared outrigger is not flagged",
       "input": "",
@@ -1538,11 +1538,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:276"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:276"
         }
       ],
       "test_exempt": null,
@@ -1579,8 +1579,8 @@
       "verify": [],
       "notes": [],
       "current_impl": [
-        "`graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.",
-        "`TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`graph_from_tables()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.",
+        "`TestReview` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — every issue is explained\n  Given  the issues found in the demo schema\n  When   their messages are read\n  Then   each message is a sentence stating the cause, not a bare label\n\nCASE-2 — issues become amber notes\n  Given  the demo schema\n  When   `graph_from_tables()` is called\n  Then   it gains four review notes, each joined to its table by a dashed edge\n\nCASE-3 — a clean schema draws no note\n  Given  the demo schema with every problem fixed\n  When   `graph_from_tables()` is called\n  Then   no review note is drawn and the legend has no review-note entry",
       "input": "",
@@ -1595,11 +1595,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
         }
       ],
       "test_exempt": null,
@@ -1632,8 +1632,8 @@
         "Node text keeps the line breaks it is given; `fit_text()` wraps each line on its own."
       ],
       "current_impl": [
-        "`graph_from_tables()` and `_label()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
-        "`TestColumns` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`graph_from_tables()` and `_label()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
+        "`TestColumns` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — off by default\n  Given  the demo schema\n  When   `graph_from_tables()` is called without `columns`\n  Then   each node label is the table name and its role badge, and nothing else\n\nCASE-2 — columns in order with key marks\n  Given  a fact table with a primary key, three foreign keys and three measures\n  When   `graph_from_tables(columns=True)` is called\n  Then   its label lists all seven columns in declared order, with `PK` or `FK` where they apply\n\nCASE-3 — the flag reaches the drawing\n  Given  the demo schema\n  When   `data-model --from-ddl` is run with `--columns`\n  Then   the scene passes every gate and holds a text element listing `PK order_line_key`",
       "input": "",
@@ -1648,11 +1648,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
         }
       ],
       "test_exempt": null,
@@ -1694,8 +1694,8 @@
         "The file is a YAML subset on purpose: the plugin is stdlib only and carries no YAML parser. Richer YAML is an error, never a guess, because a half-understood config changes a diagram without saying so."
       ],
       "current_impl": [
-        "`parse_roles()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`; `classify_tables()` in `classify.py`; the flag in `cli.py`.",
-        "`TestRoles` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`parse_roles()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`; `classify_tables()` in `classify.py`; the flag in `cli.py`.",
+        "`TestRoles` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — flat lines are read\n  Given  a roles file with comments, a quoted table name, a trailing comment and mixed-case roles\n  When   `parse_roles()` reads it\n  Then   it returns each table with its lower-case role\n\nCASE-2 — anything else is refused\n  Given  a nested mapping, a list item, an unknown role and a table listed twice\n  When   `parse_roles()` reads each\n  Then   `ValueError` is raised naming the line that is wrong\n\nCASE-3 — the override wins and the history stays\n  Given  a schema and an override setting `stg_payments` to fact\n  When   `classify_tables()` is called with it\n  Then   that table is a fact at confidence 1, flagged overridden, and its reason says the rules had said unknown\n\nCASE-4 — a typo is not ignored\n  Given  an override naming a table the schema does not define\n  When   `classify_tables()` is called with it\n  Then   `ValueError` is raised naming that table\n\nCASE-5 — the override reaches the review and the label\n  Given  `dim_product` overridden to unknown\n  When   `graph_from_tables()` is called\n  Then   its surrogate-key note is gone and its label reads `unknown · set by you`\n\nCASE-6 — the flag works end to end\n  Given  a roles file, and one with a bad role or a missing table\n  When   `data-model --from-ddl` is run with `--roles`\n  Then   the first renders with the override marked, and the others fail naming the roles file",
       "input": "",
@@ -1710,15 +1710,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:177"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:177"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py:33"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py:33"
         }
       ],
       "test_exempt": null,
@@ -1752,8 +1752,8 @@
         "Only `models/` is read; seeds, snapshots and sources are not drawn."
       ],
       "current_impl": [
-        "`read_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py`; `scene_from_dbt()` and `graph_from_tables()` in `data_model.py`; the flag in `cli.py`.",
-        "`TestReadDbt` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`read_dbt()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py`; `scene_from_dbt()` and `graph_from_tables()` in `data_model.py`; the flag in `cli.py`.",
+        "`TestReadDbt` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — models from SQL and schema files\n  Given  a project with five models, three staging and two marts, in `.sql` and `schema.yml` files\n  When   `read_dbt()` reads it\n  Then   five tables come back sorted by name\n\nCASE-2 — keys and types from the schema\n  Given  a model whose `order_id` has `unique` and `not_null` tests and whose `amount` has a `data_type`\n  When   `read_dbt()` reads it\n  Then   `order_id` is the primary key, the type is `numeric`, and a column with `not_null` is not nullable\n\nCASE-3 — a relationships test is a foreign key\n  Given  a column with a `relationships` test to `ref('customers')` on `customer_id`\n  When   `read_dbt()` reads it\n  Then   the model gains a foreign key from that column to `customers.customer_id`\n\nCASE-4 — lineage from ref() only\n  Given  SQL that calls `ref()` on models, on an unknown name, and inside comments\n  When   `read_dbt()` reads it\n  Then   lineage holds only the refs to real models, in sorted pairs, with none from comments or `source()`\n\nCASE-5 — lineage is dashed and never doubles a foreign key\n  Given  lineage pairs, one of which a foreign key already joins in the same direction\n  When   `graph_from_tables()` is called with them\n  Then   the others are dashed lines, and the joined pair keeps its single foreign-key edge\n\nCASE-6 — unreadable input is refused\n  Given  an empty folder, and a `schema.yml` using a YAML anchor\n  When   `read_dbt()` reads each\n  Then   `ValueError` names the folder for the first and the file and line for the second\n\nCASE-7 — the command draws a dbt project\n  Given  the fixture dbt project\n  When   `data-model --from-dbt` runs, and again with no input or with both inputs\n  Then   the first writes both files through every gate, and the others are usage errors",
       "input": "",
@@ -1768,19 +1768,19 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:236"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:236"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py:83"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py:83"
         }
       ],
       "test_exempt": null,
@@ -1813,8 +1813,8 @@
         "A ` #` inside a block scalar is read as a comment, so a description holding one loses the rest of that line."
       ],
       "current_impl": [
-        "`parse_yaml()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py`.",
-        "`TestMiniYaml` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`parse_yaml()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py`.",
+        "`TestMiniYaml` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — nested maps and lists\n  Given  maps nested by indentation, a list of maps that open on the dash line, and a list at its key's indent\n  When   `parse_yaml()` reads them\n  Then   it returns the matching nested dictionaries and lists\n\nCASE-2 — scalars and flow collections\n  Given  booleans, null, numbers, quoted strings, a `ref('m')` string and flow collections\n  When   `parse_yaml()` reads them\n  Then   each value has its Python type, and `{{ doc('d') }}` stays a string\n\nCASE-3 — block scalars and comments\n  Given  a `>` and a `|` block scalar, comments and a leading `---`\n  When   `parse_yaml()` reads the text\n  Then   the folded scalar joins with spaces, the literal one keeps its newlines, and comments are dropped\n\nCASE-4 — what is outside the subset\n  Given  an anchor, a tab indent, a repeated key, a second document, an unreadable line and an open quote\n  When   `parse_yaml()` reads each\n  Then   `ValueError` is raised naming the line that is wrong",
       "input": "",
@@ -1829,11 +1829,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py:196"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py:196"
         }
       ],
       "test_exempt": null,
@@ -1880,8 +1880,8 @@
         "Column types are not inferred, so a `cast(...)` shows as written."
       ],
       "current_impl": [
-        "`mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
-        "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`mapping_markdown()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`; `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.",
+        "`TestMapping` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — plain columns are traced\n  Given  models that read source tables through CTEs, rename a column there, and end in `select *`\n  When   `mapping_markdown()` is called\n  Then   each column names its `model.column` or `source.table.column`, never a CTE\n  And    each reads `copy` or `rename`\n\nCASE-2 — an expression keeps its text\n  Given  `min(orders.order_date) as first_order` and `amount / 100 as amount`\n  When   `mapping_markdown()` is called\n  Then   each row shows the expression as written, and one inside a CTE is not hidden behind `copy`\n\nCASE-3 — rules and order\n  Given  schema tests `not_null`, `relationships` and `accepted_values`, and marts that depend on staging models\n  When   `mapping_markdown()` is called\n  Then   the rule cell lists those tests with their targets and values, and staging models come first\n\nCASE-4 — select star\n  Given  a model that selects `*` from a model producing a column its schema does not declare\n  When   `mapping_markdown()` is called\n  Then   every column the star brings in gets a row reading `copy (via *)`, declared or not\n\nCASE-5 — what cannot be read is marked\n  Given  a union, Jinja control flow, a subquery in FROM, a bare name over two relations, and a CTE built on a union\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason, and names no guessed source\n\nCASE-6 — what is missing is marked\n  Given  an unaliased expression, a model with no SQL file, and a column the schema declares but the SELECT lacks\n  When   `mapping_markdown()` is called\n  Then   each affected row says \"needs review\" with the reason\n\nCASE-7 — safe and stable text\n  Given  an expression containing `||`, and the same project read twice\n  When   `mapping_markdown()` is called\n  Then   the pipes are escaped inside the table, and both texts are identical",
       "input": "",
@@ -1896,11 +1896,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py:428"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py:428"
         }
       ],
       "test_exempt": null,
@@ -1940,8 +1940,8 @@
         "A label on a dashed line is the only thing that tells lineage from a review note, since edges carry no colour of their own."
       ],
       "current_impl": [
-        "`scene_from_dbt(draw_lineage=...)` and `graph_from_tables()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
-        "`TestLineageFlag` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`scene_from_dbt(draw_lineage=...)` and `graph_from_tables()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.",
+        "`TestLineageFlag` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — no lineage by default\n  Given  the fixture dbt project\n  When   `data-model --from-dbt` runs without `--lineage`\n  Then   the scene holds no text element reading `ref`\n\nCASE-2 — lineage on request\n  Given  the same project\n  When   `data-model --from-dbt` runs with `--lineage`\n  Then   the scene passes every gate and holds one `ref` label for each lineage line\n\nCASE-3 — lineage needs dbt\n  Given  a DDL file\n  When   `data-model --from-ddl` runs with `--lineage`\n  Then   the command fails with a usage error\n\nCASE-4 — the mapping does not depend on the flag\n  Given  the fixture project and a mapping path\n  When   `data-model --from-dbt --mapping` runs with and without `--lineage`\n  Then   both write the same mapping text",
       "input": "",
@@ -1956,11 +1956,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:237"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:237"
         }
       ],
       "test_exempt": null,
@@ -1996,8 +1996,8 @@
         "The \"Why\" rows repeat the classifier's evidence text, which is plain but still names things like \"descriptive columns\"; the glossary defines the roles those words lead to."
       ],
       "current_impl": [
-        "Text in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`; label policy in `data_model.py`; the glossary position in `spec.py`.",
-        "`TestExplain` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "Text in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py`; label policy in `data_model.py`; the glossary position in `spec.py`.",
+        "`TestExplain` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — legend with a plain meaning\n  Given  a schema with facts, dimensions, unknown tables and review notes\n  When   `graph_from_tables()` is called\n  Then   each role in use has a legend entry starting with its name and holding its plain meaning\n\nCASE-2 — how to read it\n  Given  any schema\n  When   `graph_from_tables()` is called\n  Then   the subtitle says what a box is and what an arrow from A to B means\n\nCASE-3 — only the terms in use\n  Given  a schema with notes, a clean one, one with columns listed and one with a role set by hand\n  When   the glossary terms of each are read\n  Then   each defines what it shows, and none defines SCD, PK or the like where the diagram has no use for them\n\nCASE-4 — why each table has its role\n  Given  the demo schema of six tables\n  When   the glossary is read\n  Then   it ends with one \"Why\" row per table, each holding the evidence in words\n\nCASE-5 — PK and FK words, and rule names on notes\n  Given  a primary key, a foreign key, a plain column and a review note\n  When   their text is built\n  Then   the keys start with `PK` or `FK`\n  And    the plain column is bare\n  And    the note starts with its rule's name\n\nCASE-6 — labels only where they cannot collide\n  Given  a one-fact schema, a two-fact schema, and the two-fact schema with columns listed\n  When   `graph_from_tables()` is called\n  Then   only the first labels its arrows, and the second says to add `--columns` in its subtitle\n\nCASE-7 — a wide legend\n  Given  schemas whose legend holds long entries\n  When   `scene_from_ddl()` draws them through every gate\n  Then   the files are written because the glossary does not overlap the legend",
       "input": "",
@@ -2012,19 +2012,19 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:70"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:70"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:94"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py:94"
         }
       ],
       "test_exempt": null,
@@ -2064,8 +2064,8 @@
         "The report is built before the scene is drawn, so a project that cannot be read fails early; the file itself is written after the gates, so a drawing that fails them never gets one."
       ],
       "current_impl": [
-        "`scene_from_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the `--mapping` flag in `cli.py`.",
-        "`TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`scene_from_dbt()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the `--mapping` flag in `cli.py`.",
+        "`TestMapping` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — the file is written beside the scene\n  Given  the fixture dbt project and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the file holds exactly the text `mapping_markdown()` returns\n\nCASE-2 — a failed gate leaves no file\n  Given  a project whose scene fails a gate\n  When   `scene_from_dbt()` is called with a mapping path\n  Then   it raises `ValueError`, and no mapping file exists\n\nCASE-3 — the mapping needs a dbt project\n  Given  a DDL file and a mapping path\n  When   `data-model --from-ddl --mapping` runs\n  Then   the command fails with a usage error\n\nCASE-4 — an unreadable project leaves nothing\n  Given  an empty project directory and a mapping path\n  When   `data-model --from-dbt --mapping` runs\n  Then   the command fails, and no mapping file exists",
       "input": "",
@@ -2080,11 +2080,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:238"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:238"
         }
       ],
       "test_exempt": null,
@@ -2117,8 +2117,8 @@
         "Routed edges weigh more than crossings because a line looping round the diagram is the worse defect."
       ],
       "current_impl": [
-        "`best_right()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py`; `_flipped()` and `graph_from_tables()` in `data_model.py`; the layout in `pack.py`.",
-        "`TestStarLayout` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`best_right()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py`; `_flipped()` and `graph_from_tables()` in `data_model.py`; the layout in `pack.py`.",
+        "`TestStarLayout` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — two facts, no crossing\n  Given  two fact tables that share two dimensions\n  When   the graph is built and drawn\n  Then   the second fact is flipped, and the drawing has no crossing pair of arrows and no routed edge\n\nCASE-2 — one fact, nothing flipped\n  Given  a schema with one fact table\n  When   the graph is built\n  Then   no edge carries `flip`\n\nCASE-3 — many facts, measured\n  Given  an order process of five fact-like tables and eight dimensions, one dimension reached only by a flipped bridge\n  When   it is drawn\n  Then   at most one edge is routed and at most nine pairs of arrows cross, and that dimension shares its column with the others\n\nCASE-4 — the search beats alternating\n  Given  two fact-like tables for which alternating sides routes an edge round the diagram\n  When   the graph is built and drawn\n  Then   neither table is flipped, and the drawing has no routed edge and one crossing pair\n\nCASE-5 — too many to search\n  Given  more than eight fact-like tables\n  When   the sides are chosen\n  Then   every second one is flipped, and no candidate layout is drawn to measure it",
       "input": "",
@@ -2133,15 +2133,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:122"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:122"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py:68"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py:68"
         }
       ],
       "test_exempt": null,
@@ -2172,8 +2172,8 @@
         "The routed line keeps its grey so a detour still differs from a straight arrow."
       ],
       "current_impl": [
-        "`_outside_star()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, the term in `explain.py`, and `_route()` in `pack.py`.",
-        "`TestOutsideTheStar` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`_outside_star()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, the term in `explain.py`, and `_route()` in `pack.py`.",
+        "`TestOutsideTheStar` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — an unplaced table is framed\n  Given  the demo schema, whose staging table no key joins\n  When   the graph is built\n  Then   one group labelled \"outside the star\" holds that table and no other, and the glossary defines the term\n\nCASE-2 — nothing unplaced, no frame\n  Given  the clean schema, which has no unknown table\n  When   the graph is built\n  Then   the graph has no groups and the glossary has no \"Outside the star\" row\n\nCASE-3 — a joined unknown table stays in the star\n  Given  a dbt project whose unknown models are joined to one another\n  When   the graph is built\n  Then   no group is drawn\n\nCASE-4 — a detour does not look like a review link\n  Given  a back edge that is not dashed and one that is, both routed round the diagram\n  When   the graph is packed\n  Then   both are grey, and only the second has a dashed stroke",
       "input": "",
@@ -2188,7 +2188,7 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:112"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:112"
         }
       ],
       "test_exempt": null,
@@ -2231,8 +2231,8 @@
         "The rules were run over the shipped examples before they were written down: none raised anything, which is what CASE-6 pins."
       ],
       "current_impl": [
-        "The five rules and `RULES` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`; the terms in `explain.py`.",
-        "`TestMoreReviewRules` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "The five rules and `RULES` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`; the terms in `explain.py`.",
+        "`TestMoreReviewRules` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — foreign key types\n  Given  a foreign key declared `int` to a `bigint` key, one to a `varchar` key, and ones that differ only by alias, length or an undeclared type\n  When   `review_tables()` is run\n  Then   the first two raise `fk-type` and the others do not\n\nCASE-2 — degenerate dimension\n  Given  a dimension holding only its key, and one that also holds a name\n  When   `review_tables()` is run\n  Then   only the first raises `degenerate-dimension`\n\nCASE-3 — junk dimension\n  Given  a dimension of two flags, one of a flag and a name, and one of a single flag\n  When   `review_tables()` is run\n  Then   only the first raises `junk-dimension`\n\nCASE-4 — shared dimensions\n  Given  two facts with no dimension in common, two that share one, and a schema with one fact\n  When   `review_tables()` is run\n  Then   both facts of the first pair raise `conformed-dimension` and nothing else does\n\nCASE-5 — several keys in one column\n  Given  columns `tag_ids`, `tag_keys` and an `int[]` named `tag_id`, and columns `tags text[]`, `author_id` and `title`\n  When   `review_tables()` is run\n  Then   the first three raise `many-to-many` and the others do not\n\nCASE-6 — no new alarm on the shipped examples\n  Given  the demo, clean, no-prefix and order-process schemas and the dbt example\n  When   `review_tables()` is run on each\n  Then   none of the five new rules fires\n\nCASE-7 — every new rule is explained\n  Given  a note of any of the five rules\n  When   the glossary is built\n  Then   it defines that rule's term in plain words",
       "input": "",
@@ -2247,23 +2247,23 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:183"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:183"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:211"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:211"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:220"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:220"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:234"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:234"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:255"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py:255"
         }
       ],
       "test_exempt": null,
@@ -2310,8 +2310,8 @@
         "Three or more keys still decide a factless fact on structure alone, as before."
       ],
       "current_impl": [
-        "`_tell_bridge_from_event()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
-        "`TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`."
+        "`_tell_bridge_from_event()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.",
+        "`TestClassify` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`."
       ],
       "accept": "CASE-1 — no hint, a close call\n  Given  a keys-only table joining two tables, named for neither an event nor a link\n  When   `classify_tables()` is run\n  Then   it is a bridge with a confidence below twenty percent\n\nCASE-2 — an event's name\n  Given  a keys-only table named `course_enrollment` joining two tables\n  When   `classify_tables()` is run\n  Then   it is a fact, and the reason says its name says an event\n\nCASE-3 — a date table among the two\n  Given  a keys-only table joining a student table and a calendar\n  When   `classify_tables()` is run\n  Then   it is a fact, and the reason names the calendar as a date table\n\nCASE-4 — a link's name\n  Given  the first table with `_map` added to its name\n  When   `classify_tables()` is run\n  Then   it is a bridge with more confidence than the first, and the reason says its name says a link",
       "input": "",
@@ -2326,7 +2326,7 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:143"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py:143"
         }
       ],
       "test_exempt": null,
@@ -2382,8 +2382,8 @@
         "The legend frame is container-exempt; the glossary box is registered in the overlap set explicitly because `frame()` alone would not be."
       ],
       "current_impl": [
-        "`Scene.legend()` and `Scene.glossary()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
-        "`TestBuilderUnits` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`Scene.legend()` and `Scene.glossary()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
+        "`TestBuilderUnits` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "accept": "CASE-1 — a legend built from declared roles\n  Given  `Scene(roles={\"agent\": \"violet\"})` and no explicit entries\n  When   `legend()` is called\n  Then   the scene gains a key with one row labelled \"agent\", and the resolved\n         colour of \"violet\" is recorded for legend coverage\n\nCASE-2 — an empty legend is refused\n  Given  a `Scene` with no declared roles\n  When   `legend()` is called with no entries\n  Then   `ValueError` is raised\n\nCASE-3 — a glossary decodes a term on the canvas\n  Given  a `Scene`\n  When   `glossary([(\"SSOT\", \"single source of truth\")], (0, 0))` is called\n  Then   the scene contains a text element reading `SSOT — single source of truth`\n\nCASE-4 — an empty glossary is refused\n  Given  a `Scene`\n  When   `glossary([], (0, 0))` is called\n  Then   `ValueError` is raised\n\nCASE-5 — the glossary box is overlap-checked\n  Given  a `Scene` with a glossary drawn at (0, 0)\n  When   a box is placed on top of it and `check_overlaps()` is called\n  Then   the overlap is reported",
       "input": "",
@@ -2398,15 +2398,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:81"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:81"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:107"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:107"
         }
       ],
       "test_exempt": null,
@@ -2436,8 +2436,8 @@
         "`flip` is for the `\"straight\"` edge style. A bus draws a trunk beside its source, so a flipped edge is left out of it."
       ],
       "current_impl": [
-        "`_laid()` and `_pull_flipped_targets()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
-        "`CasesExcalidrawFlip` in `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+        "`_laid()` and `_pull_flipped_targets()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
+        "`CasesExcalidrawFlip` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
       "accept": "CASE-1 — a source beyond its targets\n  Given  two sources pointing at the same two targets, one of them flipped\n  When   `pack()` lays them out\n  Then   the flipped source sits after the targets, the other before, and every arrow stays bound\n\nCASE-2 — the arrow keeps its direction\n  Given  an edge from B to C marked `flip`\n  When   `pack()` draws it\n  Then   the arrow starts at B and ends at C\n\nCASE-3 — a target only flipped edges reach\n  Given  a node that only a flipped edge points at\n  When   `pack()` lays out the graph\n  Then   it sits in the same layer as the other targets, with its arrow bound and straight\n\nCASE-4 — nothing changes without the key\n  Given  one graph with no `flip` key and the same graph with `flip` set to false\n  When   `pack()` lays out each\n  Then   the two scenes are identical",
       "input": "",
@@ -2452,15 +2452,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:8"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:8"
         },
         {
           "role": "tested-by",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:1404"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1404"
         },
         {
           "role": "implements",
-          "loc": "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:170"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:170"
         }
       ],
       "test_exempt": null,
@@ -2863,7 +2863,7 @@
     },
     {
       "month": "2026-11",
-      "count": 14,
+      "count": 15,
       "first": "2026-11-06",
       "last": "2026-11-14",
       "versions": [
@@ -2880,11 +2880,20 @@
         "v2.17.0",
         "v2.18.0",
         "v2.19.0",
-        "v2.20.0"
+        "v2.20.0",
+        "v2.21.0"
       ],
-      "landmark": "v2.20.0",
-      "headline": "**Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only",
+      "landmark": "v2.21.0",
+      "headline": "**The two editions swapped folders: `plugin/` is now the instructions-only edition and the",
       "entries": [
+        {
+          "version": "v2.21.0",
+          "date": "2026-11-14",
+          "headline": "**The two editions swapped folders: `plugin/` is now the instructions-only edition and the",
+          "body": "**The two editions swapped folders: `plugin/` is now the instructions-only edition and the\nfull builder edition moved to `plugin-full/`.**\n\nv2.20.0 was refused again: the Claude plugin directory's submission is pinned to the\n`plugin/` path and does not read `.claude-plugin/marketplace.json`, so it kept fetching the\nfull edition (93 files, the MCP server, the Python builder and the vendored runtime). Now\n`plugin/` holds only the 7 Markdown, JSON and icon files the directory accepts.\n\n- **Marketplace installs are unaffected.** The plugin names did not change:\n  `excalidraw-diagram` is still the instructions-only edition (now `./plugin`) and\n  `excalidraw-diagram-full` is still the full edition (now `./plugin-full`). The\n  plugin-cache resolver keys on names, not folders, so it needs no change.\n- Every repo path to the full edition now reads `plugin-full/`: CI, `.gitignore`,\n  `.reqmapignore`, `scripts/check_versions.py` and its test, the examples' usage lines,\n  the README, `CLAUDE.md` and the requirement corpus's Context paths.",
+          "first_commit": "2026-11-14",
+          "last_commit": "2026-11-14"
+        },
         {
           "version": "v2.20.0",
           "date": "2026-11-14",

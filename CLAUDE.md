@@ -11,7 +11,7 @@ not understand a system asks for a picture of it, so the output must decode itse
 (title, reading direction, legend, glossary). `examples/make_explainer.py` is the
 reference for that shape and `ARCH-EXCALIDRAW-033` is the requirement that holds it.
 
-**Stdlib only, no dependencies.** `plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py`
+**Stdlib only, no dependencies.** `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py`
 is the builder's import name and CLI; the code is the `excalidraw_engine/` package beside it,
 one module per responsibility (its `__init__` has the map). `mcp_server.py` beside both
 offers the same entry points as MCP tools. Nothing here installs from PyPI or npm; if a
@@ -33,7 +33,7 @@ non-author accounts naming the animated timing view or the log timeline, the ven
 offline viewer runtime landed, and the open v2.2 research item closed.
 
 **If it ever reopens, the home is a standalone repo** — not a second `plugins[]` entry,
-not a second directory under `plugin/skills/`. The viewer here emits one `.excalidraw`
+not a second directory under `plugin-full/skills/`. The viewer here emits one `.excalidraw`
 plus one `.html` from a single `save()`; an animated player is a second renderer that
 emits no scene, and that is the contract it would break.
 
@@ -55,19 +55,19 @@ embedded in a page meant to be forwarded.
 
 ```bash
 # a diagram from a coordinate-free description: pack() places it, the gates judge it
-python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py scene --from-json graph.json -o out/
+python -X utf8 plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py scene --from-json graph.json -o out/
 
 # the builder's own smoke run — renders every shape, runs the auto-layout, and asserts
 # nothing overlaps and no connector crosses another. Exits non-zero on a layout
 # regression, which is the failure a unit test does NOT catch: the JSON stays perfectly
 # valid while the diagram becomes unreadable.
-cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 excalidraw_builder.py
+cd plugin-full/skills/excalidraw-diagram/scripts && python -X utf8 excalidraw_builder.py
 
-cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw test_mcp_server -v
-cd plugin/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw.ClassName.test_name -v
+cd plugin-full/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw test_mcp_server -v
+cd plugin-full/skills/excalidraw-diagram/scripts && python -X utf8 -m unittest test_excalidraw.ClassName.test_name -v
 
 # every worked example must still run; each takes an output directory
-python -X utf8 plugin/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py out/
+python -X utf8 plugin-full/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py out/
 
 python scripts/check_versions.py          # plugin.json == marketplace.json (x2); --fix syncs
 cd scripts && python -X utf8 -m unittest test_check_versions -v   # and that the check itself catches a stale copy
@@ -92,7 +92,7 @@ job runs only on PRs, so a version bump pushed any other way is never checked.
 
 ## Versioning
 
-`plugin/.claude-plugin/plugin.json` is the source of truth. `directory-plugin/.claude-plugin/plugin.json`
+`plugin-full/.claude-plugin/plugin.json` is the source of truth. `plugin/.claude-plugin/plugin.json`
 repeats it, and `.claude-plugin/marketplace.json` repeats it **three times** — top level and
 in each of its two `plugins[]` entries — and an installed copy reads the marketplace entry,
 so a bump that misses any place ships a release nobody receives. Nothing errors; the plugin
@@ -100,11 +100,11 @@ simply never updates. `scripts/check_versions.py` enforces the five-way match an
 it. To start a release, run `python scripts/check_versions.py --bump patch|minor|major`: it
 raises every copy at once and reminds you to add the `CHANGELOG.md` heading.
 
-**Two marketplace entries, one per edition.** `excalidraw-diagram` is `./directory-plugin`
+**Two marketplace entries, one per edition.** `excalidraw-diagram` is `./plugin`
 (the instructions-only edition the plugin directory reviews, so it is listed first and
-keeps the original name); `excalidraw-diagram-full` is `./plugin`. The directory resolves a
-submission through this file's `source`, which is why the full edition moved to a new name
-rather than the directory edition.
+keeps the original name); `excalidraw-diagram-full` is `./plugin-full`. The directory's
+submission is pinned to the `plugin/` path rather than read from this file, which is why
+the directory edition lives at `plugin/` and the full edition moved to `plugin-full/`.
 
 **Any shipped change bumps the semver**, a skill edit included: an edit with no bump is
 invisible to consumers running `/plugin update`. A bump needs a matching `` `vX.Y.Z` ``
@@ -158,7 +158,7 @@ method carries `# verifies: <ID>#CASE-n`; a confirmed requirement's automatable 
 no `verifies:` tag is a gate WARN. A case checked by reading rather than by a test is
 marked `<!-- verifiable by: inspection -->` on its `CASE-n` line, which takes it out of
 that count. Paths in a requirement's Context section are repo-relative
-(`plugin/skills/...`), not plugin-relative.
+(`plugin-full/skills/...`), not plugin-relative.
 
 **Lint rules that bite when writing a requirement:** a confirmed requirement needs at
 least three cases; a `Then` with three or more `and`/`or` joins is flagged, so split it
@@ -167,9 +167,10 @@ into sentences; sentences stay under 25 words; a binding line names its subject.
 ## Layout
 
 ```
-plugin/.claude-plugin/plugin.json          the manifest
-plugin/.mcp.json                           registers the MCP server on install
-plugin/skills/excalidraw-diagram/
+plugin/                                    the directory edition: Markdown, JSON and the icon only
+plugin-full/.claude-plugin/plugin.json     the full edition's manifest
+plugin-full/.mcp.json                      registers the MCP server on install
+plugin-full/skills/excalidraw-diagram/
   SKILL.md                                 the authoritative contract (Claude Code)
   SKILL.universal.md                       the same for any assistant — keep the two in step
   references/builder_api.md                every call, imports, the graph.json schema
@@ -189,9 +190,11 @@ scripts/reqmap.py                          the vendored requirement engine
 scripts/check_versions.py + its test       version coherence
 ```
 
-**Only `plugin/` ships.** `/plugin install` hands a consumer the manifest and the skill;
-the corpus, the engine and the release check are this repo's own scaffolding and stay
-outside it.
+**Only `plugin/` and `plugin-full/` ship.** `/plugin install` hands a consumer one of the two
+editions; the corpus, the engine and the release check are this repo's own scaffolding and
+stay outside both. **`plugin/` is the directory edition and must stay Markdown, JSON and the
+icon only**: the plugin directory's submission is pinned to the `plugin/` path and ignores
+`marketplace.json`, so anything executable placed there is refused again.
 
 **`SKILL.md` and `SKILL.universal.md` are two hand-maintained copies of one contract.**
 Nothing generates either from the other, so a change to one that misses the other is a

@@ -52,12 +52,12 @@ CASE-5
 
 ## Context
 **Notes**
-- The authoritative usage reference is `plugin/skills/excalidraw-diagram/SKILL.md`.
+- The authoritative usage reference is `plugin-full/skills/excalidraw-diagram/SKILL.md`.
 - `save()` overlap detection raises on any two non-container shapes that
   overlap (co-ordinates checked after all shapes are added).
 
 **Current implementation**
-- `Scene` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`,
+- `Scene` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py`,
   assembled from one mixin per call family (`shapes.py`, `connectors.py`,
   `arrange.py`, `annotate.py`, `pack.py`, `checks.py`, `gates.py`) over the shared
   state in `canvas.py`. `excalidraw_builder.py` beside the package is the stable
@@ -242,11 +242,11 @@ CASE-4 — a label on a dark fill stays readable
 
 **Current implementation**
 - `Paint` and `Font` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py`, `Rect` and
   `as_rect()` in `excalidraw_engine/geometry.py`, and item validation in
   `excalidraw_engine/arrange.py`.
 - `CasesExcalidrawValues` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
 
 --------------------
@@ -334,8 +334,8 @@ CASE-7 — a wide scene opens whole
   with all of it visible after the call.
 
 **Current implementation**
-- `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the
+- `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py` and the
   vendored files in `excalidraw_engine/runtime/`, inlined by `_runtime()` and
   `html_page()` in `excalidraw_engine/viewer.py`.
 - `CasesOfflineViewer` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

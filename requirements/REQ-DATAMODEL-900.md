@@ -48,5 +48,5 @@ CASE-4 — an unreadable script is refused
 - A `CREATE TABLE ... AS SELECT` is refused rather than skipped: skipping it would hide a table.
 
 **Current implementation**
-- `parse_ddl()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.
-- `TestParseDdl` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `parse_ddl()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py`.
+- `TestParseDdl` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

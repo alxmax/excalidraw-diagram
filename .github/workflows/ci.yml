@@ -29,16 +29,16 @@ jobs:
           python-version: ${{ matrix.python }}
       # -X utf8 on every invocation: the suites print non-ASCII and fail on cp1252.
       - name: Builder smoke + layout self-checks
-        working-directory: plugin/skills/excalidraw-diagram/scripts
+        working-directory: plugin-full/skills/excalidraw-diagram/scripts
         run: python -X utf8 excalidraw_builder.py
       - name: Builder unit tests
-        working-directory: plugin/skills/excalidraw-diagram/scripts
+        working-directory: plugin-full/skills/excalidraw-diagram/scripts
         run: python -X utf8 -m unittest test_excalidraw -v
       - name: MCP server tests
-        working-directory: plugin/skills/excalidraw-diagram/scripts
+        working-directory: plugin-full/skills/excalidraw-diagram/scripts
         run: python -X utf8 -m unittest test_mcp_server -v
       - name: Data-model tests
-        working-directory: plugin/skills/excalidraw-diagram/scripts
+        working-directory: plugin-full/skills/excalidraw-diagram/scripts
         run: python -X utf8 -m unittest test_data_model -v
 
   # Every example generator must still run. They are the skill's worked examples, so a
@@ -56,14 +56,14 @@ jobs:
       - name: Every example generator runs
         run: |
           out=$(mktemp -d)
-          for f in plugin/skills/excalidraw-diagram/examples/make_*.py docs/make_*.py; do
+          for f in plugin-full/skills/excalidraw-diagram/examples/make_*.py docs/make_*.py; do
             echo "::group::$f"
             python -X utf8 "$f" "$out"
             echo "::endgroup::"
           done
           echo "::group::scene --from-json"
           for g in docs/*_graph.json; do
-            python -X utf8 plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py \
+            python -X utf8 plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py \
               scene --from-json "$g" -o "$out"
           done
           echo "::endgroup::"
@@ -121,10 +121,10 @@ jobs:
       - name: A version bump carries a CHANGELOG entry
         run: |
           base="origin/${{ github.base_ref }}"
-          if git diff --quiet "$base" -- plugin/.claude-plugin/plugin.json; then
+          if git diff --quiet "$base" -- plugin-full/.claude-plugin/plugin.json; then
             echo "plugin.json unchanged - nothing to check"; exit 0
           fi
-          v=$(python -c "import json;print(json.load(open('plugin/.claude-plugin/plugin.json'))['version'])")
+          v=$(python -c "import json;print(json.load(open('plugin-full/.claude-plugin/plugin.json'))['version'])")
           grep -q -- "\`v$v\`" CHANGELOG.md || {
             echo "::error::plugin.json is at $v but CHANGELOG.md has no \`v$v\` heading"; exit 1; }
           echo "CHANGELOG has an entry for v$v"

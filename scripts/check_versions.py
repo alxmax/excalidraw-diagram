@@ -2,8 +2,8 @@
 # implements: ARCH-RELEASE-035
 """Assert the plugin's version is spelled the same in every manifest that carries it.
 
-`plugin/.claude-plugin/plugin.json` is the source of truth. The directory edition's
-`directory-plugin/.claude-plugin/plugin.json` repeats it, and `.claude-plugin/marketplace.json`
+`plugin-full/.claude-plugin/plugin.json` is the source of truth. The directory edition's
+`plugin/.claude-plugin/plugin.json` repeats it, and `.claude-plugin/marketplace.json`
 repeats it at the top level and in every `plugins[]` entry. An installed copy reads the
 marketplace entry, so a bump that misses any place ships a release nobody receives. That
 is silent: nothing errors, the plugin simply never updates.
@@ -21,8 +21,8 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLUGIN = os.path.join(ROOT, "plugin", ".claude-plugin", "plugin.json")
-DIRECTORY = os.path.join(ROOT, "directory-plugin", ".claude-plugin", "plugin.json")
+PLUGIN = os.path.join(ROOT, "plugin-full", ".claude-plugin", "plugin.json")
+DIRECTORY = os.path.join(ROOT, "plugin", ".claude-plugin", "plugin.json")
 MARKET = os.path.join(ROOT, ".claude-plugin", "marketplace.json")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
 _SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
@@ -105,7 +105,7 @@ def main(argv=None):  # implements: REQ-RELEASE-855
         return 0
 
     # Named so a failure says WHICH copy disagreed, not just that something did.
-    found = [("directory-plugin plugin.json", _load(DIRECTORY).get("version")),
+    found = [("plugin/ (directory edition) plugin.json", _load(DIRECTORY).get("version")),
              ("marketplace.json top level", market.get("version"))]
     for i, p in enumerate(market.get("plugins", [])):
         found.append(("marketplace.json plugins[%d] (%s)" % (i, p.get("name")), p.get("version")))
@@ -118,7 +118,7 @@ def main(argv=None):  # implements: REQ-RELEASE-855
     if a.fix:
         _set_plugin_version(want, DIRECTORY)
         _sync_marketplace(market, want)
-        print("fixed  directory-plugin plugin.json and marketplace.json set to '%s'" % want)
+        print("fixed  plugin/ (directory edition) plugin.json and marketplace.json set to '%s'" % want)
         return 0
 
     print("MISMATCH  plugin.json says '%s'" % want)

@@ -46,5 +46,5 @@ CASE-3 — the flag reaches the drawing
 
 **Current implementation**
 - `graph_from_tables()` and `_label()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.
-- `TestColumns` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the flag in `cli.py`.
+- `TestColumns` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

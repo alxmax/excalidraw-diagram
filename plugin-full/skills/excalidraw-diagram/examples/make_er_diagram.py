@@ -9,7 +9,7 @@ what they cannot: every foreign key names a table that exists, and every
 relationship joins two tables through a column one of them actually has.
 
 Regenerate from the repo root (the .excalidraw + .html land where you say):
-    python -X utf8 plugin/skills/excalidraw-diagram/examples/make_er_diagram.py out/
+    python -X utf8 plugin-full/skills/excalidraw-diagram/examples/make_er_diagram.py out/
 """
 import os
 import sys

@@ -73,9 +73,9 @@ CASE-7
 
 **Current implementation**
 - The seven `check_*` methods in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`, and
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`, and
   `Gates` with the `save()` gate dispatch in `excalidraw_engine/gates.py`.
-- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).
+- `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).
 
 
 --------------------

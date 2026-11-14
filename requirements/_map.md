@@ -76,39 +76,39 @@ _Each system/architecture requirement → its code; arrow label = role (`impleme
 ```mermaid
 graph LR
   ARCH_DATAMODEL_036["A data model drawn and reviewed from its SQL<br><small>ARCH-DATAMODEL-036</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_test_data_model_py_2["plugin/skills/excalidraw-diagram/scripts/test_data_model.py:2"]
-  ARCH_DATAMODEL_036 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_data_model_py_2
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1["plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"]
-  ARCH_DATAMODEL_036 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_data_model_py_2["plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py:2"]
+  ARCH_DATAMODEL_036 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_data_model_py_2
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:1"]
+  ARCH_DATAMODEL_036 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_engine_data_model_py_1
   ARCH_EXCALIDRAW_030["Excalidraw scene builder — core API<br><small>ARCH-EXCALIDRAW-030</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2"]
-  ARCH_EXCALIDRAW_030 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_2["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"]
-  ARCH_EXCALIDRAW_030 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_2
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine___init___py_1["plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py:1"]
-  ARCH_EXCALIDRAW_030 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_engine___init___py_1
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:2"]
+  ARCH_EXCALIDRAW_030 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_2
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_2["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:2"]
+  ARCH_EXCALIDRAW_030 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_2
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_engine___init___py_1["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py:1"]
+  ARCH_EXCALIDRAW_030 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_engine___init___py_1
   ARCH_EXCALIDRAW_031["Excalidraw quality gates<br><small>ARCH-EXCALIDRAW-031</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_3["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:3"]
-  ARCH_EXCALIDRAW_031 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_3
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_3["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:3"]
-  ARCH_EXCALIDRAW_031 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_3
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_3["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:3"]
+  ARCH_EXCALIDRAW_031 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_3
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_3["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:3"]
+  ARCH_EXCALIDRAW_031 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_3
   ARCH_EXCALIDRAW_032["Excalidraw builder entry points: CLI verbs and MCP tools<br><small>ARCH-EXCALIDRAW-032</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_4["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:4"]
-  ARCH_EXCALIDRAW_032 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_4
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_4["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:4"]
-  ARCH_EXCALIDRAW_032 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_4
-  f_plugin_skills_excalidraw_diagram_scripts_test_mcp_server_py_1["plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"]
-  ARCH_EXCALIDRAW_032 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_mcp_server_py_1
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_4["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:4"]
+  ARCH_EXCALIDRAW_032 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_4
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_4["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:4"]
+  ARCH_EXCALIDRAW_032 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_4
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_mcp_server_py_1["plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py:1"]
+  ARCH_EXCALIDRAW_032 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_mcp_server_py_1
   ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
-  ARCH_EXCALIDRAW_033 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-943"]
-  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
+  ARCH_EXCALIDRAW_033 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-943"]
+  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943
   ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
-  f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
-  ARCH_EXCALIDRAW_034 -->|implements| f_plugin_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6
-  f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5["plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"]
-  ARCH_EXCALIDRAW_034 -->|tested-by| f_plugin_skills_excalidraw_diagram_scripts_test_excalidraw_py_5
+  f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
+  ARCH_EXCALIDRAW_034 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_5["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:5"]
+  ARCH_EXCALIDRAW_034 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_5
   ARCH_RELEASE_035["A released version reaches the people who installed it<br><small>ARCH-RELEASE-035</small>"]
   f_scripts_check_versions_py_2["scripts/check_versions.py:2"]
   ARCH_RELEASE_035 -->|implements| f_scripts_check_versions_py_2

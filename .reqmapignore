@@ -24,7 +24,7 @@ __pycache__/**
 # a capability of their own, so tagging one would claim a requirement it does not
 # carry. They are not unchecked: CI runs every generator, and a generator that
 # raises fails the build.
-plugin/skills/excalidraw-diagram/examples/**
+plugin-full/skills/excalidraw-diagram/examples/**
 
 # The diagram generators behind README.md's pictures. Same argument as the worked
 # examples above: a generator demonstrates the builder rather than implementing a
@@ -37,8 +37,8 @@ docs/make_*.py
 # that illustrates it. What they describe is owned by ARCH-EXCALIDRAW-030/031/034 —
 # drafting a second requirement from the prose would state the same obligation twice,
 # which is the merge smell the engine warns about, seeded on purpose.
-plugin/skills/excalidraw-diagram/SKILL.universal.md
-plugin/skills/excalidraw-diagram/references/**
+plugin-full/skills/excalidraw-diagram/SKILL.universal.md
+plugin-full/skills/excalidraw-diagram/references/**
 
 # CI configuration. It runs the checks; it is not a capability the plugin offers, and
 # it does not ship. `init` otherwise drafts an empty requirement for it on every run.
@@ -47,7 +47,7 @@ plugin/skills/excalidraw-diagram/references/**
 # The vendored Excalidraw runtime the offline viewer inlines: third-party build output
 # copied verbatim (its README records the sources and versions). It implements nothing
 # of this repo's, and a minified bundle reads to the scanner as an untagged code file.
-plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
+plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/**
 
 # Local-only pictures: untracked, so they promise nothing the repo has to trace.
 docs/local_*.html
@@ -56,9 +56,9 @@ docs/local_*.html
 # describe capabilities the requirements already own, so tagging them would state the same
 # obligation twice.
 README.md
-plugin/README.md
+plugin-full/README.md
 
 # The instructions-only edition for the plugin directory: Markdown, JSON and the icon.
 # Its SKILL.md restates the contract ARCH-EXCALIDRAW-030/031/034 already own as rules
 # followed by hand rather than enforced by code, so it implements nothing of its own.
-directory-plugin/**
+plugin/**

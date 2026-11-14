@@ -60,6 +60,6 @@ CASE-3
   builder already draws and adds no layout or renderer of its own.
 
 **Current implementation**
-- `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with
+- `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`, with
   `ddl.py`, `classify.py` and `review.py` beside it.
-- `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

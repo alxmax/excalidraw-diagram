@@ -6,7 +6,7 @@ you use it, what's inside, and where it runs — in everyday words, with every t
 decoded in the glossary. Built with the builder's s.section() + s.pipeline().
 
 Run from the repo root, writing into the regenerable diagrams/ dir:
-    python plugin/skills/excalidraw-diagram/examples/make_explainer.py diagrams
+    python plugin-full/skills/excalidraw-diagram/examples/make_explainer.py diagrams
 """
 import os
 import sys

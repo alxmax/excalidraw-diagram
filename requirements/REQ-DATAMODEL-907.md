@@ -67,6 +67,6 @@ CASE-7 — the command draws a dbt project
 - Only `models/` is read; seeds, snapshots and sources are not drawn.
 
 **Current implementation**
-- `read_dbt()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py`;
+- `read_dbt()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py`;
   `scene_from_dbt()` and `graph_from_tables()` in `data_model.py`; the flag in `cli.py`.
-- `TestReadDbt` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestReadDbt` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

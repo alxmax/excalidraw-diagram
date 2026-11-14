@@ -68,6 +68,6 @@ CASE-5 — the glossary box is overlap-checked
 
 **Current implementation**
 - `Scene.legend()` and `Scene.glossary()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
 - `TestBuilderUnits` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

@@ -13,7 +13,7 @@ docs/repo_map.png.
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugin",
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugin-full",
                                 "skills", "excalidraw-diagram", "scripts"))
 from excalidraw_builder import DASHED, Font, Gates, Scene
 
@@ -43,7 +43,7 @@ parts = s.row([
     ("examples/make_*.py\nfour worked generators", "output"),
     ("requirements/\n11 promises, gate-checked", "spec"),
 ], (80, row_y), gap=26, cell={"size": (215, 70), "font": 12})
-s.enclose(parts, label="plugin/  -  what gets installed")
+s.enclose(parts, label="plugin-full/  -  what gets installed")
 _, _, fx2, _ = s.bounds()
 s.box("marketplace.json + CI\nversion, checks, release", (fx2 + 60, row_y, 215, 70),
       paint="ship", font=12)

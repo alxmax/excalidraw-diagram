@@ -5,7 +5,7 @@ Shows the 8-step flow from a system description to finished files, with
 detail panels for the two variable steps (Explore branching, save() gates).
 
 Run from the repo root:
-    python plugin/skills/excalidraw-diagram/examples/make_excalidraw_skill_flow.py
+    python plugin-full/skills/excalidraw-diagram/examples/make_excalidraw_skill_flow.py
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))

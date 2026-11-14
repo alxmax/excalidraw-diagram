@@ -38,5 +38,5 @@ CASE-3 — a clean schema draws no note
 ## Context
 **Current implementation**
 - `graph_from_tables()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.
-- `TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`.
+- `TestReview` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

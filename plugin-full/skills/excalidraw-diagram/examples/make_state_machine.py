@@ -10,7 +10,7 @@ rounded box. The script asserts what no gate can: every state is reachable from
 the start, and every non-final state has a way out.
 
 Regenerate from the repo root (the .excalidraw + .html land where you say):
-    python -X utf8 plugin/skills/excalidraw-diagram/examples/make_state_machine.py out/
+    python -X utf8 plugin-full/skills/excalidraw-diagram/examples/make_state_machine.py out/
 """
 import os
 import sys

@@ -72,6 +72,6 @@ CASE-7 — safe and stable text
 - Column types are not inferred, so a `cast(...)` shows as written.
 
 **Current implementation**
-- `mapping_markdown()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`;
+- `mapping_markdown()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py`;
   `read_dbt_project()` in `dbt.py`. The file-writing flag is `REQ-DATAMODEL-912`'s.
-- `TestMapping` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestMapping` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

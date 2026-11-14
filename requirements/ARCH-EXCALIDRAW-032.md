@@ -67,11 +67,11 @@ CASE-6
   A caller who wants control over the layout writes a generator instead.
 
 **Current implementation**
-- `main(argv)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html`
+- `main(argv)` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`, dispatching to `render_html`
   (`viewer.py`), `discover_stub` (`discover.py`) and `scene_from_json` (`spec.py`).
 - `svg.py` beside it for the SVG a caller can ask for.
-- `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.
-- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class,
+- `plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py` for the MCP tools.
+- `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (CLI test class,
   and `CasesExcalidrawSceneVerb` for the `scene` verb).
 
 
@@ -217,10 +217,10 @@ CASE-5 — the verb without a description prints usage and exits 2
   malformed file take the same exit path as a malformed description.
 
 **Current implementation**
-- `scene_from_spec()` and `scene_from_json()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the
-  `scene` verb in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.
+- `scene_from_spec()` and `scene_from_json()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py`, and the
+  `scene` verb in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py`.
 - `CasesExcalidrawSceneVerb` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
 
 --------------------
@@ -257,7 +257,7 @@ Every bullet below is binding.
   The documented schema is the single source, so the tool cannot drift from it.
 - `mcp_server.py` writes only protocol messages to stdout. Text the builder prints
   during a call is captured and returned inside that call's result.
-- `plugin/.mcp.json` registers the server, so installing the plugin makes the
+- `plugin-full/.mcp.json` registers the server, so installing the plugin makes the
   tools available with no further setup.
 
 ## Cases
@@ -304,8 +304,8 @@ CASE-6 — stdout carries only protocol
   directory.
 
 **Current implementation**
-- `plugin/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin/.mcp.json`.
-- `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.
+- `plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py` and `plugin-full/.mcp.json`.
+- `plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py`.
 
 
 --------------------
@@ -378,7 +378,7 @@ CASE-6 — the MCP tool takes the option
   rasteriser, which the standard library does not have.
 
 **Current implementation**
-- `scene_svg` and `render_svg` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.
-- `save(svg=True)` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.
-- `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and
-  `plugin/skills/excalidraw-diagram/scripts/test_mcp_server.py`.
+- `scene_svg` and `render_svg` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py`.
+- `save(svg=True)` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py`.
+- `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (`CasesSvgExport`) and
+  `plugin-full/skills/excalidraw-diagram/scripts/test_mcp_server.py`.
