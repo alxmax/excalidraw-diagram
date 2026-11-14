@@ -1,5 +1,30 @@
 # Changelog
 
+## plugin `v2.20.0` — 2026-11-14
+
+**Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only
+edition; the full builder edition is `excalidraw-diagram-full`.**
+
+The Claude plugin directory resolves a submission through this repository's
+`.claude-plugin/marketplace.json`, and that file pointed `excalidraw-diagram` at `./plugin`,
+the full edition it refuses. So the marketplace now lists two plugins:
+
+- **`excalidraw-diagram`** → `./directory-plugin`, the Markdown-and-JSON edition. Anyone who
+  installed `excalidraw-diagram` from this marketplace receives this edition on the next
+  update: no Python builder, no MCP server, no offline viewer runtime.
+- **`excalidraw-diagram-full`** → `./plugin`, unchanged apart from its name. To keep the
+  builder, the gates and the MCP tools, run
+  `/plugin install excalidraw-diagram-full@excalidraw-diagram`.
+
+Also in this release:
+
+- The plugin-cache resolver in `discover`'s stub and in `references/builder_api.md` matches
+  `excalidraw-diagram*`, so a stub finds the builder under the new name and under an
+  install from before the rename.
+- `scripts/check_versions.py` now checks five copies of the version: both `plugin.json`
+  files, the marketplace top level and each `plugins[]` entry. `--bump` and `--fix` write
+  all of them.
+
 ## plugin `v2.19.0` — 2026-11-14
 
 **An instructions-only edition for the Claude plugin directory.**

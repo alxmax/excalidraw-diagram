@@ -571,7 +571,7 @@ class TestCli(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-848
             cfg, home = os.path.join(d, "cfg"), os.path.join(d, "home")
             os.makedirs(home)
             shutil.copytree(HERE, os.path.join(
-                cfg, "plugins", "cache", "excalidraw-diagram", "excalidraw-diagram",
+                cfg, "plugins", "cache", "excalidraw-diagram", "excalidraw-diagram-full",
                 "9.9.9", "skills", "excalidraw-diagram", "scripts"),
                 ignore=shutil.ignore_patterns("__pycache__", "test_*"))
             repo = os.path.join(d, "repo")

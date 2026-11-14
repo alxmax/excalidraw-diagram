@@ -92,13 +92,19 @@ job runs only on PRs, so a version bump pushed any other way is never checked.
 
 ## Versioning
 
-`plugin/.claude-plugin/plugin.json` is the source of truth. `.claude-plugin/marketplace.json`
-repeats the version **twice** — top level and inside `plugins[]` — and an installed copy
-reads the marketplace entry, so a bump that misses either place ships a release nobody
-receives. Nothing errors; the plugin simply never updates. `scripts/check_versions.py`
-enforces the three-way match and CI runs it. To start a release, run
-`python scripts/check_versions.py --bump patch|minor|major`: it raises all three copies
-at once and reminds you to add the `CHANGELOG.md` heading.
+`plugin/.claude-plugin/plugin.json` is the source of truth. `directory-plugin/.claude-plugin/plugin.json`
+repeats it, and `.claude-plugin/marketplace.json` repeats it **three times** — top level and
+in each of its two `plugins[]` entries — and an installed copy reads the marketplace entry,
+so a bump that misses any place ships a release nobody receives. Nothing errors; the plugin
+simply never updates. `scripts/check_versions.py` enforces the five-way match and CI runs
+it. To start a release, run `python scripts/check_versions.py --bump patch|minor|major`: it
+raises every copy at once and reminds you to add the `CHANGELOG.md` heading.
+
+**Two marketplace entries, one per edition.** `excalidraw-diagram` is `./directory-plugin`
+(the instructions-only edition the plugin directory reviews, so it is listed first and
+keeps the original name); `excalidraw-diagram-full` is `./plugin`. The directory resolves a
+submission through this file's `source`, which is why the full edition moved to a new name
+rather than the directory edition.
 
 **Any shipped change bumps the semver**, a skill edit included: an edit with no bump is
 invisible to consumers running `/plugin update`. A bump needs a matching `` `vX.Y.Z` ``
@@ -191,7 +197,7 @@ outside it.
 Nothing generates either from the other, so a change to one that misses the other is a
 silent divergence. Edit both. The universal file drops only the Claude Code-specific parts
 (sub-agent fan-out, plugin-cache resolver); every rule, gate and checklist item must match.
-The resolver's cache path is `excalidraw-diagram/excalidraw-diagram`, the marketplace name
+The resolver's cache path is `excalidraw-diagram/excalidraw-diagram*`, the marketplace name
 then the plugin name.
 
 **Both contracts stay in the 150-200 line band.** What earns a place in them is a

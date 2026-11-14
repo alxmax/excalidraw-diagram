@@ -11,7 +11,7 @@ satisfies: [SYS-DIAGRAM-001]
 # A released version reaches the people who installed it
 
 ## Description
-> The version number is written in three places and read from one of them. If a
+> The version number is written in five places and read from one of them. If a
 > bump misses a copy, nothing errors, no test fails and the release looks shipped —
 > it simply never arrives: an installed plugin keeps running the old build because
 > the marketplace entry still advertises the old number. That is the worst shape a
@@ -24,7 +24,7 @@ Every bullet below is binding.
 - CI runs the version check on every push and every pull request, so a mismatch
   cannot be merged.
 - CI fails a pull request that bumps the version without a matching CHANGELOG heading.
-- A release starts with one command that raises all three copies together. [[REQ-RELEASE-857]]
+- A release starts with one command that raises every copy together. [[REQ-RELEASE-857]]
 
 ## Cases
 CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->
@@ -40,7 +40,7 @@ CASE-2 — a bump without a CHANGELOG heading fails the pull request <!-- verifi
 CASE-3 — the release check never ships <!-- verifiable by: inspection -->
   Given  the directory `/plugin install` hands a consumer
   When   its contents are listed
-  Then   `scripts/check_versions.py` is absent, because only `plugin/` ships
+  Then   `scripts/check_versions.py` is absent, because only the edition's own folder ships
 
 ## Context
 **Notes**
@@ -65,7 +65,7 @@ owner: Alex
 satisfies: [ARCH-RELEASE-035]
 ---
 
-# check_versions.py: the three copies of the version agree
+# check_versions.py: every copy of the version agrees
 
 ## Description
 > The copies exist only to be identical, so the check compares them, names every
@@ -74,17 +74,17 @@ satisfies: [ARCH-RELEASE-035]
 
 Every bullet below is binding.
 - `scripts/check_versions.py` compares the version in
-  `plugin/.claude-plugin/plugin.json` against both copies in
-  `.claude-plugin/marketplace.json`: the top-level one and the one inside `plugins[]`.
-- The script exits 0 when all three agree, and 1 when any disagrees.
+  `plugin/.claude-plugin/plugin.json` against `directory-plugin/.claude-plugin/plugin.json`
+  and every copy in `.claude-plugin/marketplace.json`: the top level and each `plugins[]` entry.
+- The script exits 0 when all copies agree, and 1 when any disagrees.
 - A failure names every copy that disagreed and the value it holds.
-- `--fix` rewrites `marketplace.json` from `plugin.json` instead of failing.
+- `--fix` rewrites every other copy from `plugin.json` instead of failing.
 
 ## Cases
-CASE-1 — three matching versions pass
-  Given  `plugin.json` at a version and both `marketplace.json` copies at the same one
+CASE-1 — matching versions pass
+  Given  both `plugin.json` files and every `marketplace.json` copy at the same version
   When   `check_versions.py` runs
-  Then   it exits 0 and prints that the version agrees across three locations
+  Then   it exits 0 and prints that the version agrees across five locations
 
 CASE-2 — a missed copy fails, and says which one
   Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind
@@ -92,19 +92,24 @@ CASE-2 — a missed copy fails, and says which one
   Then   it exits 1 and its output names the top-level copy and the value it holds
 
 CASE-3 — a missed copy inside plugins[] fails too
-  Given  both top-level versions agreeing while the entry in `plugins[]` lags
+  Given  the top-level versions agreeing while one entry in `plugins[]` lags
   When   `check_versions.py` runs
   Then   it exits 1 and its output names that entry
 
 CASE-4 — `--fix` makes them agree instead of failing
-  Given  a marketplace manifest whose two copies both disagree with `plugin.json`
+  Given  every other copy disagreeing with `plugin.json`
   When   `check_versions.py --fix` runs
-  Then   it exits 0, and a second run with no flag exits 0 because the file now agrees
+  Then   it exits 0, and a second run with no flag exits 0 because the files now agree
+
+CASE-5 — a stale directory edition fails, and says so
+  Given  `directory-plugin/.claude-plugin/plugin.json` left behind a bump
+  When   `check_versions.py` runs
+  Then   it exits 1 and its output names the directory-plugin copy and the value it holds
 
 ## Context
 **Notes**
-- The count in the success line is three: `plugin.json` plus the two marketplace
-  copies. It is printed so a future manifest that adds a fourth copy shows up as a
+- The count in the success line is five: the two `plugin.json` files plus the three
+  marketplace copies. It is printed so a future manifest that adds a fourth copy shows up as a
   changed number rather than passing unnoticed.
 
 **Current implementation**
@@ -127,13 +132,13 @@ satisfies: [ARCH-RELEASE-035]
 # check_versions.py --bump: start a release with no copy left behind
 
 ## Description
-> A release starts by raising the version, and the three places it is written are
+> A release starts by raising the version, and the five places it is written are
 > exactly where a hand edit goes wrong. `--bump` raises them in one step, so the
 > state it leaves already passes the check.
 
 Every bullet below is binding.
 - `check_versions.py --bump patch|minor|major` raises the version in `plugin.json`
-  and writes the same value to both `marketplace.json` copies.
+  and writes the same value to every other copy.
 - `--bump` changes only the version string in `plugin.json`, leaving its layout and
   line endings as they were.
 - `--bump` refuses a version that is not X.Y.Z, and changes no file when it does.
@@ -141,19 +146,19 @@ Every bullet below is binding.
   when it is missing.
 
 ## Cases
-CASE-1 — `--bump` raises all three copies together
-  Given  `plugin.json` and both `marketplace.json` copies at `2.4.9`
+CASE-1 — `--bump` raises every copy together
+  Given  every copy of the version at `2.4.9`
   When   `check_versions.py --bump minor` runs
-  Then   it exits 0 and all three copies hold `2.5.0`
+  Then   it exits 0 and every copy holds `2.5.0`
   Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed
 
 CASE-2 — `--bump` resets the parts below the one raised
-  Given  all three copies at `2.4.9`
+  Given  every copy at `2.4.9`
   When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`
   Then   the results are `2.4.10`, `2.5.0` and `3.0.0`
 
 CASE-3 — `--bump` refuses a version that is not X.Y.Z
-  Given  all three copies at `2.5`
+  Given  every copy at `2.5`
   When   `check_versions.py --bump patch` runs
   Then   it exits 1 and every copy still holds `2.5`
 

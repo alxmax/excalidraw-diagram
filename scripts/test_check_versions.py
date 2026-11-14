@@ -2,14 +2,14 @@
 # tested-by: ARCH-RELEASE-035
 """Tests for the version-coherence check.
 
-The defect this guards is silent: a bump that misses one of the three places the
+The defect this guards is silent: a bump that misses one of the five places the
 version is written ships a release nobody receives, with nothing on fire. So the
 tests here care less about the happy path than about the two ways a copy can be
 left behind, and about `--fix` actually converging.
 
-Each test builds a throwaway repo with the two manifests at chosen versions and
+Each test builds a throwaway repo with the three manifests at chosen versions and
 imports check_versions with its module-level paths pointed at it — the script
-resolves PLUGIN and MARKET once at import, so they are patched per test rather
+resolves PLUGIN, DIRECTORY and MARKET once at import, so they are patched per test rather
 than re-imported.
 """
 import io
@@ -31,19 +31,20 @@ def _write(path, data):
 
 
 class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # tested-by: REQ-RELEASE-855  # tested-by: REQ-RELEASE-857
-    """Every case of ARCH-RELEASE-035, against a throwaway pair of manifests."""
+    """Every case of ARCH-RELEASE-035, against a throwaway set of manifests."""
 
     def setUp(self):
-        self._saved = (cv.PLUGIN, cv.MARKET, cv.CHANGELOG)
+        self._saved = (cv.PLUGIN, cv.DIRECTORY, cv.MARKET, cv.CHANGELOG)
         self._tmp = tempfile.TemporaryDirectory()
         root = self._tmp.name
         cv.PLUGIN = os.path.join(root, "plugin", ".claude-plugin", "plugin.json")
+        cv.DIRECTORY = os.path.join(root, "directory-plugin", ".claude-plugin", "plugin.json")
         cv.MARKET = os.path.join(root, ".claude-plugin", "marketplace.json")
         cv.CHANGELOG = os.path.join(root, "CHANGELOG.md")
         self._changelog("# Changelog\n")
 
     def tearDown(self):
-        cv.PLUGIN, cv.MARKET, cv.CHANGELOG = self._saved
+        cv.PLUGIN, cv.DIRECTORY, cv.MARKET, cv.CHANGELOG = self._saved
         self._tmp.cleanup()
 
     def _changelog(self, text):
@@ -51,18 +52,28 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
             f.write(text)
 
     def _versions(self):
-        """The three copies as (plugin, top level, plugins[0])."""
+        """The five copies as (plugin, directory, top level, plugins[0], plugins[1])."""
         with io.open(cv.PLUGIN, encoding="utf-8") as f:
             plugin = json.load(f)["version"]
+        with io.open(cv.DIRECTORY, encoding="utf-8") as f:
+            directory = json.load(f)["version"]
         with io.open(cv.MARKET, encoding="utf-8") as f:
             market = json.load(f)
-        return plugin, market["version"], market["plugins"][0]["version"]
+        return (plugin, directory, market["version"],
+                market["plugins"][0]["version"], market["plugins"][1]["version"])
 
-    def _manifests(self, plugin_v, top_v, entry_v):
-        _write(cv.PLUGIN, {"name": "excalidraw-diagram", "version": plugin_v})
+    def _manifests(self, plugin_v, top_v, entry_v, directory_v=None, full_v=None):
+        """Write the manifests; the directory copy and the second entry default to the
+        plugin.json and first-entry versions respectively."""
+        _write(cv.PLUGIN, {"name": "excalidraw-diagram-full", "version": plugin_v})
+        _write(cv.DIRECTORY, {"name": "excalidraw-diagram",
+                              "version": plugin_v if directory_v is None else directory_v})
         _write(cv.MARKET, {"name": "excalidraw-diagram", "version": top_v,
                            "plugins": [{"name": "excalidraw-diagram",
-                                        "version": entry_v, "source": "./plugin"}]})
+                                        "version": entry_v, "source": "./directory-plugin"},
+                                       {"name": "excalidraw-diagram-full",
+                                        "version": entry_v if full_v is None else full_v,
+                                        "source": "./plugin"}]})
 
     def _run(self, *argv):
         """main() with stdout captured; returns (exit code, printed text)."""
@@ -72,12 +83,12 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
             code = cv.main(list(argv))
         return code, buf.getvalue()
 
-    def test_three_matching_versions_pass(self):  # verifies: REQ-RELEASE-855#CASE-1
+    def test_matching_versions_pass(self):  # verifies: REQ-RELEASE-855#CASE-1
         self._manifests("1.1.0", "1.1.0", "1.1.0")
         code, out = self._run()
         self.assertEqual(code, 0, out)
         self.assertIn("1.1.0", out)
-        self.assertIn("3 location(s)", out)
+        self.assertIn("5 location(s)", out)
 
     def test_a_stale_top_level_copy_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-2
         self._manifests("1.2.0", "1.1.0", "1.2.0")
@@ -94,8 +105,22 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
         self.assertIn("plugins[0]", out)
         self.assertIn("1.1.0", out)
 
+    def test_a_stale_directory_edition_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-5
+        self._manifests("1.2.0", "1.2.0", "1.2.0", directory_v="1.1.0")
+        code, out = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn("directory-plugin", out)
+        self.assertIn("1.1.0", out)
+
+    def test_a_stale_second_entry_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-3
+        self._manifests("1.2.0", "1.2.0", "1.2.0", full_v="1.1.0")
+        code, out = self._run()
+        self.assertEqual(code, 1)
+        self.assertIn("plugins[1]", out)
+        self.assertIn("excalidraw-diagram-full", out)
+
     def test_fix_makes_them_agree(self):  # verifies: REQ-RELEASE-855#CASE-4
-        self._manifests("2.0.0", "1.1.0", "1.0.9")
+        self._manifests("2.0.0", "1.1.0", "1.0.9", directory_v="1.0.8", full_v="1.0.7")
         code, _ = self._run("--fix")
         self.assertEqual(code, 0)
         # the point of --fix is that the next plain run passes
@@ -105,12 +130,13 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
             market = json.load(f)
         self.assertEqual(market["version"], "2.0.0")
         self.assertEqual(market["plugins"][0]["version"], "2.0.0")
+        self.assertEqual(self._versions(), ("2.0.0",) * 5)
 
-    def test_bump_raises_all_three_copies_together(self):  # verifies: REQ-RELEASE-857#CASE-1
+    def test_bump_raises_every_copy_together(self):  # verifies: REQ-RELEASE-857#CASE-1
         self._manifests("2.4.9", "2.4.9", "2.4.9")
         code, out = self._run("--bump", "minor")
         self.assertEqual(code, 0, out)
-        self.assertEqual(self._versions(), ("2.5.0",) * 3)
+        self.assertEqual(self._versions(), ("2.5.0",) * 5)
         code, out = self._run()
         self.assertEqual(code, 0, out)
 
@@ -119,7 +145,7 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
             self._manifests("2.4.9", "2.4.9", "2.4.9")
             code, out = self._run("--bump", part)
             self.assertEqual(code, 0, out)
-            self.assertEqual(self._versions(), (want,) * 3, part)
+            self.assertEqual(self._versions(), (want,) * 5, part)
 
     def test_bump_changes_only_the_version_string(self):  # verifies: REQ-RELEASE-857#CASE-1
         self._manifests("1.0.0", "1.0.0", "1.0.0")
@@ -135,7 +161,7 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
         code, out = self._run("--bump", "patch")
         self.assertEqual(code, 1)
         self.assertIn("2.5", out)
-        self.assertEqual(self._versions(), ("2.5",) * 3)
+        self.assertEqual(self._versions(), ("2.5",) * 5)
 
     def test_bump_reminds_about_the_changelog_only_when_the_heading_is_missing(self):  # verifies: REQ-RELEASE-857#CASE-4
         self._manifests("1.0.0", "1.0.0", "1.0.0")
@@ -150,7 +176,7 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
     def test_the_real_manifests_agree(self):  # verifies: REQ-RELEASE-855#CASE-1
         # not a fixture: the repo's own manifests, so a bump that misses a copy
         # fails here as well as in the CI job that runs the script directly
-        cv.PLUGIN, cv.MARKET, cv.CHANGELOG = self._saved
+        cv.PLUGIN, cv.DIRECTORY, cv.MARKET, cv.CHANGELOG = self._saved
         code, out = self._run()
         self.assertEqual(code, 0, out)
 

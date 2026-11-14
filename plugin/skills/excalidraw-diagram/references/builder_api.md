@@ -27,11 +27,11 @@ def _builder_path():
     roots = [os.environ.get("CLAUDE_CONFIG_DIR"), os.path.expanduser("~/.claude")]
     hits = [h for root in roots if root
             for h in glob.glob(os.path.join(root, "plugins", "cache",
-                                            "excalidraw-diagram", "excalidraw-diagram",
+                                            "excalidraw-diagram", "excalidraw-diagram*",
                                             "*", "skills", "excalidraw-diagram", "scripts"))]
     if not hits:
         raise RuntimeError(
-            "excalidraw-diagram skill not found — run: /plugin install excalidraw-diagram"
+            "builder not found — run: /plugin install excalidraw-diagram-full@excalidraw-diagram"
         )
     def _ver(p):
         m = re.search(r"(\d+)\.(\d+)\.(\d+)", p)

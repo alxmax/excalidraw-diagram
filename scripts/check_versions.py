@@ -2,15 +2,16 @@
 # implements: ARCH-RELEASE-035
 """Assert the plugin's version is spelled the same in every manifest that carries it.
 
-`plugin/.claude-plugin/plugin.json` is the source of truth. `.claude-plugin/marketplace.json`
-repeats it twice — once at the top level, once inside `plugins[]` — and an installed copy
-reads the marketplace entry, so a bump that misses either place ships a release nobody
-receives. That is silent: nothing errors, the plugin simply never updates.
+`plugin/.claude-plugin/plugin.json` is the source of truth. The directory edition's
+`directory-plugin/.claude-plugin/plugin.json` repeats it, and `.claude-plugin/marketplace.json`
+repeats it at the top level and in every `plugins[]` entry. An installed copy reads the
+marketplace entry, so a bump that misses any place ships a release nobody receives. That
+is silent: nothing errors, the plugin simply never updates.
 
-Exit 0 when they agree, 1 when they do not. `--fix` rewrites the marketplace manifest from
-plugin.json rather than making the human retype it. `--bump patch|minor|major` raises the
-version in plugin.json and writes it to both marketplace copies in one step, so a release
-cannot be started with one of the three places left behind.
+Exit 0 when they agree, 1 when they do not. `--fix` rewrites every copy from plugin.json
+rather than making the human retype it. `--bump patch|minor|major` raises the version in
+both plugin.json files and every marketplace copy in one step, so a release cannot be
+started with one of them left behind.
 """
 import argparse
 import io
@@ -21,6 +22,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGIN = os.path.join(ROOT, "plugin", ".claude-plugin", "plugin.json")
+DIRECTORY = os.path.join(ROOT, "directory-plugin", ".claude-plugin", "plugin.json")
 MARKET = os.path.join(ROOT, ".claude-plugin", "marketplace.json")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
 _SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
@@ -50,16 +52,17 @@ def _bumped(version, part):  # implements: REQ-RELEASE-857
     return "%d.%d.%d" % (major, minor, patch + 1)
 
 
-def _set_plugin_version(new):
-    """Write `new` into plugin.json by editing the one version string, so the file's
+def _set_plugin_version(new, path=None):
+    """Write `new` into a plugin.json by editing the one version string, so the file's
     layout and line endings are left exactly as they were."""
-    with io.open(PLUGIN, encoding="utf-8", newline="") as f:
+    path = path or PLUGIN
+    with io.open(path, encoding="utf-8", newline="") as f:
         text = f.read()
     text, n = re.subn(r'("version"\s*:\s*")[^"]*(")',
                       lambda m: m.group(1) + new + m.group(2), text, count=1)
     if n != 1:
-        raise ValueError("plugin.json has no version string to change")
-    with io.open(PLUGIN, "w", encoding="utf-8", newline="") as f:
+        raise ValueError("%s has no version string to change" % path)
+    with io.open(path, "w", encoding="utf-8", newline="") as f:
         f.write(text)
 
 
@@ -72,13 +75,13 @@ def _sync_marketplace(market, version):
 
 
 def main(argv=None):  # implements: REQ-RELEASE-855
-    """Compare (or with --fix, sync) the three version copies; returns the exit code."""
+    """Compare (or with --fix, sync) every version copy; returns the exit code."""
     ap = argparse.ArgumentParser(description=__doc__)
     group = ap.add_mutually_exclusive_group()
     group.add_argument("--fix", action="store_true",
-                       help="rewrite marketplace.json from plugin.json instead of failing")
+                       help="rewrite every copy from plugin.json instead of failing")
     group.add_argument("--bump", choices=("patch", "minor", "major"),
-                       help="raise the version in plugin.json and in both marketplace copies")
+                       help="raise the version in plugin.json and in every copy")
     a = ap.parse_args(argv)
 
     plugin, market = _load(PLUGIN), _load(MARKET)
@@ -91,8 +94,10 @@ def main(argv=None):  # implements: REQ-RELEASE-855
             print("error: %s" % exc)
             return 1
         _set_plugin_version(new)
+        _set_plugin_version(new, DIRECTORY)
         _sync_marketplace(market, new)
-        print("bumped  %s -> %s  (plugin.json and both marketplace copies)" % (want, new))
+        print("bumped  %s -> %s  (both plugin.json files and every marketplace copy)"
+              % (want, new))
         with io.open(CHANGELOG, encoding="utf-8") as f:
             if "`v%s`" % new not in f.read():
                 print("next    add a `v%s` heading to CHANGELOG.md; CI fails the PR without one"
@@ -100,7 +105,8 @@ def main(argv=None):  # implements: REQ-RELEASE-855
         return 0
 
     # Named so a failure says WHICH copy disagreed, not just that something did.
-    found = [("marketplace.json top level", market.get("version"))]
+    found = [("directory-plugin plugin.json", _load(DIRECTORY).get("version")),
+             ("marketplace.json top level", market.get("version"))]
     for i, p in enumerate(market.get("plugins", [])):
         found.append(("marketplace.json plugins[%d] (%s)" % (i, p.get("name")), p.get("version")))
 
@@ -110,8 +116,9 @@ def main(argv=None):  # implements: REQ-RELEASE-855
         return 0
 
     if a.fix:
+        _set_plugin_version(want, DIRECTORY)
         _sync_marketplace(market, want)
-        print("fixed  marketplace.json set to '%s'" % want)
+        print("fixed  directory-plugin plugin.json and marketplace.json set to '%s'" % want)
         return 0
 
     print("MISMATCH  plugin.json says '%s'" % want)

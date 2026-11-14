@@ -25,8 +25,8 @@ invariants and the seven readability checks that the full edition's builder enfo
 [`references/viewer_template.md`](references/viewer_template.md) has the HTML page.
 
 **Builder available? Use it.** If the session already has the full edition's MCP tools
-(`build_scene`, `render_html`, `graph_schema`, from `/plugin marketplace add
-alxmax/excalidraw-diagram`), use those instead of this file. Never download or run code
+(`build_scene`, `render_html`, `graph_schema`, from the `excalidraw-diagram-full` plugin of
+the `alxmax/excalidraw-diagram` marketplace), use those instead of this file. Never download or run code
 to get them; if they are absent, write the JSON as below.
 
 ## The goal

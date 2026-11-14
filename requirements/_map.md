@@ -36,7 +36,7 @@ graph LR
     REQ_EXCALIDRAW_856["SVG export, on request<br><small>REQ-EXCALIDRAW-856</small>"]
     REQ_EXCALIDRAW_851["pack(): layering, ordering, and routing what will not go straight<br><small>REQ-EXCALIDRAW-851</small>"]
     REQ_EXCALIDRAW_858["pack(): what a node says about itself<br><small>REQ-EXCALIDRAW-858</small>"]
-    REQ_RELEASE_855["check_versions.py: the three copies of the version agree<br><small>REQ-RELEASE-855</small>"]
+    REQ_RELEASE_855["check_versions.py: every copy of the version agrees<br><small>REQ-RELEASE-855</small>"]
     REQ_RELEASE_857["check_versions.py --bump: start a release with no copy left behind<br><small>REQ-RELEASE-857</small>"]
     REQ_DATAMODEL_900["Reading tables, keys and foreign keys from DDL<br><small>REQ-DATAMODEL-900</small>"]
     REQ_DATAMODEL_901["Tables as the graph the builder already draws<br><small>REQ-DATAMODEL-901</small>"]
