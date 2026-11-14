@@ -73,5 +73,5 @@ CASE-7 — names stand in for missing types
 
 **Current implementation**
 - `classify_tables()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.
-- `TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.
+- `TestClassify` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

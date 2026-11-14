@@ -48,6 +48,6 @@ CASE-4 — a detour does not look like a review link
 - The routed line keeps its grey so a detour still differs from a straight arrow.
 
 **Current implementation**
-- `_outside_star()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`,
+- `_outside_star()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`,
   the term in `explain.py`, and `_route()` in `pack.py`.
-- `TestOutsideTheStar` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestOutsideTheStar` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

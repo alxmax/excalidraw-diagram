@@ -76,5 +76,5 @@ CASE-7 — every new rule is explained
 
 **Current implementation**
 - The five rules and `RULES` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`; the terms in `explain.py`.
-- `TestMoreReviewRules` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`; the terms in `explain.py`.
+- `TestMoreReviewRules` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

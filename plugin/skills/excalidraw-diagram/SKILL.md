@@ -1,195 +1,161 @@
 ---
 name: excalidraw-diagram
 description: >-
-  Generate Excalidraw diagrams (.excalidraw scene files) AND a self-contained
-  HTML viewer from a description of a system, flow, or architecture. Use this
-  whenever the user asks for an Excalidraw diagram, a hand-drawn / whiteboard
-  style schematic, an architecture poster, a flowchart, a sub-agent or pipeline
+  Generate Excalidraw diagrams (.excalidraw scene files) AND an HTML viewer
+  from a description of a system, flow, or architecture. Use this whenever the
+  user asks for an Excalidraw diagram, a hand-drawn / whiteboard style
+  schematic, an architecture poster, a flowchart, a sub-agent or pipeline
   diagram, or says things like "draw the architecture", "make a schema",
   "diagram this repo", "schemă excalidraw", or "put the diagram in an HTML".
-  Also trigger when asked to visualise how components, agents, requirements, or
-  modules connect — even if the word "Excalidraw" is not used but a sketchy /
-  editable diagram is wanted — and when someone does not understand a system
-  and a picture would teach it: "explain how X works", "I don't understand X",
-  "nu înțeleg cum merge X", "walk me through this". Produces a valid .excalidraw
-  file that imports into excalidraw.com plus a browser-openable .html.
+  Also trigger when someone does not understand a system and a picture would
+  teach it: "explain how X works", "I don't understand X", "nu înțeleg cum
+  merge X", "walk me through this". Produces a valid .excalidraw file that
+  imports into excalidraw.com plus a browser-openable .html.
 ---
 
-# Excalidraw diagram
+# Excalidraw diagram (instructions-only edition)
 
 Turn a description of a system into a real **Excalidraw scene** (`.excalidraw`)
-plus a **self-contained HTML viewer** (`.html`) — genuine Excalidraw, editable,
-not a screenshot. The scene drag-and-drops into
-[excalidraw.com](https://excalidraw.com); the viewer opens by double-click.
+plus an **HTML viewer** (`.html`): genuine Excalidraw, editable, not a screenshot.
+This edition ships no code. **You write the scene JSON yourself**, so you carry the
+invariants and the seven readability checks that the full edition's builder enforces.
+[`references/excalidraw_format.md`](references/excalidraw_format.md) has every field;
+[`references/example_scene.json`](references/example_scene.json) is a correct scene to copy from;
+[`references/worked_examples.md`](references/worked_examples.md) has the layouts;
+[`references/viewer_template.md`](references/viewer_template.md) has the HTML page.
 
-**You never hand-write Excalidraw JSON.** `scripts/excalidraw_builder.py` owns
-the format's invariants (seeds, version nonces, two-way arrow bindings,
-bound-text back-references) and emits both files in one `.save()`. Two companion
-files carry the detail this contract only states:
-[`references/builder_api.md`](references/builder_api.md) — every call, how to
-import it, the `graph.json` schema — and
-[`references/worked_examples.md`](references/worked_examples.md) — the repo-poster
-recipe and ❌ → ✅ variants.
+**Builder available? Use it.** If the session already has the full edition's MCP tools
+(`build_scene`, `render_html`, `graph_schema`, from the `excalidraw-diagram-full` plugin of
+the `alxmax/excalidraw-diagram` marketplace), use those instead of this file. Never download or run code
+to get them; if they are absent, write the JSON as below.
 
-## The goal (read this first)
+## The goal
 
-**Produce a schematic an outsider can understand with no prior context** — one
-that shows *how the system actually works*: its real components, the flow between
-them, how it is invoked, how it ships. For a repo that means *that repo's* files
-and flow, never a generic template. Pretty-but-shallow fails. Three things pass:
-
-1. **Substance** — real identifiers (`excalidraw_builder.py`, `pack()`), the actual
-   workflow, and all three layers (internal flow → integration → distribution).
-2. **Readability** — title + one-line subtitle, a legend when colour means a
-   role, a glossary for jargon, one reading direction, zero overlaps/crossings.
-3. **Enforcement** — the builder's gates turn those rules into hard failures, so
-   a sloppy diagram cannot ship.
-
-## When to use
-
-- "Make an Excalidraw / whiteboard / hand-drawn diagram of …"
-- "Diagram this repo's architecture" / "schemă excalidraw pentru …"
-- Flowcharts, pipelines, multi-agent layouts, module maps, state flows.
-- "Put the diagram in an HTML I can open / share."
-- **"Explain how X works" / "I don't understand X"** — the most common case. The
-  asker wants to *learn* the system, not just see it. Build a teaching diagram:
-  everyday words in the boxes, a stated reading direction, a legend and a
-  glossary that decode every colour and term on the canvas. The template is
-  [`examples/make_explainer.py`](examples/make_explainer.py); worked example 6 in
-  `references/worked_examples.md` shows the shape.
-- Not this, if they want a static image with no sketch aesthetic — but if they
-  said Excalidraw, use this.
-
-## Two ways in
-
-| Path | Use it when | How |
-|---|---|---|
-| **`scene --from-json`** | the subject is a graph you can describe — parts and connections — and you do not care where each box lands; a Mermaid flowchart already is one, so translate it with `references/mermaid_to_graph.md` rather than pasting an image | write `graph.json` (schema in `references/builder_api.md`), then `python scripts/excalidraw_builder.py scene --from-json graph.json -o out/` (`python3` where there is no `python`); add `--svg` for a clean-line `.svg` too |
-| **A generator script** | the layout itself carries meaning: stacked layers, a lane per tool, a poster | write Python against the `Scene` API — position as `at=(x, y)`, colour as `paint=`, type as `font=` — and run it |
-
-Three more verbs: `render <scene.excalidraw> [out_dir]` rebuilds the `.html` for a scene edited elsewhere; `discover <repo> [out.py]` scaffolds a poster stub; `data-model --from-ddl <schema.sql> | --from-dbt <project> [--mapping map.md] [--lineage] [-o out/] [--name Title] [--columns] [--roles roles.yml]` draws SQL tables or dbt models with roles and amber review notes, and a dbt project can also write a source-to-target mapping (`references/builder_api.md`).
-**No arguments is the smoke test CI depends on — never shadow it.** An MCP client gets every verb but `data-model` as a tool
-(`build_scene`, `render_html`, `discover_repo`, `graph_schema`).
+**A schematic an outsider can understand with no prior context**: real components,
+the flow between them, how it is invoked, how it ships. Three things pass:
+1. **Substance**: real identifiers (`viewer.py`, `save()`), the actual workflow, and all
+   three layers (internal flow, then integration, then distribution).
+2. **Readability**: a title, a one-line subtitle, a legend when colour means a role,
+   a glossary for jargon, one reading direction, zero overlaps or crossings.
+3. **Self-check**: you run the seven checks below on your coordinates before saving.
 
 ## Workflow
 
-1. **Understand the thing to draw.** For a repo, read its README and file layout
-   first, so the diagram shows the *actual* components and flow. Identify the
-   nodes, the directed connections, the grouping, the reading direction. For an
-   architecture diagram audit **all three layers** before planning: *internal
-   flow* (steps, modes, decision gates), *integration* (entry points, external
-   systems, feedback loops, state) and *distribution* (install, package, deploy).
-   One that shows only the internal flow is incomplete.
+1. **Understand the subject.** For a repo, read its README and layout first. List the
+   nodes, the directed edges (each with a verb), the groups and the reading direction.
+2. **Plan on a grid, in a table, before any JSON.** One row per node: id, label,
+   shape, role colour, `x`, `y`, `w`, `h`. Compute sizes and positions with the rules
+   below; never guess a coordinate by eye.
+3. **Write the elements** in paint order: frames and containers first, then shapes, each
+   followed by its bound text, then arrows, each followed by its label, then free text.
+4. **Run the self-check** on the table. Fix the coordinates and re-check until all seven
+   checks are clean.
+5. **Write both files**: `<name>.excalidraw`, then `<name>.html` from the viewer template.
+   ONE scene per request; several views stack as labelled regions in it.
 
-   **Large repo? Fan out (optional).** Count source files with a `Glob`
-   (excluding `node_modules/`, `.git/`, `__pycache__/`). At **≤ 80, or with no
-   `Agent` tool**, explore sequentially — the subagent overhead is not worth it.
-   Past that, dispatch read-only `Explore` subagents **in parallel**: 3 by
-   default, one per lens, never more than 5. **sonnet** for *data-flow +
-   integration*, the lens that must reason about flow; **haiku** for *structure +
-   entry-points* and *distribution + packaging*. Each returns **≤ 60 lines** of
-   JSON — `components` (real file names, never "ServiceA"), directed `edges`
-   (`{src, dst, label}` with a verb), its `group`. Merge, **dedup by id**, lay
-   out, and never re-read a file a subagent covered.
+## Element invariants (break one and the import misbehaves)
 
-2. **Choose the path.** Describable as nodes and edges → `graph.json`. Layout
-   carries meaning → a generator script.
-3. **Plan the layout before writing code** (see Layout rules): every column, its
-   x, every arrow. Check no arrow crosses an unrelated box.
-4. **Write it.** Name a generator `make_diagram.py` — **never
-   `make_<projectname>.py`**: the project is implicit from the directory and the
-   `basename` you pass to `.save()`, and a subject-specific name blocks reuse.
-5. **Run it.** `save()` raises on overlap — fix and re-run until it passes, then
-   **present both files**, `.excalidraw` first.
+- **Envelope:** `{"type":"excalidraw","version":2,"source":"excalidraw-diagram-skill",
+  "elements":[…],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"},"files":{}}`.
+- **Every element carries the full base**: `id, type, x, y, width, height, angle:0,
+  strokeColor, backgroundColor, fillStyle:"solid", strokeWidth:2, strokeStyle,
+  roughness, opacity:100, groupIds:[], frameId:null, roundness, seed, version:1,
+  versionNonce, isDeleted:false, boundElements:[], updated, link:null, locked:false`.
+- **Ids are unique** across the scene. Use `<type>-<n>-<8 hex>`, with `n` counting up.
+- **`seed` and `versionNonce`** are distinct random integers in 1..2147483647, two per
+  element. Never reuse one; the seed drives the hand-drawn wobble.
+- **Text in a shape is two-way.** The text has `containerId` = shape id,
+  `textAlign:"center"`, `verticalAlign:"middle"`. The shape lists
+  `{"type":"text","id":<text id>}` in `boundElements`. Centre the text's box in the shape.
+- **An arrow between shapes is two-way.** The arrow has `startBinding` and `endBinding`
+  `{elementId, focus:0, gap:14}`. BOTH shapes list `{"type":"arrow","id":<arrow id>}`.
+  An arrow label is text with `containerId` = arrow id, listed in the arrow's `boundElements`.
+- **Arrow geometry:** `x,y` is the start point; `points` are relative to it, the first
+  always `[0,0]`. Start and end 14px outside each border, on the line between the two
+  centres. `width`/`height` span the points. Add `lastCommittedPoint:null`,
+  `startArrowhead:null`, `endArrowhead:"arrow"`, `elbowed:false`.
+- **Text fields:** `text`, `originalText` (identical), `fontSize`, `fontFamily`
+  (1 hand-drawn, 2 normal, 3 code), `lineHeight:1.25`, `autoResize:true`.
+- **Style:** `roughness` 0 (clean, the default) or 1 (sketch), the same for every element.
+  Rectangles take `roundness:{"type":3}`; ellipses, diamonds and text take `null`.
+- **Frames go behind.** A grouping rectangle is listed before its members so they paint on top.
 
-## Layout rules (they hold on both paths; `pack()` already obeys them)
+## Sizing and layout (the grid)
 
-- **Parallel groups.** When N nodes do the same thing at once, place them with
-  `grid()`/`row()`, wrap with `enclose()`, and draw **one arrow in and one out**
-  of the frame. Arrows between members are the biggest source of spaghetti.
-- **Column gaps.** Every column needs ≥80px clearance each side:
-  `col_x[i+1] ≥ col_x[i] + col_width[i] + 80`.
-- **Arrow crossing check.** Before coding each arrow, trace the straight line
-  between the two centres. If it cuts a box that is neither end, restructure or
-  `route_under()`; a wide fan-out takes `PackOptions(edge_style="orthogonal")`.
-- **Backward / feedback arrows.** A right-to-left arrow crosses the whole
-  forward flow. Always `route_under()` (below the row and back), or drop it and
-  note the feedback in a `label()`.
-- **Reference columns.** A column that only lists possible values is a legend,
-  not a stage; do not draw a long arrow to it across the diagram.
-- **Box sizing.** Start from `h ≥ lines × font size × 1.6 + 16` and
-  `w ≥ longest_line_chars × font size × 0.65 + 20`; the `overflow` gate confirms.
-  Keep labels to 2–3 words, push detail into a `label()` caption.
-- **One file, many diagrams.** ONE `.excalidraw` + ONE `.html` per request, from
-  a single `.save()`. Several views stack as labelled regions in the *same* scene
-  (`section()`, or `bounds()` + ~80px). Calling `save()` twice raises
-  `RuntimeError`, so splitting into several files fails at once.
-- **Expand, don't cram.** The canvas is unlimited. Spread out rather than
-  shrinking fonts or overlapping shapes.
-- **Centered captions anchor at the point.** `label(text, (x, y))` and a `title()`
-  with `font=Font(align="center")` treat `x` as the text's centre (`"right"` as its
-  right edge) — pass the coordinate you want it centred on.
-- **Frame and group captions** sit ≥24px ABOVE the frame's top edge
-  (`y = frame_y - 24`), never on the border; keep free `label()` text ≥16px clear
-  of every shape and arrowhead.
-- **Committing the diagram?** Pass `Scene(seed=<int>)` for byte-identical re-runs.
+- **Text extent:** width = longest line's characters × fontSize × 0.58; height =
+  lines × fontSize × 1.25.
+- **Box size:** `w ≥ chars × size × 0.65 + 20` and `h ≥ lines × size × 1.6 + 16`.
+  Keep labels to 2–3 words per line; detail goes in a free caption under the box.
+- **Columns:** `col_x[i+1] ≥ col_x[i] + col_w[i] + 80`. **Rows:** at least 60px apart
+  vertically. Two shapes joined by a labelled arrow need a gap of at least the label's
+  width plus 76px (14px off each border, then 24px of line each side of the label).
+- **Frames:** 24px padding round their members. Their caption sits 24px above the top edge.
+- **Free text** stays 16px clear of every shape and arrowhead.
+- **Parallel nodes** go in one frame with ONE arrow in and ONE out, never N×N arrows.
+- **Feedback edges** never run straight back across the flow. Route them below the row
+  as an unbound arrow (`startBinding:null`, `endBinding:null`) through 4 points, dashed,
+  in grey `#343a40`.
+- **≤ 20 nodes per region.** Past that, split into an overview region and a detail region.
+- **Expand, don't cram.** The canvas is unlimited; never shrink type below 12px.
 
-## Quality rules — make it understandable with no context (required)
+## The seven self-checks (run all of them on your table before saving)
 
-Not optional polish. Rules 1 and 3 are enforced by `scripts/test_excalidraw.py`:
-every example must build with zero overlaps, zero crossings and zero unlegended
-fills. That is the operational definition of "clean", not a matter of taste.
+The full edition refuses a scene that fails any of these. You refuse it too.
 
-1. **Zero overlaps, zero crossings.** `save()` raises on overlap already; for
-   crossings use `route_under()`/`path()` and `Gates(crossing="error")`.
-2. **Title + one-line subtitle.** Open with `s.title(...)` and one `s.label(...)`
-   sentence saying what the diagram shows and its reading direction.
-3. **Legend whenever colour means something.** If any `paint=` encodes a role,
-   call `s.legend(...)` (or `Scene(roles=…)` then `s.legend()`). Colour is the
-   single source of truth for role and the legend lists every colour used; give
-   each *distinct meaning* its own colour. **Enforced:** once a legend is
-   rendered, `save()` flags any fill missing from the key, and
-   `Gates(legend="error")` makes that fatal. Build the key with `legend()` — a
-   hand-rolled row of swatches is invisible to the gate.
-4. **Label cross-role edges.** Any arrow whose ends are different roles, or is
-   otherwise non-obvious, carries a short verb phrase (`label="validates"`).
-5. **Real identifiers as node names, jargon in a glossary.** Name the actual file
-   / function / component (`save()`, `check_overlaps()`), never "Service A".
-   When a label must use a term a newcomer cannot decode (`back edge`, `@v1`), add
-   `s.glossary([(term, meaning), …])` beside the legend, so every term is
-   explained on the canvas.
-6. **Readable type sizes.** Two tiers suffice — a title size (~28–32) and a body
-   size (~14–16). Never below 12px.
-7. **Complexity ceiling: ≤20 nodes per region.** Past that, split into an
-   overview region and a detail one below; never cram 30 boxes into one.
+1. **overlap**: no two non-frame shapes overlap by more than 1px on both axes, and no
+   shape sits inside a frame that does not group it.
+2. **short_arrows**: every bound arrow is at least 24px long.
+3. **crossing**: the straight line between a bound arrow's two centres cuts no unrelated
+   shape (inset 4px) and no frame caption. Move the box or route the arrow under.
+4. **legend**: once a legend exists, every non-white `backgroundColor` on a shape appears
+   in it.
+5. **overflow**: every bound text's width and height fit inside its shape.
+6. **text_overlap**: no two free texts (titles, captions, legend rows) overlap.
+7. **label_fit**: an arrow's length minus its label's extent along it leaves at least
+   24px of visible line at each end.
 
-**The seven gates**, each set in one `Gates` value to `"error"` (raises), `"warn"`
-(prints) or `"off"`. Two default to `"error"`: `overlap` and `short_arrows` (an
-arrow too short to draw). Five default to `"warn"`: `crossing` (an arrow through
-an unrelated box), `legend` (a fill missing from the key), `overflow` (bound text
-bigger than its shape), `text_overlap` (two captions on each other), `label_fit`
-(an arrow's label wider than its connector — bound labels are excluded from the
-other two, so this is their only gate). Ship with `Gates.strict()`.
+Also check that every `boundElements` entry points to an element that points back, and
+that every `containerId`, `elementId` and `id` resolves.
 
-## Output
+## Quality rules (required, not polish)
 
-**Pre-delivery checklist.**
+1. **Title (28–32px) plus a one-line subtitle (14–16px)** saying what the diagram shows
+   and its reading direction.
+2. **Legend whenever colour means a role.** Use a frame titled "Legend" with an 18×18
+   swatch and a label per colour. One colour per distinct meaning, and every colour used.
+3. **Label cross-role edges** with a short verb phrase (`validates`, `POST /orders`).
+4. **Real identifiers** as node names, never "Service A". Any term a newcomer cannot decode
+   goes in a **Glossary** frame (term, then meaning) beside the legend.
+5. **Two type tiers suffice:** title ~28–32, body ~14–16, never below 12.
+6. **"Explain how X works"** means a teaching diagram. Use everyday words in the boxes,
+   read top to bottom, and give one region per idea (the problem, how you use it, what
+   is inside), each opened by a section title.
 
-*The builder enforces these:*
-- [ ] `save(..., gates=Gates.strict())`
-- [ ] `Scene(seed=<int>)` if the diagram is committed
+Palette (fill / stroke): grey `#e9ecef`/`#343a40`, blue `#a5d8ff`/`#1971c2`, green
+`#b2f2bb`/`#2f9e44`, orange `#ffd8a8`/`#e8590c`, violet `#d0bfff`/`#6741d9`, red
+`#ffc9c9`/`#e03131`, yellow `#ffec99`/`#f08c00`, teal `#99e9f2`/`#0c8599`, pink
+`#fcc2d7`/`#c2255c`. Text and outlines use `#1e1e1e`.
 
-*You must check these — the builder cannot:*
-- [ ] Title + one-line subtitle stating what it shows and the reading direction
-- [ ] Legend present if colour encodes a role, listing every colour used
-- [ ] Glossary present if any acronym / project term needs decoding
-- [ ] Every cross-role / non-obvious arrow is labelled
-- [ ] Node names are real identifiers, not placeholders
-- [ ] All three layers covered (internal flow / integration / distribution)
-- [ ] No region exceeds ~20 nodes
+## The HTML viewer
 
-Then deliver **both** files and say three things: **what it shows** (one
-sentence), **how to read it** (the direction, how regions stack), and the
-**colour legend** if colour is used. `<name>.excalidraw` drags onto
-excalidraw.com to edit; `<name>.html` opens by double-click. **Both work offline and
-upload nothing** — the viewer inlines the runtime (~1.6 MB); `--cdn` links unpkg instead.
+Copy the page in [`references/viewer_template.md`](references/viewer_template.md). It loads
+`@excalidraw/excalidraw@0.17.6` and React/ReactDOM `18.2.0` (UMD builds) from unpkg, pinned
+to those exact versions. Do not change them: 0.18+ is ESM-only and breaks the `<script>` page.
+Substitute the title and the scene JSON. **Escape every `</` in the JSON as `<\/`** before
+embedding it, or a label containing `</script>` ends the script early. The page needs a
+network on first open and falls back to a download button when the CDN is unreachable.
+The `.excalidraw` file itself always works offline.
+
+## Pre-delivery checklist
+
+- [ ] Ids unique; every binding two-way; seeds and nonces distinct
+- [ ] The seven self-checks clean, with numbers you computed rather than eyeballed
+- [ ] Title and subtitle, with the reading direction stated
+- [ ] Legend lists every colour used; glossary covers every acronym or project term
+- [ ] Every cross-role or non-obvious arrow labelled; real identifiers, no placeholders
+- [ ] All three layers covered (internal flow, integration, distribution); ≤20 nodes per region
+- [ ] `</` escaped in the HTML's embedded scene
+
+Then deliver **both** files and say three things: **what it shows** (one sentence),
+**how to read it** (the direction, how regions stack), and the **colour legend**.
+`<name>.excalidraw` drags onto excalidraw.com to edit; `<name>.html` opens by double-click.

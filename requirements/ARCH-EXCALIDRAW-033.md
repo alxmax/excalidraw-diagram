@@ -69,9 +69,9 @@ CASE-3 — the asker who does not know the system gets a picture that teaches it
 
 **Current implementation**
 - `Scene.legend()` and `Scene.glossary()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
-- `plugin/skills/excalidraw-diagram/examples/make_explainer.py` (the reference
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.
+- `plugin-full/skills/excalidraw-diagram/examples/make_explainer.py` (the reference
   teaching diagram); `TestExampleDiagrams` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.
 - The trigger phrases ("explain how X works", "I don't understand X") and the
   explainer recipe live in `SKILL.md` / `SKILL.universal.md`.

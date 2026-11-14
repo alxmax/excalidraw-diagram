@@ -37,8 +37,8 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
         self._saved = (cv.PLUGIN, cv.DIRECTORY, cv.MARKET, cv.CHANGELOG)
         self._tmp = tempfile.TemporaryDirectory()
         root = self._tmp.name
-        cv.PLUGIN = os.path.join(root, "plugin", ".claude-plugin", "plugin.json")
-        cv.DIRECTORY = os.path.join(root, "directory-plugin", ".claude-plugin", "plugin.json")
+        cv.PLUGIN = os.path.join(root, "plugin-full", ".claude-plugin", "plugin.json")
+        cv.DIRECTORY = os.path.join(root, "plugin", ".claude-plugin", "plugin.json")
         cv.MARKET = os.path.join(root, ".claude-plugin", "marketplace.json")
         cv.CHANGELOG = os.path.join(root, "CHANGELOG.md")
         self._changelog("# Changelog\n")
@@ -70,10 +70,10 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
                               "version": plugin_v if directory_v is None else directory_v})
         _write(cv.MARKET, {"name": "excalidraw-diagram", "version": top_v,
                            "plugins": [{"name": "excalidraw-diagram",
-                                        "version": entry_v, "source": "./directory-plugin"},
+                                        "version": entry_v, "source": "./plugin"},
                                        {"name": "excalidraw-diagram-full",
                                         "version": entry_v if full_v is None else full_v,
-                                        "source": "./plugin"}]})
+                                        "source": "./plugin-full"}]})
 
     def _run(self, *argv):
         """main() with stdout captured; returns (exit code, printed text)."""
@@ -109,7 +109,7 @@ class TestCheckVersions(unittest.TestCase):  # tested-by: ARCH-RELEASE-035  # te
         self._manifests("1.2.0", "1.2.0", "1.2.0", directory_v="1.1.0")
         code, out = self._run()
         self.assertEqual(code, 1)
-        self.assertIn("directory-plugin", out)
+        self.assertIn("directory edition", out)
         self.assertIn("1.1.0", out)
 
     def test_a_stale_second_entry_fails_and_is_named(self):  # verifies: REQ-RELEASE-855#CASE-3

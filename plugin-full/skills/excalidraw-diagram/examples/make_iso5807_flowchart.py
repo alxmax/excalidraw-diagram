@@ -16,7 +16,7 @@ routes it instead, resuming at the gates via on-page connector A rather than a
 long back-edge.
 
 Run from the repo root, writing into the regenerable diagrams/ dir:
-    python plugin/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py diagrams
+    python plugin-full/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py diagrams
 """
 import os
 import sys

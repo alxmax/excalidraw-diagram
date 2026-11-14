@@ -50,5 +50,5 @@ CASE-4 — what is outside the subset
   the rest of that line.
 
 **Current implementation**
-- `parse_yaml()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py`.
-- `TestMiniYaml` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `parse_yaml()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py`.
+- `TestMiniYaml` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

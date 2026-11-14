@@ -9,7 +9,7 @@ own geometry: every message starts and ends on a lifeline, messages run strictly
 downwards (time order), and every message label fits between two lifelines.
 
 Regenerate from the repo root (the .excalidraw + .html land where you say):
-    python -X utf8 plugin/skills/excalidraw-diagram/examples/make_sequence_diagram.py out/
+    python -X utf8 plugin-full/skills/excalidraw-diagram/examples/make_sequence_diagram.py out/
 """
 import os
 import sys

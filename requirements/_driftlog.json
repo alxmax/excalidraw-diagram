@@ -26,8 +26,8 @@
       "reason": "label ink follows fill contrast; pack node font and diamond sizing (REQ-858)"
     },
     "ARCH-RELEASE-035": {
-      "hash": "e72ae81d5535",
-      "reason": "the version now lives in five copies: the directory edition's plugin.json and a second marketplace entry joined the original three"
+      "hash": "a29e804efb66",
+      "reason": "plugin/ -> plugin-full/ folder move for the directory submission"
     },
     "REQ-DATAMODEL-901": {
       "hash": "e8e1c86f61ac",
@@ -73,6 +73,10 @@
       "hash": "e0b7380e2a31",
       "reason": "REQ-846/847: crossing and overlap also judge enclose() frames; REQ-851: pack() clears non-members out of frames and draws arrows before frames"
     },
+    "REQ-EXCALIDRAW-852": {
+      "hash": "d46256e2aa1f",
+      "reason": "plugin/ -> plugin-full/ folder move for the directory submission"
+    },
     "REQ-EXCALIDRAW-853": {
       "hash": "36ec376383e1",
       "reason": "invented example values in place of lifted ones"
@@ -86,8 +90,8 @@
       "reason": "pack nodes carry customData id (REQ-858)"
     },
     "REQ-RELEASE-855": {
-      "hash": "088ecf668fe4",
-      "reason": "the version now lives in five copies: the directory edition's plugin.json and a second marketplace entry joined the original three"
+      "hash": "855043555a8a",
+      "reason": "plugin/ -> plugin-full/ folder move for the directory submission"
     },
     "REQ-RELEASE-857": {
       "hash": "564cbec0185d",

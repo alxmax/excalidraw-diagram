@@ -78,9 +78,9 @@ CASE-4 — a graph that cannot be laid out is refused, and says why
 **Current implementation**
 - `pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`,
   `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`,
-  `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
+  `by_barycenter` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.
 - `CasesExcalidraw034` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
 **Links**
 - Depends on: ARCH-EXCALIDRAW-030 (the Scene API it places shapes with) and
@@ -189,10 +189,10 @@ CASE-7 — a frame caption dodges the arrows entering the group
 
 **Current implementation**
 - `pack()`, `_PackRun` and the graph functions `back_edges`, `layer_of`,
-  `by_barycenter` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.
+  `by_barycenter` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`; `_straight_hits()` in
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`.
 - `CasesExcalidraw034` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
 
 
 --------------------
@@ -272,7 +272,7 @@ CASE-7 — every placed node carries its id
 **Current implementation**
 - `diamond_size()`, `PackOptions`, `_PackRun.measure()`, `_PackRun.place()`,
   `_PackRun._trunks()` and `_PackRun._bus()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`;
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`;
   `scene_from_spec()` in `excalidraw_engine/spec.py`.
 - `CasesExcalidraw034` in
-  `plugin/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.

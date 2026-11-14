@@ -2,104 +2,104 @@
   "_schema": 2,
   "members": {
     "ARCH-DATAMODEL-036": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "4e2b753265afbe47494eec26d15e66bded5ccf91cb92534ad8e20c1060cdba4a"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py": "4e2b753265afbe47494eec26d15e66bded5ccf91cb92534ad8e20c1060cdba4a"
     },
     "ARCH-EXCALIDRAW-030": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
     },
     "ARCH-RELEASE-035": {
-      "scripts/check_versions.py": "d1450b1dcb66226ba8d1f6606e394f8e7075981c184ed8fdc56531edffdc1dc0"
+      "scripts/check_versions.py": "a47d97ec6a50cb416e5091dff114ea4944160375b3d0369b6ebad1785f8572e6"
     },
     "REQ-DATAMODEL-900": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py#parse_ddl": "3d0456a69c7b135cac1f3f12bbba7693a7befb259ecdca5cb0e4a12224a3809f"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py#parse_ddl": "3d0456a69c7b135cac1f3f12bbba7693a7befb259ecdca5cb0e4a12224a3809f"
     },
     "REQ-DATAMODEL-901": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "cf77316a2fb7ea5a821e62dd3cd899388f6e85bfca355bb472588f21196b31f1"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#scene_from_ddl": "cf77316a2fb7ea5a821e62dd3cd899388f6e85bfca355bb472588f21196b31f1"
     },
     "REQ-DATAMODEL-903": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#review_tables": "3c724b03cc4af96de4ac1ec45e978ef147fda1541c84c8d7f618eb53f7b37d05"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#review_tables": "3c724b03cc4af96de4ac1ec45e978ef147fda1541c84c8d7f618eb53f7b37d05"
     },
     "REQ-DATAMODEL-906": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py#parse_roles": "78767f4d89d0c3dba61bff34b02b99786823561b66cba82105bdc0a543fbe1db"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py#parse_roles": "78767f4d89d0c3dba61bff34b02b99786823561b66cba82105bdc0a543fbe1db"
     },
     "REQ-DATAMODEL-907": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py#read_dbt": "dbf616e7fa6046ece73bfe3de60d9e1219cc843cff9657b217c5ca21e638eee0"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/dbt.py#read_dbt": "dbf616e7fa6046ece73bfe3de60d9e1219cc843cff9657b217c5ca21e638eee0"
     },
     "REQ-DATAMODEL-908": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py#parse_yaml": "510e433a388d9e4ac8cfbac34fcd277b596b79d664ca83dae0c17a212c416e54"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/miniyaml.py#parse_yaml": "510e433a388d9e4ac8cfbac34fcd277b596b79d664ca83dae0c17a212c416e54"
     },
     "REQ-DATAMODEL-909": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py#mapping_markdown": "371cf2e7b1c47b193f2bf4f9e01a0ffe957025dbc426927fc403f19424b6a820"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/mapping.py#mapping_markdown": "371cf2e7b1c47b193f2bf4f9e01a0ffe957025dbc426927fc403f19424b6a820"
     },
     "REQ-DATAMODEL-911": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#glossary": "5b71b4ca9310001d73a990e2c2b568aaa88b60ba93cf7aaf6a2c6fc38af0c503",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#role_key": "092a47fbad3a43a5cd13105918029617e9fac5c7d175020b9236403496277de9"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#glossary": "5b71b4ca9310001d73a990e2c2b568aaa88b60ba93cf7aaf6a2c6fc38af0c503",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/explain.py#role_key": "092a47fbad3a43a5cd13105918029617e9fac5c7d175020b9236403496277de9"
     },
     "REQ-DATAMODEL-913": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_flipped": "30be8919bc041297ffa7a14341776899c3a77549171d462043ee760c5fbdcafb",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py#best_right": "5d1c3a800c41a6d668aa2e5cff0187adbe75728f748d01c3f9f142540dd02188"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_flipped": "30be8919bc041297ffa7a14341776899c3a77549171d462043ee760c5fbdcafb",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py#best_right": "5d1c3a800c41a6d668aa2e5cff0187adbe75728f748d01c3f9f142540dd02188"
     },
     "REQ-DATAMODEL-914": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_outside_star": "5b9b6d768d3953d363ce22b1974de338fd12b896594f7b453a183ea6736fdbc2"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py#_outside_star": "5b9b6d768d3953d363ce22b1974de338fd12b896594f7b453a183ea6736fdbc2"
     },
     "REQ-DATAMODEL-915": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_conformed_dimension": "f6e5c38c6aa5d4f3460053ad094feab40c923d9527f46f20fdc315fa6e84cfd3",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_degenerate_dimension": "60b8996c19e8f30745b308837638a6a60d0c3fe0be5bd9548a2da4cb3cbbf1a2",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_fk_type": "952b070b4c0166e3b0452b60bc647fce075127b54a0a035bee14ba8e45233b09",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_junk_dimension": "c15a5f6e0e7c44e408bd17923d80609f057451630d3afee610d2787b349cd537",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_many_to_many": "58b8b82f2868b2271fd9f41c68c0c6304652135b2e340337a0ba3a68839161f2"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_conformed_dimension": "f6e5c38c6aa5d4f3460053ad094feab40c923d9527f46f20fdc315fa6e84cfd3",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_degenerate_dimension": "60b8996c19e8f30745b308837638a6a60d0c3fe0be5bd9548a2da4cb3cbbf1a2",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_fk_type": "952b070b4c0166e3b0452b60bc647fce075127b54a0a035bee14ba8e45233b09",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_junk_dimension": "c15a5f6e0e7c44e408bd17923d80609f057451630d3afee610d2787b349cd537",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py#_many_to_many": "58b8b82f2868b2271fd9f41c68c0c6304652135b2e340337a0ba3a68839161f2"
     },
     "REQ-DATAMODEL-916": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py#_tell_bridge_from_event": "349cb6539bc19b6d60771e7a2eb5db81eaeb9c928dca4a82fe9ac28310181b9e"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py#_tell_bridge_from_event": "349cb6539bc19b6d60771e7a2eb5db81eaeb9c928dca4a82fe9ac28310181b9e"
     },
     "REQ-EXCALIDRAW-844": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#Rect": "b4a039bf9d544d542dbd714332e7ef2ebfd28934554bb5d448fabbda26177305",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py#Scene": "34535fa1895a0ed545950ff334b51c22f1d7ae635036e078ba3d2ca522af1dff",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py#ShapesMixin": "b54f2cffbecefdb55a3015b218b3fbf16babea0dbf045f6aed7e9993bcf6e7e0",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Style": "eb59331e3dda4f85d1bc487e9f732d82fed08f0a8222cd417dcb081eece6da29",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#TextStyle": "dabc0589b12e289630acda4b94c4a23c02c0e01ed72981566afddebe23aaec17"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#ArrangeMixin": "85a2fc1fe08ebbac1b407a0ef3a48aef4347feaf6afa0bc382a6c6c2af051e33",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#Rect": "b4a039bf9d544d542dbd714332e7ef2ebfd28934554bb5d448fabbda26177305",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/scene.py#Scene": "34535fa1895a0ed545950ff334b51c22f1d7ae635036e078ba3d2ca522af1dff",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py#ShapesMixin": "b54f2cffbecefdb55a3015b218b3fbf16babea0dbf045f6aed7e9993bcf6e7e0",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Style": "eb59331e3dda4f85d1bc487e9f732d82fed08f0a8222cd417dcb081eece6da29",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#TextStyle": "dabc0589b12e289630acda4b94c4a23c02c0e01ed72981566afddebe23aaec17"
     },
     "REQ-EXCALIDRAW-845": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py#Canvas": "8e222eb1f8863c82efd8b43c28922580cc939b971d95a45776b8425740ed862b",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py#ConnectorsMixin": "900b1713f18d6e04cf077525ffdd1bdbd1a69f40bcf254a0f99f72caa95582ff"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/canvas.py#Canvas": "8e222eb1f8863c82efd8b43c28922580cc939b971d95a45776b8425740ed862b",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py#ConnectorsMixin": "900b1713f18d6e04cf077525ffdd1bdbd1a69f40bcf254a0f99f72caa95582ff"
     },
     "REQ-EXCALIDRAW-848": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py#main": "8e4fafcd960087b0e81e68333cad6d0eaec51b1f20b4fccc6bb82ef845504f68",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py#discover_stub": "9db1082e73b0f5c51748fc9a3c5b1f581ab1607cb4d2b6dc110b0ee13a142dcf",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py": "2ab4ec16a84ecca62ea43d92978222c2377004b3f94bceabeedc263314afc483",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py#render_html": "b5ba031bfcf06400f1838cb5fbe73119e590beff05b11f8e27b75a24c9fe9d56"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/cli.py#main": "8e4fafcd960087b0e81e68333cad6d0eaec51b1f20b4fccc6bb82ef845504f68",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/discover.py#discover_stub": "9db1082e73b0f5c51748fc9a3c5b1f581ab1607cb4d2b6dc110b0ee13a142dcf",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/selftest.py": "2ab4ec16a84ecca62ea43d92978222c2377004b3f94bceabeedc263314afc483",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py#render_html": "b5ba031bfcf06400f1838cb5fbe73119e590beff05b11f8e27b75a24c9fe9d56"
     },
     "REQ-EXCALIDRAW-849": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py#AnnotateMixin": "574ee9c72a14311ab127be8157ad4dd225a2c1c6e23f4558e2be1083c3e7fc82"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py#AnnotateMixin": "574ee9c72a14311ab127be8157ad4dd225a2c1c6e23f4558e2be1083c3e7fc82"
     },
     "REQ-EXCALIDRAW-850": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_json": "644178204a010353b6b5c1ed225ea593d6ce7dab73a950fb8f8e86a47843f1df",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_spec": "10bf27d6a92a4a45e00781b96c2d6e6403d5cb3e5ec58b39abf8e323ce2e02dd"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_json": "644178204a010353b6b5c1ed225ea593d6ce7dab73a950fb8f8e86a47843f1df",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py#scene_from_spec": "10bf27d6a92a4a45e00781b96c2d6e6403d5cb3e5ec58b39abf8e323ce2e02dd"
     },
     "REQ-EXCALIDRAW-852": {
-      "plugin/skills/excalidraw-diagram/scripts/mcp_server.py": "44e63adc53d54b393d03b703d71f76261b40edaa190b5992c91987b821587702"
+      "plugin-full/skills/excalidraw-diagram/scripts/mcp_server.py": "44e63adc53d54b393d03b703d71f76261b40edaa190b5992c91987b821587702"
     },
     "REQ-EXCALIDRAW-853": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#_item": "e797e1ab89bd77f1b448638eaffc87fa241ef5e7ef2f9cf4dcfd26db25181408",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#as_rect": "302b198b8529e59f7dd1f3e9a6e7dd2f4e24e368b34db1fdf98e0ceb08b64ac9",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Font": "0947ad111e7ff6c0136b6395e28374efede09dd6957f740383b0ab85d5456b2e",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Paint": "5234eb25595e170e48f68571d9e74b3362d773fb8b88709788c6c168ab3e02ae",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#ink_on": "4ebe12acf24bdad6295263efb87bcce9823cd136b8aac59685c4422bbe5073fe"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py#_item": "e797e1ab89bd77f1b448638eaffc87fa241ef5e7ef2f9cf4dcfd26db25181408",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/geometry.py#as_rect": "302b198b8529e59f7dd1f3e9a6e7dd2f4e24e368b34db1fdf98e0ceb08b64ac9",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Font": "0947ad111e7ff6c0136b6395e28374efede09dd6957f740383b0ab85d5456b2e",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#Paint": "5234eb25595e170e48f68571d9e74b3362d773fb8b88709788c6c168ab3e02ae",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/style.py#ink_on": "4ebe12acf24bdad6295263efb87bcce9823cd136b8aac59685c4422bbe5073fe"
     },
     "REQ-EXCALIDRAW-854": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py#available": "bee764a8ecef9e6c7df4f46eed61771abe80e3d074a59eb9b6c0c2fa4dcfbdd3",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py#html_page": "1aa12689a82d01c9d131a8d5620517700c3c4bf7401b822f2013697a0d85d545"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/assets.py#available": "bee764a8ecef9e6c7df4f46eed61771abe80e3d074a59eb9b6c0c2fa4dcfbdd3",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/viewer.py#html_page": "1aa12689a82d01c9d131a8d5620517700c3c4bf7401b822f2013697a0d85d545"
     },
     "REQ-EXCALIDRAW-856": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py#render_svg": "55c77c6c5b04a26432b8c533e42997b9204ea9df9b56893c07bd66293fa7cdde",
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py#scene_svg": "da34d1640e5877dd53fa2bcbb312b1daf04c4c9460dfe79814d75aa2a26aab3a"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py#render_svg": "55c77c6c5b04a26432b8c533e42997b9204ea9df9b56893c07bd66293fa7cdde",
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/svg.py#scene_svg": "da34d1640e5877dd53fa2bcbb312b1daf04c4c9460dfe79814d75aa2a26aab3a"
     },
     "REQ-EXCALIDRAW-859": {
-      "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#_laid": "830d60029dbda214d6573d4028f875944548539a1dcedbc48cd65e33082b9d2c"
+      "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#_laid": "830d60029dbda214d6573d4028f875944548539a1dcedbc48cd65e33082b9d2c"
     },
     "REQ-RELEASE-855": {
-      "scripts/check_versions.py#main": "cbcbfe63403a24195e35aa8289efca228a98ebf5a3ce87a12f429f3e5eb7364e"
+      "scripts/check_versions.py#main": "acf1e7f01556b116cba8af82d58b940769ef1656b21155b8beee12134d2943b6"
     },
     "REQ-RELEASE-857": {
       "scripts/check_versions.py#_bumped": "d561ddb1d9ca152509b426384bf8aec53ac1d5d47d1f3d7e3cc47a4b70079683"

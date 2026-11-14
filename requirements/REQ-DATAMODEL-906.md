@@ -60,6 +60,6 @@ CASE-6 — the flag works end to end
   diagram without saying so.
 
 **Current implementation**
-- `parse_roles()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`;
+- `parse_roles()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/roles.py`;
   `classify_tables()` in `classify.py`; the flag in `cli.py`.
-- `TestRoles` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestRoles` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

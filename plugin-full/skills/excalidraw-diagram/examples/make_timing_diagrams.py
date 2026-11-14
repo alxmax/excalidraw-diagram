@@ -8,7 +8,7 @@ never inspect an unbound trace, so the script asserts its own geometry: clock
 edges land on the bit grid and every trace stays inside its row.
 
 Regenerate from the repo root (the .excalidraw + .html land where you say):
-    python -X utf8 plugin/skills/excalidraw-diagram/examples/make_timing_diagrams.py out/
+    python -X utf8 plugin-full/skills/excalidraw-diagram/examples/make_timing_diagrams.py out/
 Then open out/timing_diagrams.html and use Excalidraw's menu > Export image to
 refresh docs/timing_diagrams.png.
 """

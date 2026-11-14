@@ -1,5 +1,23 @@
 # Changelog
 
+## plugin `v2.21.0` — 2026-11-14
+
+**The two editions swapped folders: `plugin/` is now the instructions-only edition and the
+full builder edition moved to `plugin-full/`.**
+
+v2.20.0 was refused again: the Claude plugin directory's submission is pinned to the
+`plugin/` path and does not read `.claude-plugin/marketplace.json`, so it kept fetching the
+full edition (93 files, the MCP server, the Python builder and the vendored runtime). Now
+`plugin/` holds only the 7 Markdown, JSON and icon files the directory accepts.
+
+- **Marketplace installs are unaffected.** The plugin names did not change:
+  `excalidraw-diagram` is still the instructions-only edition (now `./plugin`) and
+  `excalidraw-diagram-full` is still the full edition (now `./plugin-full`). The
+  plugin-cache resolver keys on names, not folders, so it needs no change.
+- Every repo path to the full edition now reads `plugin-full/`: CI, `.gitignore`,
+  `.reqmapignore`, `scripts/check_versions.py` and its test, the examples' usage lines,
+  the README, `CLAUDE.md` and the requirement corpus's Context paths.
+
 ## plugin `v2.20.0` — 2026-11-14
 
 **Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only

@@ -51,5 +51,5 @@ CASE-4 — a link's name
 
 **Current implementation**
 - `_tell_bridge_from_event()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.
-- `TestClassify` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/classify.py`.
+- `TestClassify` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

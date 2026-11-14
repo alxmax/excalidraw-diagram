@@ -19,7 +19,7 @@ satisfies: [SYS-DIAGRAM-001]
 > its own rather than a line in a checklist.
 
 Every bullet below is binding.
-- `plugin/.claude-plugin/plugin.json` is the source of truth, and every other copy of
+- `plugin-full/.claude-plugin/plugin.json` is the source of truth, and every other copy of
   the version equals it. [[REQ-RELEASE-855]] details the check.
 - CI runs the version check on every push and every pull request, so a mismatch
   cannot be merged.
@@ -44,7 +44,7 @@ CASE-3 — the release check never ships <!-- verifiable by: inspection -->
 
 ## Context
 **Notes**
-- This is a repo capability, not a shipped one: `scripts/` sits outside `plugin/`
+- This is a repo capability, not a shipped one: `scripts/` sits outside `plugin-full/`
   and never reaches an installed copy. It satisfies the diagram need indirectly —
   a fix nobody receives is a fix that did not happen.
 
@@ -74,7 +74,7 @@ satisfies: [ARCH-RELEASE-035]
 
 Every bullet below is binding.
 - `scripts/check_versions.py` compares the version in
-  `plugin/.claude-plugin/plugin.json` against `directory-plugin/.claude-plugin/plugin.json`
+  `plugin-full/.claude-plugin/plugin.json` against `plugin/.claude-plugin/plugin.json`
   and every copy in `.claude-plugin/marketplace.json`: the top level and each `plugins[]` entry.
 - The script exits 0 when all copies agree, and 1 when any disagrees.
 - A failure names every copy that disagreed and the value it holds.
@@ -102,9 +102,9 @@ CASE-4 — `--fix` makes them agree instead of failing
   Then   it exits 0, and a second run with no flag exits 0 because the files now agree
 
 CASE-5 — a stale directory edition fails, and says so
-  Given  `directory-plugin/.claude-plugin/plugin.json` left behind a bump
+  Given  `plugin/.claude-plugin/plugin.json` left behind a bump
   When   `check_versions.py` runs
-  Then   it exits 1 and its output names the directory-plugin copy and the value it holds
+  Then   it exits 1 and its output names the plugin copy and the value it holds
 
 ## Context
 **Notes**

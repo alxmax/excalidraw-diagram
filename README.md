@@ -46,8 +46,8 @@ Then just ask. The skill triggers on its own for things like:
 
 | Edition | Plugin name | Folder | What it ships | Where it installs from |
 |---|---|---|---|---|
-| **Full** | `excalidraw-diagram-full` | `plugin/` | the skill, the stdlib Python builder with its seven gates, the MCP server, the offline viewer runtime | this repo's marketplace |
-| **Instructions-only** | `excalidraw-diagram` | `directory-plugin/` | the skill as Markdown and JSON only: Claude writes the scene JSON itself under the same layout rules and runs the seven checks by hand; the viewer loads Excalidraw from unpkg | this repo's marketplace and the Claude plugin directory |
+| **Full** | `excalidraw-diagram-full` | `plugin-full/` | the skill, the stdlib Python builder with its seven gates, the MCP server, the offline viewer runtime | this repo's marketplace |
+| **Instructions-only** | `excalidraw-diagram` | `plugin/` | the skill as Markdown and JSON only: Claude writes the scene JSON itself under the same layout rules and runs the seven checks by hand; the viewer loads Excalidraw from unpkg | this repo's marketplace and the Claude plugin directory |
 
 The plugin directory accepts code, local MCP servers and fonts only from Verified
 organizations, so the directory edition carries none of them. The full edition is the
@@ -59,7 +59,7 @@ editions carry the same version number, and `SKILL.md` in each must agree on the
 Describe the graph and let the builder place it:
 
 ```
-cd plugin/skills/excalidraw-diagram/scripts
+cd plugin-full/skills/excalidraw-diagram/scripts
 python excalidraw_builder.py scene --from-json graph.json -o out/
 ```
 
@@ -90,7 +90,7 @@ a layout count go down but never up.
 **A Mermaid flowchart, drawn as an editable scene** —
 [`docs/mermaid_graph.json`](docs/mermaid_graph.json) is this Mermaid source, translated
 line by line as
-[`references/mermaid_to_graph.md`](plugin/skills/excalidraw-diagram/references/mermaid_to_graph.md)
+[`references/mermaid_to_graph.md`](plugin-full/skills/excalidraw-diagram/references/mermaid_to_graph.md)
 describes:
 
 ```mermaid
@@ -120,7 +120,7 @@ s.save("auth_flow", out_dir="out", gates=Gates.strict())
 
 ## MCP tools
 
-Installing the plugin also registers an MCP server (`plugin/.mcp.json`), so an assistant
+Installing the plugin also registers an MCP server (`plugin-full/.mcp.json`), so an assistant
 can call the builder as tools instead of shelling out: `build_scene` takes the same graph
 description as `scene --from-json`, plus `render_html`, `discover_repo`, and `graph_schema`
 for the description format. It speaks JSON-RPC over stdio and, like the builder, needs
@@ -136,7 +136,7 @@ So the model does not author JSON. It writes a short Python script against a sma
 `Scene` API, and the builder owns the invariants and **checks its own output**:
 
 ```
-$ python plugin/skills/excalidraw-diagram/scripts/excalidraw_builder.py
+$ python plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py
 wrote /tmp/excd/smoke.excalidraw /tmp/excd/smoke.html
 OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)
 ```
@@ -164,7 +164,7 @@ ValueError: 1 overlapping shape(s): 'ingest' overlaps 'parse'. Move the coordina
 ## What is in here
 
 ```
-plugin/skills/excalidraw-diagram/
+plugin-full/skills/excalidraw-diagram/
   SKILL.md                  the authoritative contract (Claude Code), 196 lines
   SKILL.universal.md        the same, for any assistant
   scripts/excalidraw_builder.py   the import name and CLI — stdlib only, no dependencies
@@ -175,8 +175,8 @@ plugin/skills/excalidraw-diagram/
   references/worked_examples.md   the repo-poster recipe and ❌ → ✅ variants
   references/excalidraw_format.md the file-format notes the builder encodes
   examples/make_*.py        nine worked generators, each runnable on its own
-plugin/.mcp.json            registers the MCP server on install
-directory-plugin/           the instructions-only edition: Markdown, JSON and the icon
+plugin-full/.mcp.json       registers the MCP server on install
+plugin/                     the instructions-only edition: Markdown, JSON and the icon
 requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py, *_graph.json + *.png  what the pictures in this README are built from
 scripts/check_versions.py   plugin.json and marketplace.json must agree
@@ -187,7 +187,7 @@ scripts/check_versions.py   plugin.json and marketplace.json must agree
 Each generator under `examples/` runs standalone and writes into a directory you name:
 
 ```
-python plugin/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py out/
+python plugin-full/skills/excalidraw-diagram/examples/make_iso5807_flowchart.py out/
 ```
 
 They are exercised in CI, so a generator that stops working is a build failure rather than
@@ -228,7 +228,7 @@ connector.
 Three more diagram types, again with nothing new in the builder. Each generator asserts
 the geometry or the logic no gate can see.
 
-`plugin/skills/excalidraw-diagram/examples/make_sequence_diagram.py`: signing in, as
+`plugin-full/skills/excalidraw-diagram/examples/make_sequence_diagram.py`: signing in, as
 messages between a browser, a gateway, an auth service and a database. Participants are
 boxes, lifelines and messages are unbound `path()` lines, the `alt` fragment is a
 `frame()`. The script asserts that every message ends on a lifeline and that time only
@@ -236,14 +236,14 @@ runs downwards.
 
 ![A sequence diagram of signing in](docs/sequence_diagram.png)
 
-`plugin/skills/excalidraw-diagram/examples/make_state_machine.py`: the life of an online
+`plugin-full/skills/excalidraw-diagram/examples/make_state_machine.py`: the life of an online
 order. States and events are a graph, so `pack()` places them and routes the one event
 that goes back. The script asserts that every state is reachable and that only final
 states are dead ends.
 
 ![A state machine of an order's life](docs/state_machine.png)
 
-`plugin/skills/excalidraw-diagram/examples/make_er_diagram.py`: the tables behind a small
+`plugin-full/skills/excalidraw-diagram/examples/make_er_diagram.py`: the tables behind a small
 shop. A coloured header box over a body box listing the columns is one table, and a
 headless arrow labelled `1 x : N y` is one relationship. The script asserts that the
 foreign keys and the drawn relationships agree, both ways.
@@ -259,12 +259,12 @@ none: a trace is an unbound
 `(x, y, w, h)`. The gates never inspect an unbound trace, so each generator asserts its
 own geometry: clock edges land on the bit grid, every trace stays in its row.
 
-`plugin/skills/excalidraw-diagram/examples/make_timing_diagrams.py`: how a byte
+`plugin-full/skills/excalidraw-diagram/examples/make_timing_diagrams.py`: how a byte
 travels on SPI, I2C and UART.
 
 ![SPI, I2C and UART timing diagrams](docs/timing_diagrams.png)
 
-`plugin/skills/excalidraw-diagram/examples/make_autosar_timing.py`: a button
+`plugin-full/skills/excalidraw-diagram/examples/make_autosar_timing.py`: a button
 debounce, an AUTOSAR Dem counter-based
 debounce with its fault detection counter, and an ECU turn-on / turn-off.
 
@@ -282,7 +282,7 @@ between two local processes. Nothing is installed at build time either, from npm
 
 **Viewing.** The `.html` carries its own renderer: the pinned Excalidraw build, React and
 the fonts are vendored in
-[`plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/`](plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/)
+[`plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/`](plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/runtime/)
 and inlined into the page, so opening it issues **zero network requests** — verified by
 rendering a generated page in Chrome with a net log, with DNS pointed at nothing. It costs
 about 1.6 MB per page. `--cdn` writes the ~100 KB page that loads the same runtime from

@@ -61,6 +61,6 @@ CASE-5 — too many to search
   worse defect.
 
 **Current implementation**
-- `best_right()` in `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py`;
+- `best_right()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py`;
   `_flipped()` and `graph_from_tables()` in `data_model.py`; the layout in `pack.py`.
-- `TestStarLayout` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+- `TestStarLayout` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

@@ -69,5 +69,5 @@ CASE-7 — snowflake
 
 **Current implementation**
 - `review_tables()` and its first five rules in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.
-- `TestReview` in `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/review.py`.
+- `TestReview` in `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

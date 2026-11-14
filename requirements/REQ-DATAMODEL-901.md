@@ -51,6 +51,6 @@ CASE-5 — the title is chosen, not inherited
 ## Context
 **Current implementation**
 - `graph_from_tables()`, `unresolved_fks()` and `scene_from_ddl()` in
-  `plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py`; the verb in `cli.py`.
 - `TestGraph`, `TestScene` and `TestCli` in
-  `plugin/skills/excalidraw-diagram/scripts/test_data_model.py`.
+  `plugin-full/skills/excalidraw-diagram/scripts/test_data_model.py`.

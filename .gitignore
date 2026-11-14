@@ -6,7 +6,7 @@ __pycache__/
 diagrams/
 out/
 *.excalidraw
-!plugin/skills/excalidraw-diagram/references/*.excalidraw
+!plugin-full/skills/excalidraw-diagram/references/*.excalidraw
 
 # The rendered viewer is regenerable from the committed _map.json and the vendored
 # template, so it is built rather than committed (the upstream ADR-0034 posture).

@@ -14,7 +14,7 @@ assignment, so MODES and MODEL are deliberately omitted:
 Colour = role (one legend decodes all layers); a glossary decodes the jargon.
 Every save() gate runs at "error". Run from the repo root, writing into the
 regenerable diagrams/ dir:
-    python plugin/skills/excalidraw-diagram/examples/make_full_architecture.py diagrams
+    python plugin-full/skills/excalidraw-diagram/examples/make_full_architecture.py diagrams
 """
 import os
 import sys
