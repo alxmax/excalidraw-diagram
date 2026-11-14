@@ -30,6 +30,18 @@ Then just ask. The skill triggers on its own for things like:
   direction, a legend for every colour and a glossary for every term, so someone
   who has never seen the system can read it.
 
+### Two editions
+
+| Edition | Folder | What it ships | Where it installs from |
+|---|---|---|---|
+| **Full** | `plugin/` | the skill, the stdlib Python builder with its seven gates, the MCP server, the offline viewer runtime | this repo's marketplace (the commands above) |
+| **Instructions-only** | `directory-plugin/` | the skill as Markdown and JSON only: Claude writes the scene JSON itself under the same layout rules and runs the seven checks by hand; the viewer loads Excalidraw from unpkg | the Claude plugin directory |
+
+The plugin directory accepts code, local MCP servers and fonts only from Verified
+organizations, so the directory edition carries none of them. The full edition is the
+better tool wherever it can be installed: the gates are enforced rather than followed. Both
+editions carry the same version number, and `SKILL.md` in each must agree on the rules.
+
 ## Two ways to a diagram
 
 Describe the graph and let the builder place it:
@@ -152,6 +164,7 @@ plugin/skills/excalidraw-diagram/
   references/excalidraw_format.md the file-format notes the builder encodes
   examples/make_*.py        nine worked generators, each runnable on its own
 plugin/.mcp.json            registers the MCP server on install
+directory-plugin/           the instructions-only edition: Markdown, JSON and the icon
 requirements/               the skill's requirement corpus, checked in CI
 docs/make_*.py, *_graph.json + *.png  what the pictures in this README are built from
 scripts/check_versions.py   plugin.json and marketplace.json must agree

@@ -2853,9 +2853,9 @@
     },
     {
       "month": "2026-11",
-      "count": 12,
+      "count": 13,
       "first": "2026-11-06",
-      "last": "2026-11-07",
+      "last": "2026-11-14",
       "versions": [
         "v2.10.0",
         "v2.11.0",
@@ -2868,11 +2868,20 @@
         "v2.15.1",
         "v2.16.0",
         "v2.17.0",
-        "v2.18.0"
+        "v2.18.0",
+        "v2.19.0"
       ],
-      "landmark": "v2.18.0",
-      "headline": "Five more review rules, and a better call on a table of only keys",
+      "landmark": "v2.19.0",
+      "headline": "An instructions-only edition for the Claude plugin directory",
       "entries": [
+        {
+          "version": "v2.19.0",
+          "date": "2026-11-14",
+          "headline": "An instructions-only edition for the Claude plugin directory",
+          "body": "**An instructions-only edition for the Claude plugin directory.**\n\nThe directory refused 2.18.0. It accepts local MCP servers, scripts, fonts and other\nnon-text files only from Verified organizations, and its security scan cannot read a\nminified bundle. The full plugin ships all four: the stdio MCP server, the Python builder,\nthe `.woff2` fonts and `excalidraw.production.min.js`.\n\n- **`directory-plugin/`** is a second edition holding only Markdown, JSON and the icon.\n  Its `SKILL.md` is a contract for writing the scene JSON by hand. It states the format\n  invariants the builder owns: unique ids, distinct seeds and nonces, and two-way text and\n  arrow bindings. It gives the sizing and column rules as arithmetic, and the seven gates\n  as checks Claude runs on its own coordinates before saving.\n- **`references/example_scene.json`** is a scene the builder emitted under\n  `Gates.strict()`, so the shape Claude copies is one the gates passed.\n- **`references/viewer_template.md`** is the CDN viewer page (`@excalidraw/excalidraw@0.17.6`,\n  React 18.2.0, the versions the full edition vendors). It escapes `</` in the embedded scene.\n- `plugin/` is unchanged and remains what the GitHub marketplace installs. When the full\n  edition's MCP tools are present, the directory edition defers to them.",
+          "first_commit": "2026-11-14",
+          "last_commit": "2026-11-14"
+        },
         {
           "version": "v2.18.0",
           "date": "2026-11-07",
