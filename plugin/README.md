@@ -1,4 +1,12 @@
-# excalidraw-diagram
+# excalidraw-diagram-full
+
+The full edition of `excalidraw-diagram`: the skill plus the Python builder, its gates and
+the MCP server. Install it with:
+
+```
+/plugin marketplace add alxmax/excalidraw-diagram
+/plugin install excalidraw-diagram-full@excalidraw-diagram
+```
 
 Describe a system, a flow or an architecture, and get back an **editable Excalidraw
 scene** (`<name>.excalidraw`, imports into excalidraw.com) and a **self-contained HTML

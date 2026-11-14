@@ -16,10 +16,22 @@ PNG of a generator that CI runs on every push.*
 
 ## Install
 
+The full edition, with the Python builder, its seven gates and the MCP server:
+
 ```
 /plugin marketplace add alxmax/excalidraw-diagram
-/plugin install excalidraw-diagram
+/plugin install excalidraw-diagram-full@excalidraw-diagram
 ```
+
+The instructions-only edition, the one the Claude plugin directory lists:
+
+```
+/plugin install excalidraw-diagram@excalidraw-diagram
+```
+
+Installed `excalidraw-diagram` from this marketplace before v2.20.0? That name now
+installs the instructions-only edition; install `excalidraw-diagram-full` to keep the
+builder.
 
 Then just ask. The skill triggers on its own for things like:
 
@@ -32,10 +44,10 @@ Then just ask. The skill triggers on its own for things like:
 
 ### Two editions
 
-| Edition | Folder | What it ships | Where it installs from |
-|---|---|---|---|
-| **Full** | `plugin/` | the skill, the stdlib Python builder with its seven gates, the MCP server, the offline viewer runtime | this repo's marketplace (the commands above) |
-| **Instructions-only** | `directory-plugin/` | the skill as Markdown and JSON only: Claude writes the scene JSON itself under the same layout rules and runs the seven checks by hand; the viewer loads Excalidraw from unpkg | the Claude plugin directory |
+| Edition | Plugin name | Folder | What it ships | Where it installs from |
+|---|---|---|---|---|
+| **Full** | `excalidraw-diagram-full` | `plugin/` | the skill, the stdlib Python builder with its seven gates, the MCP server, the offline viewer runtime | this repo's marketplace |
+| **Instructions-only** | `excalidraw-diagram` | `directory-plugin/` | the skill as Markdown and JSON only: Claude writes the scene JSON itself under the same layout rules and runs the seven checks by hand; the viewer loads Excalidraw from unpkg | this repo's marketplace and the Claude plugin directory |
 
 The plugin directory accepts code, local MCP servers and fonts only from Verified
 organizations, so the directory edition carries none of them. The full edition is the

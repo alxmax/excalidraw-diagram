@@ -1,7 +1,7 @@
 {
   "name": "excalidraw-diagram",
   "description": "Generate Excalidraw diagrams (.excalidraw scene files) and an HTML viewer from a description of a system, flow or architecture. Instructions-only edition: Claude writes the scene JSON itself under a layout and self-check contract. No bundled code, no MCP server; the full edition with the Python builder installs from the GitHub marketplace.",
-  "version": "2.19.0",
+  "version": "2.20.0",
   "author": {
     "name": "Schipor Alexandru"
   },

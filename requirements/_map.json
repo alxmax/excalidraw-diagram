@@ -1144,12 +1144,12 @@
       "status": "confirmed",
       "area": "ARCH",
       "title": "A released version reaches the people who installed it",
-      "intent": "The version number is written in three places and read from one of them. If a bump misses a copy, nothing errors, no test fails and the release looks shipped — it simply never arrives: an installed plugin keeps running the old build because the marketplace entry still advertises the old number. That is the worst shape a defect can take, silent and invisible from inside the repo, so it gets a check of its own rather than a line in a checklist.",
+      "intent": "The version number is written in five places and read from one of them. If a bump misses a copy, nothing errors, no test fails and the release looks shipped — it simply never arrives: an installed plugin keeps running the old build because the marketplace entry still advertises the old number. That is the worst shape a defect can take, silent and invisible from inside the repo, so it gets a check of its own rather than a line in a checklist.",
       "contract": [
         "`plugin/.claude-plugin/plugin.json` is the source of truth, and every other copy of the version equals it. [[REQ-RELEASE-855]] details the check.",
         "CI runs the version check on every push and every pull request, so a mismatch cannot be merged.",
         "CI fails a pull request that bumps the version without a matching CHANGELOG heading.",
-        "A release starts with one command that raises all three copies together. [[REQ-RELEASE-857]]"
+        "A release starts with one command that raises every copy together. [[REQ-RELEASE-857]]"
       ],
       "verify": [],
       "notes": [
@@ -1160,7 +1160,7 @@
         "The `versions` and `changelog` jobs in `.github/workflows/ci.yml`.",
         "-------------------"
       ],
-      "accept": "CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->\n  Given  `.github/workflows/ci.yml`\n  When   a commit is pushed or a pull request opened\n  Then   the `versions` job runs `scripts/check_versions.py` and its own tests\n\nCASE-2 — a bump without a CHANGELOG heading fails the pull request <!-- verifiable by: inspection -->\n  Given  a pull request that changes the version in `plugin.json`\n  When   the `changelog` job runs\n  Then   it fails unless `CHANGELOG.md` holds a `` `vX.Y.Z` `` heading for that version\n\nCASE-3 — the release check never ships <!-- verifiable by: inspection -->\n  Given  the directory `/plugin install` hands a consumer\n  When   its contents are listed\n  Then   `scripts/check_versions.py` is absent, because only `plugin/` ships",
+      "accept": "CASE-1 — CI runs the version check on every push and pull request <!-- verifiable by: inspection -->\n  Given  `.github/workflows/ci.yml`\n  When   a commit is pushed or a pull request opened\n  Then   the `versions` job runs `scripts/check_versions.py` and its own tests\n\nCASE-2 — a bump without a CHANGELOG heading fails the pull request <!-- verifiable by: inspection -->\n  Given  a pull request that changes the version in `plugin.json`\n  When   the `changelog` job runs\n  Then   it fails unless `CHANGELOG.md` holds a `` `vX.Y.Z` `` heading for that version\n\nCASE-3 — the release check never ships <!-- verifiable by: inspection -->\n  Given  the directory `/plugin install` hands a consumer\n  When   its contents are listed\n  Then   `scripts/check_versions.py` is absent, because only the edition's own folder ships",
       "input": "",
       "output": "",
       "desc": "",
@@ -1199,24 +1199,24 @@
       "level": "code",
       "status": "confirmed",
       "area": "REQ",
-      "title": "check_versions.py: the three copies of the version agree",
+      "title": "check_versions.py: every copy of the version agrees",
       "intent": "The copies exist only to be identical, so the check compares them, names every one that disagrees, and can rewrite them from the source of truth instead of asking someone to retype a number by hand.",
       "contract": [
-        "`scripts/check_versions.py` compares the version in `plugin/.claude-plugin/plugin.json` against both copies in `.claude-plugin/marketplace.json`: the top-level one and the one inside `plugins[]`.",
-        "The script exits 0 when all three agree, and 1 when any disagrees.",
+        "`scripts/check_versions.py` compares the version in `plugin/.claude-plugin/plugin.json` against `directory-plugin/.claude-plugin/plugin.json` and every copy in `.claude-plugin/marketplace.json`: the top level and each `plugins[]` entry.",
+        "The script exits 0 when all copies agree, and 1 when any disagrees.",
         "A failure names every copy that disagreed and the value it holds.",
-        "`--fix` rewrites `marketplace.json` from `plugin.json` instead of failing."
+        "`--fix` rewrites every other copy from `plugin.json` instead of failing."
       ],
       "verify": [],
       "notes": [
-        "The count in the success line is three: `plugin.json` plus the two marketplace copies. It is printed so a future manifest that adds a fourth copy shows up as a changed number rather than passing unnoticed."
+        "The count in the success line is five: the two `plugin.json` files plus the three marketplace copies. It is printed so a future manifest that adds a fourth copy shows up as a changed number rather than passing unnoticed."
       ],
       "current_impl": [
         "`main()` in `scripts/check_versions.py`.",
         "`TestCheckVersions` in `scripts/test_check_versions.py`.",
         "-------------------"
       ],
-      "accept": "CASE-1 — three matching versions pass\n  Given  `plugin.json` at a version and both `marketplace.json` copies at the same one\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across three locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  both top-level versions agreeing while the entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  a marketplace manifest whose two copies both disagree with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the file now agrees",
+      "accept": "CASE-1 — matching versions pass\n  Given  both `plugin.json` files and every `marketplace.json` copy at the same version\n  When   `check_versions.py` runs\n  Then   it exits 0 and prints that the version agrees across five locations\n\nCASE-2 — a missed copy fails, and says which one\n  Given  `plugin.json` bumped while the top-level `marketplace.json` version is left behind\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the top-level copy and the value it holds\n\nCASE-3 — a missed copy inside plugins[] fails too\n  Given  the top-level versions agreeing while one entry in `plugins[]` lags\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names that entry\n\nCASE-4 — `--fix` makes them agree instead of failing\n  Given  every other copy disagreeing with `plugin.json`\n  When   `check_versions.py --fix` runs\n  Then   it exits 0, and a second run with no flag exits 0 because the files now agree\n\nCASE-5 — a stale directory edition fails, and says so\n  Given  `directory-plugin/.claude-plugin/plugin.json` left behind a bump\n  When   `check_versions.py` runs\n  Then   it exits 1 and its output names the directory-plugin copy and the value it holds",
       "input": "",
       "output": "",
       "desc": "",
@@ -1229,7 +1229,7 @@
       "members": [
         {
           "role": "implements",
-          "loc": "scripts/check_versions.py:74"
+          "loc": "scripts/check_versions.py:77"
         },
         {
           "role": "tested-by",
@@ -1240,8 +1240,8 @@
       "milestone": null,
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4,
+      "clauses": 5,
+      "covered": 5,
       "clarify": []
     },
     {
@@ -1251,9 +1251,9 @@
       "status": "confirmed",
       "area": "REQ",
       "title": "check_versions.py --bump: start a release with no copy left behind",
-      "intent": "A release starts by raising the version, and the three places it is written are exactly where a hand edit goes wrong. `--bump` raises them in one step, so the state it leaves already passes the check.",
+      "intent": "A release starts by raising the version, and the five places it is written are exactly where a hand edit goes wrong. `--bump` raises them in one step, so the state it leaves already passes the check.",
       "contract": [
-        "`check_versions.py --bump patch|minor|major` raises the version in `plugin.json` and writes the same value to both `marketplace.json` copies.",
+        "`check_versions.py --bump patch|minor|major` raises the version in `plugin.json` and writes the same value to every other copy.",
         "`--bump` changes only the version string in `plugin.json`, leaving its layout and line endings as they were.",
         "`--bump` refuses a version that is not X.Y.Z, and changes no file when it does.",
         "After a bump, the script reminds the author to add the matching CHANGELOG heading when it is missing."
@@ -1266,7 +1266,7 @@
         "`_bumped()` and the bump branch of `main()` in `scripts/check_versions.py`.",
         "`TestCheckVersions` in `scripts/test_check_versions.py`."
       ],
-      "accept": "CASE-1 — `--bump` raises all three copies together\n  Given  `plugin.json` and both `marketplace.json` copies at `2.4.9`\n  When   `check_versions.py --bump minor` runs\n  Then   it exits 0 and all three copies hold `2.5.0`\n  Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed\n\nCASE-2 — `--bump` resets the parts below the one raised\n  Given  all three copies at `2.4.9`\n  When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`\n  Then   the results are `2.4.10`, `2.5.0` and `3.0.0`\n\nCASE-3 — `--bump` refuses a version that is not X.Y.Z\n  Given  all three copies at `2.5`\n  When   `check_versions.py --bump patch` runs\n  Then   it exits 1 and every copy still holds `2.5`\n\nCASE-4 — the CHANGELOG reminder appears only when the heading is missing\n  Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md`\n  When   `check_versions.py --bump patch` runs\n  Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise",
+      "accept": "CASE-1 — `--bump` raises every copy together\n  Given  every copy of the version at `2.4.9`\n  When   `check_versions.py --bump minor` runs\n  Then   it exits 0 and every copy holds `2.5.0`\n  Then   a second run with no flag exits 0, and only the version string in `plugin.json` changed\n\nCASE-2 — `--bump` resets the parts below the one raised\n  Given  every copy at `2.4.9`\n  When   `--bump` runs with `patch`, `minor` and `major`, each from `2.4.9`\n  Then   the results are `2.4.10`, `2.5.0` and `3.0.0`\n\nCASE-3 — `--bump` refuses a version that is not X.Y.Z\n  Given  every copy at `2.5`\n  When   `check_versions.py --bump patch` runs\n  Then   it exits 1 and every copy still holds `2.5`\n\nCASE-4 — the CHANGELOG reminder appears only when the heading is missing\n  Given  a bump to `1.0.1` with and without a `` `v1.0.1` `` heading in `CHANGELOG.md`\n  When   `check_versions.py --bump patch` runs\n  Then   the output names `CHANGELOG.md` and `v1.0.1` when the heading is missing, and not otherwise",
       "input": "",
       "output": "",
       "desc": "",
@@ -1279,7 +1279,7 @@
       "members": [
         {
           "role": "implements",
-          "loc": "scripts/check_versions.py:40"
+          "loc": "scripts/check_versions.py:42"
         },
         {
           "role": "tested-by",
@@ -1292,7 +1292,17 @@
       "risks": [],
       "clauses": 4,
       "covered": 4,
-      "clarify": []
+      "clarify": [
+        {
+          "rule": "case-monoculture",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "3 of 4 Given lines open on the same word (\"every\"). Do the cases cover the other kinds of input a caller can supply?",
+          "suggest": "Read the Givens in context: a repeated word need not be a repeated kind of input. Add a case from the caller's side only if a kind is missing."
+        }
+      ]
     },
     {
       "id": "REQ-DATAMODEL-900",
@@ -2853,7 +2863,7 @@
     },
     {
       "month": "2026-11",
-      "count": 13,
+      "count": 14,
       "first": "2026-11-06",
       "last": "2026-11-14",
       "versions": [
@@ -2869,11 +2879,20 @@
         "v2.16.0",
         "v2.17.0",
         "v2.18.0",
-        "v2.19.0"
+        "v2.19.0",
+        "v2.20.0"
       ],
-      "landmark": "v2.19.0",
-      "headline": "An instructions-only edition for the Claude plugin directory",
+      "landmark": "v2.20.0",
+      "headline": "**Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only",
       "entries": [
+        {
+          "version": "v2.20.0",
+          "date": "2026-11-14",
+          "headline": "**Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only",
+          "body": "**Breaking for marketplace installs: `excalidraw-diagram` is now the instructions-only\nedition; the full builder edition is `excalidraw-diagram-full`.**\n\nThe Claude plugin directory resolves a submission through this repository's\n`.claude-plugin/marketplace.json`, and that file pointed `excalidraw-diagram` at `./plugin`,\nthe full edition it refuses. So the marketplace now lists two plugins:\n\n- **`excalidraw-diagram`** → `./directory-plugin`, the Markdown-and-JSON edition. Anyone who\n  installed `excalidraw-diagram` from this marketplace receives this edition on the next\n  update: no Python builder, no MCP server, no offline viewer runtime.\n- **`excalidraw-diagram-full`** → `./plugin`, unchanged apart from its name. To keep the\n  builder, the gates and the MCP tools, run\n  `/plugin install excalidraw-diagram-full@excalidraw-diagram`.\n\nAlso in this release:\n\n- The plugin-cache resolver in `discover`'s stub and in `references/builder_api.md` matches\n  `excalidraw-diagram*`, so a stub finds the builder under the new name and under an\n  install from before the rename.\n- `scripts/check_versions.py` now checks five copies of the version: both `plugin.json`\n  files, the marketplace top level and each `plugins[]` entry. `--bump` and `--fix` write\n  all of them.",
+          "first_commit": "2026-11-14",
+          "last_commit": "2026-11-14"
+        },
         {
           "version": "v2.19.0",
           "date": "2026-11-14",

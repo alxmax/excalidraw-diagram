@@ -26,8 +26,8 @@
       "reason": "label ink follows fill contrast; pack node font and diamond sizing (REQ-858)"
     },
     "ARCH-RELEASE-035": {
-      "hash": "12f81b0ac97b",
-      "reason": "ARCH-RELEASE-035 split: the script-level contract moves into its code-level child REQ-RELEASE-855 (RM032)"
+      "hash": "e72ae81d5535",
+      "reason": "the version now lives in five copies: the directory edition's plugin.json and a second marketplace entry joined the original three"
     },
     "REQ-DATAMODEL-901": {
       "hash": "e8e1c86f61ac",
@@ -84,6 +84,14 @@
     "REQ-EXCALIDRAW-858": {
       "hash": "e068d8377bd0",
       "reason": "pack nodes carry customData id (REQ-858)"
+    },
+    "REQ-RELEASE-855": {
+      "hash": "088ecf668fe4",
+      "reason": "the version now lives in five copies: the directory edition's plugin.json and a second marketplace entry joined the original three"
+    },
+    "REQ-RELEASE-857": {
+      "hash": "564cbec0185d",
+      "reason": "the version now lives in five copies: the directory edition's plugin.json and a second marketplace entry joined the original three"
     }
   }
 }

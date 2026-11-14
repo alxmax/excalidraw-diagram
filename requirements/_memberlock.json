@@ -8,7 +8,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/__init__.py": "917f09ef12689e092b49f02ebe1e1497a5fb88180bef4cc725b7f985aff45e45"
     },
     "ARCH-RELEASE-035": {
-      "scripts/check_versions.py": "05be7b381fdb390384178a217b46f88f2150ccb5cd0fa70f47cb569ce9ba1f7a"
+      "scripts/check_versions.py": "d1450b1dcb66226ba8d1f6606e394f8e7075981c184ed8fdc56531edffdc1dc0"
     },
     "REQ-DATAMODEL-900": {
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/ddl.py#parse_ddl": "3d0456a69c7b135cac1f3f12bbba7693a7befb259ecdca5cb0e4a12224a3809f"
@@ -99,7 +99,7 @@
       "plugin/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py#_laid": "830d60029dbda214d6573d4028f875944548539a1dcedbc48cd65e33082b9d2c"
     },
     "REQ-RELEASE-855": {
-      "scripts/check_versions.py#main": "f8f66e73781f1008194f05ce50422e2bfd67d687e5c487d5e360537961621f6e"
+      "scripts/check_versions.py#main": "cbcbfe63403a24195e35aa8289efca228a98ebf5a3ce87a12f429f3e5eb7364e"
     },
     "REQ-RELEASE-857": {
       "scripts/check_versions.py#_bumped": "d561ddb1d9ca152509b426384bf8aec53ac1d5d47d1f3d7e3cc47a4b70079683"

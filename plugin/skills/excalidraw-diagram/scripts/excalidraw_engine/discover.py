@@ -57,7 +57,7 @@ except ModuleNotFoundError:                      # not alongside the stub — fi
     _roots = [os.environ.get("CLAUDE_CONFIG_DIR"), os.path.expanduser("~/.claude")]
     _hits = [h for _root in _roots if _root
              for h in glob.glob(os.path.join(_root, "plugins", "cache",
-                                             "excalidraw-diagram", "excalidraw-diagram",
+                                             "excalidraw-diagram", "excalidraw-diagram*",
                                              "*", "skills", "excalidraw-diagram", "scripts"))]
     if not _hits:
         raise
