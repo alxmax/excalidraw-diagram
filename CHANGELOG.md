@@ -1,5 +1,15 @@
 # Changelog
 
+## plugin `v2.22.1` — 2026-11-16
+
+**Labels in capitals are no longer cut off in the viewer.** Full edition.
+
+- `text_extent` counted every character as 0.58 em, but Helvetica/Arial capitals run 0.61–0.94 em.
+  Excalidraw paints a text element into a canvas of its stored width, so a short estimate clipped
+  the last letters (`SHUTDOWN`: 60 px stored, 75 px drawn). Capitals and the wide glyphs (`m`,
+  `w`, `W`, `%`, `@`) now count their own width.
+- `fit_text` sizes its box from `text_extent`, so a box it returns still clears the overflow check.
+
 ## plugin `v2.22.0` — 2026-11-16
 
 **A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,

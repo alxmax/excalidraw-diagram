@@ -78,12 +78,20 @@ def as_point(at):
     return parts[0], parts[1]
 
 
+# Glyphs wider than the 0.58 em default, in em, rounded up from Helvetica/Arial
+# advances. Excalidraw paints a text element into a canvas of its stored width, so a
+# width estimated short clips the last letters: "SHUTDOWN" at 0.58 em loses two.
+_WIDE_EM = dict.fromkeys("ABCDEFGHIJKLMNOPQRSTUVWXYZw", 0.78)
+_WIDE_EM.update({"m": 0.84, "M": 0.84, "W": 0.95, "%": 0.95, "@": 1.02})
+
+
 def text_extent(text, size):
     """The (w, h) a run of text occupies at font `size` — the heuristic every
-    label, check and layout agrees on."""
+    label, check and layout agrees on. Each character counts 0.58 em, capitals and
+    the wide glyphs in `_WIDE_EM` their own width, so no line is estimated short."""
     lines = text.split("\n")
-    longest = max((len(ln) for ln in lines), default=1)
-    w = max(longest * size * 0.58, 8)
+    longest = max((sum(_WIDE_EM.get(c, 0.58) for c in ln) for ln in lines), default=1)
+    w = max(longest * size, 8)
     h = len(lines) * size * 1.25
     return w, h
 
@@ -106,8 +114,7 @@ def fit_text(text, *, size=14, max_chars=20, min_size=(120, 48)):
                 cur = w
         if cur:
             lines.append(cur)
-    longest = max((len(ln) for ln in lines), default=1)
-    width = max(min_size[0], int(longest * size * 0.6) + 24)
+    width = max(min_size[0], int(text_extent("\n".join(lines), size)[0] * 1.04) + 24)
     height = max(min_size[1], int(len(lines) * size * 1.6) + 18)
     return "\n".join(lines), width, height
 
