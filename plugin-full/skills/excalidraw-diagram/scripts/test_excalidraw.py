@@ -43,7 +43,7 @@ import excalidraw_builder as eb  # noqa: E402
 from excalidraw_engine import assets  # noqa: E402
 from excalidraw_engine.viewer import html_page  # noqa: E402
 from excalidraw_engine.discover import render_stub  # noqa: E402
-from excalidraw_engine.geometry import polyline_midpoint  # noqa: E402
+from excalidraw_engine.geometry import polyline_midpoint, text_extent  # noqa: E402
 
 
 def _example_files():
@@ -306,6 +306,21 @@ class TestBuilderUnits(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-846  # t
         s.box(wrapped, (0, 0, w, h), paint="blue")
         self.assertEqual(s.check_text_overflow(), [],
                          "a box sized by fit_text must clear the overflow check")
+
+    def test_text_extent_covers_capitals(self):
+        # Arial/Helvetica advances in em; Excalidraw clips a text element at its
+        # stored width, so the estimate must never fall short of the real run.
+        arial = dict(zip("SHUTDOWNMWG", (.667, .722, .722, .611, .722, .778, .944,
+                                         .722, .833, .944, .778)))
+        for word in ("SHUTDOWN", "MMMM", "WOW", "GG"):
+            real = sum(arial[c] for c in word) * 16
+            self.assertGreaterEqual(text_extent(word, 16)[0], real, word)
+
+    def test_fit_text_box_clears_overflow_check_in_capitals(self):
+        s = eb.Scene(seed=99)
+        wrapped, w, h = eb.fit_text("SHUTDOWN WAKEUP MODE", size=14, max_chars=16)
+        s.box(wrapped, (0, 0, w, h), paint="blue")
+        self.assertEqual(s.check_text_overflow(), [])
 
     def test_save_overflow_check_error_raises(self):  # verifies: REQ-EXCALIDRAW-846#CASE-4  # verifies: ARCH-EXCALIDRAW-031#CASE-3
         s = eb.Scene(seed=99)

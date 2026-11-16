@@ -186,7 +186,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:692"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:707"
         },
         {
           "role": "implements",
@@ -255,7 +255,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:692"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:707"
         },
         {
           "role": "implements",
@@ -324,7 +324,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:805"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:820"
         },
         {
           "role": "implements",
@@ -394,7 +394,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1475"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1490"
         },
         {
           "role": "implements",
@@ -567,7 +567,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:957"
         },
         {
           "role": "implements",
@@ -652,7 +652,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1678"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1693"
         },
         {
           "role": "implements",
@@ -728,7 +728,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1744"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1759"
         },
         {
           "role": "implements",
@@ -863,7 +863,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:510"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:525"
         },
         {
           "role": "implements",
@@ -927,7 +927,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1315"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1330"
         },
         {
           "role": "implements",
@@ -1042,7 +1042,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1577"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1592"
         },
         {
           "role": "implements",
@@ -1112,7 +1112,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:963"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:978"
         }
       ],
       "test_exempt": null,
@@ -1168,7 +1168,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1806"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1821"
         },
         {
           "role": "implements",
@@ -1310,7 +1310,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1031"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1046"
         },
         {
           "role": "implements",
@@ -1372,7 +1372,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1031"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1046"
         },
         {
           "role": "implements",
@@ -2706,7 +2706,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1432"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
         },
         {
           "role": "implements",
@@ -3125,7 +3125,7 @@
     },
     {
       "month": "2026-11",
-      "count": 16,
+      "count": 17,
       "first": "2026-11-06",
       "last": "2026-11-16",
       "versions": [
@@ -3144,11 +3144,20 @@
         "v2.19.0",
         "v2.20.0",
         "v2.21.0",
-        "v2.22.0"
+        "v2.22.0",
+        "v2.22.1"
       ],
       "landmark": "v2.22.0",
       "headline": "**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,",
       "entries": [
+        {
+          "version": "v2.22.1",
+          "date": "2026-11-16",
+          "headline": "Labels in capitals are no longer cut off in the viewer",
+          "body": "**Labels in capitals are no longer cut off in the viewer.** Full edition.\n\n- `text_extent` counted every character as 0.58 em, but Helvetica/Arial capitals run 0.61–0.94 em.\n  Excalidraw paints a text element into a canvas of its stored width, so a short estimate clipped\n  the last letters (`SHUTDOWN`: 60 px stored, 75 px drawn). Capitals and the wide glyphs (`m`,\n  `w`, `W`, `%`, `@`) now count their own width.\n- `fit_text` sizes its box from `text_extent`, so a box it returns still clears the overflow check.",
+          "first_commit": "2026-11-16",
+          "last_commit": "2026-11-16"
+        },
         {
           "version": "v2.22.0",
           "date": "2026-11-16",
