@@ -167,12 +167,13 @@ Every bullet below is binding.
   `<name>.excalidraw` and `<name>.html`. The name comes from the description's
   `name`, else from the file's own stem.
 - Every key the description accepts maps to one `Scene` call: `title` and
-  `subtitle` to `title()` and `label()`, `roles` and `legend` to `legend()`,
-  `glossary` to `glossary()`, `seed` to `Scene(seed=...)`.
-- `scene_from_json` saves with every gate set to `"error"` (`Gates.strict()`),
-  so a description that cannot be drawn readably fails instead of shipping.
-  `scene_from_spec(spec, out_dir, name)` does the same for a description
-  already in memory.
+  `subtitle` to `title()` and `label()`, `takeaway` to `takeaway()`, `notes` to
+  `note()`, `roles` and `legend` to `legend()`, `glossary` to `glossary()`, `seed`
+  and `accent` to `Scene(seed=..., accent=...)`.
+- `scene_from_json` saves with every defect gate set to `"error"` (`Gates.strict()`),
+  so a description that cannot be drawn readably fails instead of shipping; the
+  design gates warn. `scene_from_spec(spec, out_dir, name)` does the same for a
+  description already in memory, and its `gates=` replaces the default.
 - A description the builder cannot use raises `ValueError`, and the CLI turns that
   into one line on stderr and exit code 1. Invoking `scene` with no description
   prints usage and exits 2.

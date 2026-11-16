@@ -3,6 +3,8 @@
 
 Shows the 8-step flow from a system description to finished files, with
 detail panels for the two variable steps (Explore branching, save() gates).
+Steps are neutral grey; the accent marks the headline path and its one focal
+node (where save() decides), and four role colours carry the rest.
 
 Run from the repo root:
     python plugin-full/skills/excalidraw-diagram/examples/make_excalidraw_skill_flow.py
@@ -12,12 +14,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from excalidraw_builder import DASHED, Font, Gates, Paint, Scene
 
 ROLES = {
+    "step":     "grey",      # a step the assistant takes (neutral)
     "input":    "blue",      # user-provided system description
-    "agent":    "violet",    # Claude / skill reasoning steps
-    "engine":   "teal",      # excalidraw_builder.py
-    "gate":     "orange",    # save() validation checks
-    "output":   "indigo",    # produced files
-    "parallel": "green",     # parallel Explore subagents (large repos)
+    "engine":   "teal",      # excalidraw_builder.py and the checks it runs
+    "output":   "green",     # produced files
+    "parallel": "violet",    # parallel Explore subagents (large repos)
 }
 
 s = Scene(seed=42, roles=ROLES)
@@ -37,19 +38,20 @@ def Y(n):
     return 80 + n * 150      # 70px box + 80px vertical gap
 
 inp   = s.box("System description",     (PX, Y(0), PW, BH), paint="input",  font=14)
-expl  = s.box("Explore the system",     (PX, Y(1), PW, BH), paint="agent",  font=14)
-plan  = s.box("Plan the layout",        (PX, Y(2), PW, BH), paint="agent",  font=14)
-code  = s.box("Write generator script", (PX, Y(3), PW, BH), paint="agent",  font=14)
+expl  = s.box("Explore the system",     (PX, Y(1), PW, BH), paint="step",   font=14)
+plan  = s.box("Plan the layout",        (PX, Y(2), PW, BH), paint="step",   font=14)
+code  = s.box("Write generator script", (PX, Y(3), PW, BH), paint="step",   font=14)
 run   = s.box("python make_*.py",       (PX, Y(4), PW, BH), paint="engine", font=14)
-valid = s.box("save()  validates",      (PX, Y(5), PW, BH), paint="gate",   font=14)
+valid = s.box("save()  validates",      (PX, Y(5), PW, BH), paint="accent", font=14)
 out   = s.box(".excalidraw  +  .html",  (PX, Y(6), PW, BH), paint="output", font=14)
-deliv = s.box("3-point delivery",       (PX, Y(7), PW, BH), paint="agent",  font=14)
+deliv = s.box("3-point delivery",       (PX, Y(7), PW, BH), paint="step",   font=14)
 
+# the headline path carries the accent; everything beside it stays quiet
 for a, b in zip(
     [inp, expl, plan, code, run, valid, out],
     [expl, plan, code, run, valid, out, deliv],
 ):
-    s.arrow(a, b)
+    s.arrow(a, b, paint="accent")
 
 # Feedback: if save() fails → fix layout → back to PLAN (left-side bypass)
 s.path(
@@ -57,7 +59,7 @@ s.path(
      (210, Y(5) + BH // 2),
      (210, Y(2) + BH // 2),
      (PX, Y(2) + BH // 2)],
-    paint=Paint(stroke="orange", dashed=True), label="fix → retry",
+    paint=Paint(stroke="grey", dashed=True), label="fix → retry",
 )
 
 # Step annotations (text labels, below each box; exempt from overlap check)
@@ -78,23 +80,25 @@ RX = PX + PW + 200   # = 900  (wide enough that the side-panel labels clear)
 # Small repo: Claude reads directly — same y as EXPLORE
 seq = s.box(
     "≤ 80 source files:\nClaude reads README + sources directly",
-    (RX, Y(1), 340, BH), paint="agent", font=12,
+    (RX, Y(1), 340, BH), paint="step", font=12,
 )
-s.arrow(expl, seq, label="small repo", paint=DASHED)
+s.arrow(expl, seq, label="small repo", paint=DASHED, elbow=True)
 
-# Large repo: 3 parallel subagents (50px below seq)
+# Large repo: 3 parallel subagents (50px below seq), grouped: the frame reads as
+# one block, so the node budget counts it once
 PAR_Y = Y(1) + BH + 50   # = 350
+SUBAGENT = Paint(fill="parallel", group="subagents")
 par_boxes = s.grid(
-    [("structure +\nentry-points\n(haiku)", "parallel"),
-     ("data-flow +\nintegration\n(sonnet)", "parallel"),
-     ("distribution +\npackaging\n(haiku)", "parallel")],
+    [("structure +\nentry-points\n(haiku)", SUBAGENT),
+     ("data-flow +\nintegration\n(sonnet)", SUBAGENT),
+     ("distribution +\npackaging\n(haiku)", SUBAGENT)],
     (RX, PAR_Y), 3, cell={"size": (140, 84), "font": 11}, gap=(12, 30),
 )
 par_frame = s.enclose(
     par_boxes, pad=14,
     label="> 80 source files: 3 parallel Explore subagents",
 )
-s.arrow(expl, par_frame, paint=DASHED)
+s.arrow(expl, par_frame, paint=DASHED, elbow=True)
 
 # ── Right panel B: Builder API (aligned with CODE) ────────────────────────
 api = s.box(
@@ -105,24 +109,25 @@ api = s.box(
     "  legend()  glossary()  save()",
     (RX, Y(3), 360, 130), paint="engine", font=11,
 )
-s.arrow(code, api, label="imports", paint=DASHED)
+s.arrow(code, api, label="imports", paint=DASHED, elbow=True)
 
 # ── Right panel C: Validation gates (aligned with VALIDATE) ───────────────
+CHECK = Paint(fill="engine", group="checks")
 gate_boxes = s.row(
-    [("Overlap check\n→ error if fails", "gate"),
-     ("Crossing check\n→ warn / error",  "gate"),
-     ("Legend coverage\n→ warn / error", "gate")],
+    [("Overlap check\n→ error if fails", CHECK),
+     ("Crossing check\n→ warn / error",  CHECK),
+     ("Legend coverage\n→ warn / error", CHECK)],
     (RX, Y(5)), gap=12, cell={"size": (150, BH), "font": 11},
 )
 gate_frame = s.enclose(gate_boxes, pad=12, label="save() checks")
-s.arrow(valid, gate_frame, paint=DASHED)
+s.arrow(valid, gate_frame, paint=DASHED, elbow=True)
 
 # ── Colour legend ─────────────────────────────────────────────────────────
 s.legend(
-    [("User input",          "input"),
-     ("Skill / Claude step", "agent"),
+    [("Where save() decides (the focus)", "accent"),
+     ("Skill / Claude step", "step"),
+     ("User input",          "input"),
      ("Builder engine",      "engine"),
-     ("Validation gate",     "gate"),
      ("Output file",         "output"),
      ("Parallel subagent",   "parallel")],
     (1440, 300), title="What the colours mean",

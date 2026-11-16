@@ -33,17 +33,21 @@ to get them; if they are absent, write the JSON as below.
 
 **A schematic an outsider can understand with no prior context**: real components,
 the flow between them, how it is invoked, how it ships. Three things pass:
-1. **Substance**: real identifiers (`viewer.py`, `save()`), the actual workflow, and all
-   three layers (internal flow, then integration, then distribution).
-2. **Readability**: a title, a one-line subtitle, a legend when colour means a role,
-   a glossary for jargon, one reading direction, zero overlaps or crossings.
-3. **Self-check**: you run the seven checks below on your coordinates before saving.
+1. **Substance**: real identifiers (`viewer.py`, `save()`), the actual workflow, and each
+   layer (internal flow, integration, distribution) that carries information for *this*
+   reader; a layer that tells them nothing stays out.
+2. **Readability**: a title, a one-line subtitle, one focus, a legend when colour means a
+   role, a glossary for jargon, one reading direction, zero overlaps or crossings.
+3. **Self-check**: you run the seven checks below on your coordinates before saving, and
+   the three design checks after them.
 
 ## Workflow
 
 1. **Understand the subject.** For a repo, read its README and layout first. List the
    nodes, the directed edges (each with a verb), the groups and the reading direction.
-2. **Plan on a grid, in a table, before any JSON.** One row per node: id, label,
+2. **State the plan before drawing.** Write down the regions, the node count per region
+   (12 at most), the focal path and its one or two focal nodes, and what you cut to stay
+   in budget. Then **plan on a grid, in a table, before any JSON.** One row per node: id, label,
    shape, role colour, `x`, `y`, `w`, `h`. Compute sizes and positions with the rules
    below; never guess a coordinate by eye.
 3. **Write the elements** in paint order: frames and containers first, then shapes, each
@@ -71,9 +75,14 @@ the flow between them, how it is invoked, how it ships. Three things pass:
   `{elementId, focus:0, gap:14}`. BOTH shapes list `{"type":"arrow","id":<arrow id>}`.
   An arrow label is text with `containerId` = arrow id, listed in the arrow's `boundElements`.
 - **Arrow geometry:** `x,y` is the start point; `points` are relative to it, the first
-  always `[0,0]`. Start and end 14px outside each border, on the line between the two
-  centres. `width`/`height` span the points. Add `lastCommittedPoint:null`,
-  `startArrowhead:null`, `endArrowhead:"arrow"`, `elbowed:false`.
+  always `[0,0]`. Start and end 14px outside each border. `width`/`height` span the
+  points. Add `lastCommittedPoint:null`, `startArrowhead:null`, `endArrowhead:"arrow"`,
+  `elbowed:false`.
+- **Right angles only.** Shapes sharing a row or column get one straight leg in the
+  shared span. Any other arrow is a right-angle elbow written as multi-point `points`
+  (out of the facing side, turn in the gap, into the facing side; still bound at both
+  ends, which works in Excalidraw 0.17.6). Each connector on a shared side gets its own
+  attach point, 12px+ apart. A diagonal leg fails the check.
 - **Text fields:** `text`, `originalText` (identical), `fontSize`, `fontFamily`
   (1 hand-drawn, 2 normal, 3 code), `lineHeight:1.25`, `autoResize:true`.
 - **Style:** `roughness` 0 (clean, the default) or 1 (sketch), the same for every element.
@@ -95,7 +104,7 @@ the flow between them, how it is invoked, how it ships. Three things pass:
 - **Feedback edges** never run straight back across the flow. Route them below the row
   as an unbound arrow (`startBinding:null`, `endBinding:null`) through 4 points, dashed,
   in grey `#343a40`.
-- **≤ 20 nodes per region.** Past that, split into an overview region and a detail region.
+- **9–12 nodes per region.** Past 12, split into an overview region and a detail region.
 - **Expand, don't cram.** The canvas is unlimited; never shrink type below 12px.
 
 ## The seven self-checks (run all of them on your table before saving)
@@ -117,22 +126,40 @@ The full edition refuses a scene that fails any of these. You refuse it too.
 Also check that every `boundElements` entry points to an element that points back, and
 that every `containerId`, `elementId` and `id` resolves.
 
+**The three design checks** (the full edition warns on these; you fix them):
+- **focus**: at most 2 shapes in the accent colour, and at most 4 role fills beside
+  neutral grey and the accent.
+- **node_budget**: no region or frame holds more than 12 nodes (a group of cells that
+  reads as one thing, like one waveform row, counts once).
+- **orthogonal**: no bound arrow has a leg that is neither horizontal nor vertical.
+
 ## Quality rules (required, not polish)
 
 1. **Title (28–32px) plus a one-line subtitle (14–16px)** saying what the diagram shows
    and its reading direction.
-2. **Legend whenever colour means a role.** Use a frame titled "Legend" with an 18×18
+2. **One focus.** Fills default to neutral grey. One accent colour marks the headline
+   path (its arrows) and at most 2 focal nodes. Role colours, at most 4, only where
+   colour carries a meaning the legend explains. If you want to accent four things, you
+   have not decided what matters yet.
+3. **Legend whenever colour means a role.** Use a frame titled "Legend" with an 18×18
    swatch and a label per colour. One colour per distinct meaning, and every colour used.
-3. **Label cross-role edges** with a short verb phrase (`validates`, `POST /orders`).
-4. **Real identifiers** as node names, never "Service A". Any term a newcomer cannot decode
+4. **Label cross-role edges** with a short verb phrase (`validates`, `POST /orders`).
+5. **Real identifiers** as node names, never "Service A". Any term a newcomer cannot decode
    goes in a **Glossary** frame (term, then meaning) beside the legend.
-5. **Two type tiers suffice:** title ~28–32, body ~14–16, never below 12.
-6. **"Explain how X works"** means a teaching diagram. Use everyday words in the boxes,
+6. **Two-tier node text.** The name in the body font (`fontFamily: 2`); the technical
+   detail (file, port, command) beneath it as separate free text in `fontFamily: 3` at
+   12–13px, inside the shape and grouped with it. Both tiers pass overflow and
+   text_overlap. Title ~28–32, body ~14–16, never below 12.
+7. **"Explain how X works"** means a teaching diagram. Use everyday words in the boxes,
    read top to bottom, and give one region per idea (the problem, how you use it, what
-   is inside), each opened by a section title.
+   is inside), each opened by a section title. Number the main path ①②③, add ONE
+   takeaway line under the subtitle (what the reader should remember), and at most 2
+   margin notes saying *why*, each joined to its element by a dashed leader and kept
+   outside the diagram area.
 
-Palette (fill / stroke): grey `#e9ecef`/`#343a40`, blue `#a5d8ff`/`#1971c2`, green
-`#b2f2bb`/`#2f9e44`, orange `#ffd8a8`/`#e8590c`, violet `#d0bfff`/`#6741d9`, red
+Palette (fill / stroke): grey `#e9ecef`/`#343a40` (the neutral default), orange
+`#ffd8a8`/`#e8590c` (the usual accent), blue `#a5d8ff`/`#1971c2`, green
+`#b2f2bb`/`#2f9e44`, violet `#d0bfff`/`#6741d9`, red
 `#ffc9c9`/`#e03131`, yellow `#ffec99`/`#f08c00`, teal `#99e9f2`/`#0c8599`, pink
 `#fcc2d7`/`#c2255c`. Text and outlines use `#1e1e1e`.
 
@@ -153,7 +180,12 @@ The `.excalidraw` file itself always works offline.
 - [ ] Title and subtitle, with the reading direction stated
 - [ ] Legend lists every colour used; glossary covers every acronym or project term
 - [ ] Every cross-role or non-obvious arrow labelled; real identifiers, no placeholders
-- [ ] All three layers covered (internal flow, integration, distribution); ≤20 nodes per region
+- [ ] The three design checks clean: one focus, ≤12 nodes per region, right angles only
+- [ ] Every layer drawn tells this reader something
+- [ ] **Remove test:** no node can go, no two can merge, no arrow repeats what the layout
+  says, no label repeats what colour or shape says
+- [ ] A 3-column table would not say the same thing — if it would, make a table instead
+- [ ] None of the anti-patterns in `references/worked_examples.md`
 - [ ] `</` escaped in the HTML's embedded scene
 
 Then deliver **both** files and say three things: **what it shows** (one sentence),

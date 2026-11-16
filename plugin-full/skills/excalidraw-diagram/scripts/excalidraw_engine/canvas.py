@@ -17,7 +17,7 @@ class Canvas(object):
     """A drawing surface that accumulates elements and serialises them."""
 
     def __init__(self, *, typeface="normal", sketch=False, background="#ffffff",
-                 seed=None, roles=None):
+                 seed=None, roles=None, accent="orange"):
         # implements: REQ-EXCALIDRAW-845
         """typeface: "normal" (Helvetica), "hand" (Excalifont) or "code".
         sketch: True draws rough hand-drawn outlines, False clean lines.
@@ -25,12 +25,16 @@ class Canvas(object):
               an identical file. None uses time and randomness.
         roles: an optional {role_name: palette_colour} map, so a shape can be
               painted by meaning (paint="agent") and legend() can render the key.
+        accent: the one colour that marks the headline path and its focal nodes;
+              paint="accent" resolves to it, and the focus gate counts it. None
+              turns the accent count off.
         """
         if typeface not in TYPEFACES:
             raise ValueError("typeface must be one of %s" % ", ".join(sorted(TYPEFACES)))
         self.elements = []
         self.background = background
         self.roles = dict(roles or {})   # semantic role -> palette colour
+        self.accent = accent             # the focal colour: paint="accent"
         # resolved hex fills declared by legend() — the colour-SSOT key. Empty
         # until a legend is rendered, which is when coverage is enforced.
         self._legend_colours = set()
@@ -46,6 +50,16 @@ class Canvas(object):
         # abs (min_x, min_y, max_x, max_y) of each routed connector — so bounds()
         # accounts for paths that dip outside the shapes' boxes
         self._path_extents = []
+        # the top y of every section() region, in order: what node_budget counts by
+        self._sections = []
+        # bound arrows drawn with elbow=True, judged along their actual legs
+        self._elbows = set()
+        # (node id, side) -> how many elbow connectors already attach there
+        self._ports = {}
+        # sublabel text id -> (shape id, name text id or None), for the overflow check
+        self._sublabels = {}
+        # note() leader ids -> the node each one points at
+        self._leaders = {}
         self._rng = random.Random(seed) if seed is not None else random
         self._fixed_time = 1_700_000_000_000 if seed is not None else None
         self._saved = False
@@ -93,14 +107,29 @@ class Canvas(object):
             "locked": False,
         }
 
-    def _text_el(self, text, rect, ts, *, container=None, group=None):
-        """A text element filling `rect`, painted per the TextStyle `ts`."""
+    def _colour_of(self, name):
+        """A paint name as the palette sees it: a declared role's colour, the
+        scene's accent for "accent" (or a role declared as "accent"), else the
+        name itself."""
+        if name in self.roles:
+            name = self.roles[name]          # a role may itself be "accent"
+        if name == "accent" and self.accent:
+            return self.accent
+        return name
+
+    def _stroke_of(self, name):
+        """A connector's stroke name, with "accent" meaning the scene's accent."""
+        return self.accent if name == "accent" and self.accent else name
+
+    def _text_el(self, text, rect, ts, *, container=None, group=None, family=None):
+        """A text element filling `rect`, painted per the TextStyle `ts`.
+        `family` overrides the scene's typeface (3 sets a sublabel in code)."""
         eid = self._new_id("text")
         el = self._base(eid, "text", rect, Style(ts.color, group=group))
         el.update({
             "text": text,
             "fontSize": ts.size,
-            "fontFamily": self.typeface,
+            "fontFamily": family or self.typeface,
             "textAlign": ts.align,
             "verticalAlign": ts.valign,
             "containerId": container,

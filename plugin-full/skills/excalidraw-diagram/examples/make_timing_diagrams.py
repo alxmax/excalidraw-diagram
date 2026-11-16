@@ -48,10 +48,13 @@ def rising_edges(pts):
 
 
 def bus(cells, top):
-    """Adjacent value cells: (text, role) per slot; role None leaves the slot empty."""
+    """Adjacent value cells: (text, role) per slot; role None leaves the slot empty.
+    One row is one group: it moves as one, and the node budget counts it once."""
+    row = "bus-%d" % int(top)
     for i, (text, role) in enumerate(cells):
         if role:
-            s.box(text, (X0 + i * W, top, W, ROW_H), paint=role, font=13)
+            s.box(text, (X0 + i * W, top, W, ROW_H), paint=Paint(fill=role, group=row),
+                  font=13)
 
 
 def rows(y, names):

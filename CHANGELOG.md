@@ -1,5 +1,53 @@
 # Changelog
 
+## plugin `v2.22.0` — 2026-11-16
+
+**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,
+and a teaching shape that says what to remember and why.** Both editions.
+
+- **One focus (rule and design gate).** Fills default to neutral grey; one accent colour
+  (`Scene(accent="orange")`, `paint="accent"`) marks the headline path and at most two
+  focal nodes; role colours, at most four, only where the legend explains them. "If you
+  want to accent four things, you have not decided what matters yet." The new `focus`
+  gate flags more than 2 accent-coloured shapes or more than 4 role fills.
+- **Node budget 9–12 per region** (was 20). The `node_budget` gate flags a `section()`
+  region (or the scene) or an `enclose()` frame past 12 nodes; shapes sharing a
+  `Paint(group=…)`, like the cells of one waveform row, count once.
+- **Right angles, never diagonals.** `arrow(..., elbow=True)` draws a bound arrow as one
+  straight leg, or three legs turning in the gap between the shapes, with its label on the
+  middle leg; connectors sharing a side each get their own attach point. The `orthogonal`
+  gate flags a bound arrow with a diagonal leg, and the crossing gate now judges an elbow
+  along its actual legs. `PackOptions(edge_style="orthogonal")` is the recommended style;
+  it stays opt-in because making it the default moved labels in the frozen layout corpus
+  and the data-model star layout. A bus label between two members of a group now stays
+  inside their frame.
+- **The three design gates warn, under `Gates.strict()` too** (`Gates(design="warn")`);
+  name one (`Gates(focus="error")`) to make it refuse. Every worked example holds to all
+  three: the skill flow, the architecture poster, the ISO flowchart, the explainer, the
+  ER diagram, the state machine and both timing diagrams were reworked to pass.
+- **Two-tier node text.** `box(..., sublabel="pack.py")` sets the file, port or command
+  under the name in the code typeface at 12px, grouped with the shape; the overflow gate
+  checks both tiers fit. `pack()` and `graph.json` take a node `"sublabel"`.
+- **Teaching additions** for "explain how X works": `pipeline(numbered=True)` and a node
+  `"step"` number the main path ①②③; `takeaway()` (graph.json `"takeaway"`) states the
+  one line to remember under the subtitle; `note()` (graph.json `"notes"`) adds at most
+  two margin notes saying *why*, joined by a dashed right-angle leader that the crossing
+  gate checks. `make_explainer.py` shows all of them.
+- **State the plan before drawing**, a new workflow step: the regions, the node count per
+  region, the focal path and what was cut. The pre-delivery checklist gains the **remove
+  test** (can a node go, two merge, an arrow or a label go?) and "would a 3-column table
+  say the same thing?". The three-layers rule now includes a layer only when it carries
+  information for this reader.
+- **Anti-patterns** listed in both editions' `references/worked_examples.md`: identical
+  boxes, rainbow colouring, shadows, labels on the line, a legend inside the diagram,
+  vertical text, more than two accents, diagonal connectors, placeholder names.
+- **Instructions-only edition:** off-axis arrows are right-angle elbows written as
+  multi-point `points` (works in Excalidraw 0.17.6), each with its own attach point 12px+
+  apart; the sublabel tier is `fontFamily: 3` free text grouped with its shape; three
+  design checks join the seven self-checks.
+- Requirements: `REQ-EXCALIDRAW-860` (focus, node budget), `REQ-EXCALIDRAW-861` (elbow
+  arrows, orthogonal gate), `REQ-EXCALIDRAW-862` (steps, takeaway, notes, sublabels).
+
 ## plugin `v2.21.0` — 2026-11-14
 
 **The two editions swapped folders: `plugin/` is now the instructions-only edition and the

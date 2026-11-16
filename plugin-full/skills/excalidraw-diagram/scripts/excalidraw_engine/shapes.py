@@ -1,8 +1,8 @@
 """Shapes that carry a label: the native primitives, the ISO 5807 flowchart set
 and the frame that sits behind a group of them."""
 
-from .geometry import as_rect, text_extent
-from .style import FILL, STROKE, Font, Paint, Style, TextStyle, ink_on, resolve
+from .geometry import Rect, as_rect, text_extent
+from .style import FILL, STROKE, TYPEFACES, Font, Paint, Style, TextStyle, ink_on, resolve
 
 # The size a shape gets when the caller gives only a point. A flowchart symbol has
 # its own proportions, so the default follows the shape rather than the call.
@@ -32,12 +32,17 @@ _POLYGON = {"data", "preparation"}
 
 BODY_FONT = Font(16, None, "center")
 
+# The second tier of a node's text: the file, port or command under its name, set in
+# the code typeface and smaller, so the name stays the thing the eye reads first.
+SUBLABEL_SIZE = 12
+_TIER_GAP = 4
+
 
 class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
     """Labelled shapes. Every method returns the node id arrows attach to."""
 
     def box(self, text, at, *, paint=None, font=None, shape="rectangle",
-            container=False):
+            container=False, sublabel=None):
         """A shape carrying centred bound text.
 
         at:    (x, y) — sized by the shape's default — or (x, y, w, h), or a Rect.
@@ -47,6 +52,9 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         shape: rectangle, ellipse, diamond, or an ISO 5807 name.
         container=True marks a visual wrapper meant to hold other shapes; it is
         exempt from the save-time overlap check, as frames always are.
+        sublabel: a technical second line (a file, a port, a command) set under
+               the name in the code typeface at 12px. It is free text grouped
+               with the shape, and the overflow gate checks that both tiers fit.
         """
         if shape not in _NATIVE and shape not in _POLYGON:
             raise ValueError(f"unknown shape: {shape!r}")
@@ -54,23 +62,53 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         paint = Paint.coerce(paint)
         font = Font.coerce(font, BODY_FONT)
         stroke = resolve(paint.stroke, STROKE, STROKE["black"])
-        fill = resolve(self.roles.get(paint.fill, paint.fill), FILL, "transparent")
+        fill = resolve(self._colour_of(paint.fill), FILL, "transparent")
         ts = TextStyle(font.size, resolve(font.color, STROKE, ink_on(fill)))
         label = (text or "").split("\n")[0] or shape
+        group = paint.group
+        if sublabel and not group:          # the tiers move with the shape as one
+            group = "node-%d-%08x" % (self._n + 1, self._rand())
+        style = Style(stroke, fill, group=group)
+        tiers = self._tiers(text, sublabel, rect, ts) if sublabel else None
         if shape in _POLYGON:
-            nid = self._polygon(shape, text, rect, Style(stroke, fill, group=paint.group), ts)
+            nid = self._polygon(shape, text, rect, style, ts, tiers)
         else:
-            nid = self._native(shape, text, rect, Style(stroke, fill, group=paint.group), ts)
+            nid = self._native(shape, text, rect, style, ts, tiers)
+        if tiers:
+            self._sublabel(nid, sublabel, tiers[1], ts, group)
         self._register(nid, rect, self._geom_shape(shape), label=label, container=container)
         return nid
+
+    @staticmethod
+    def _tiers(text, sublabel, rect, ts):
+        """(name rect, sublabel rect): the two tiers stacked and centred as one
+        block in `rect`, the name on top."""
+        nw, nh = text_extent(text, ts.size) if text else (0.0, 0.0)
+        sw, sh = text_extent(sublabel, SUBLABEL_SIZE)
+        top = rect.y + (rect.h - (nh + _TIER_GAP + sh)) / 2
+        return (Rect(rect.cx - nw / 2, top, nw, nh),
+                Rect(rect.cx - sw / 2, top + nh + _TIER_GAP, sw, sh))
+
+    def _sublabel(self, nid, sublabel, rect, ts, group):
+        """Draw the code-typeface second tier and record it for the overflow gate."""
+        # implements: REQ-EXCALIDRAW-862
+        el = self._text_el(sublabel, rect, TextStyle(SUBLABEL_SIZE, ts.color, "center", "top"),
+                           group=group, family=TYPEFACES["code"])
+        self.elements.append(el)
+        node = self._element(nid)
+        name = next((b["id"] for b in node["boundElements"] if b.get("type") == "text"),
+                    None) if node else None
+        self._sublabels[el["id"]] = (nid, name)
 
     @staticmethod
     def _geom_shape(shape):
         """The outline arrows clip against: a polygon is treated as its box."""
         return "rectangle" if shape in _POLYGON else _NATIVE[shape][0]
 
-    def _native(self, shape, text, rect, style, ts):
-        """Draw a shape on a native primitive, with its label bound inside it."""
+    def _native(self, shape, text, rect, style, ts, tiers=None):
+        """Draw a shape on a native primitive, with its label bound inside it.
+        With `tiers`, the label sits in the upper tier, aligned to the top, so an
+        editor that re-lays it keeps it clear of the sublabel below."""
         etype, roundness, deco = _NATIVE[shape]
         style.roundness = roundness
         cid = self._new_id(etype)
@@ -78,8 +116,10 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         self.elements.append(cont)
         if text:
             tw, th = text_extent(text, ts.size)
-            tel = self._text_el(text, rect.centred(tw, th), ts,
-                                container=cid, group=style.group)
+            at = rect.centred(tw, th)
+            if tiers:
+                at, ts = tiers[0], TextStyle(ts.size, ts.color, ts.align, "top")
+            tel = self._text_el(text, at, ts, container=cid, group=style.group)
             cont["boundElements"].append({"type": "text", "id": tel["id"]})
             self.elements.append(tel)
         if deco == "predefined":
@@ -98,7 +138,7 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
                    "startArrowhead": None, "endArrowhead": None})
         return el
 
-    def _polygon(self, shape, text, rect, style, ts):
+    def _polygon(self, shape, text, rect, style, ts, tiers=None):
         """Draw an ISO 5807 polygon (parallelogram/hexagon) as a closed line
         with a free centred label."""
         w, h = rect.w, rect.h
@@ -119,8 +159,8 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         self.elements.append(el)
         if text:
             tw, th = text_extent(text, ts.size)
-            self.elements.append(
-                self._text_el(text, rect.centred(tw, th), ts, group=style.group))
+            at = tiers[0] if tiers else rect.centred(tw, th)
+            self.elements.append(self._text_el(text, at, ts, group=style.group))
         return pid
 
     # -- the named shapes: box() with a shape and its default size ---------
@@ -168,7 +208,7 @@ class ShapesMixin(object):  # implements: REQ-EXCALIDRAW-844
         rect = as_rect(at)
         paint = Paint.coerce(paint)
         style = Style(resolve(paint.stroke, STROKE, STROKE["black"]),
-                      resolve(self.roles.get(paint.fill, paint.fill), FILL, "transparent"),
+                      resolve(self._colour_of(paint.fill), FILL, "transparent"),
                       stroke_style="dashed" if paint.dashed else "solid",
                       roundness={"type": 3}, group=paint.group)
         fid = self._new_id("frame")

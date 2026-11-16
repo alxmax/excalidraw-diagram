@@ -32,7 +32,16 @@ the *whole* poster, and `s.save(..., gates=Gates.strict())`.
 **Colour discipline across layers:** the single legend must decode every layer, so
 give each *distinct* meaning its own colour — do not let two layers reuse one
 colour for different roles (e.g. an "engine" script and a "model" must differ).
-With ≤10 palette colours, merge only genuinely-equivalent roles.
+But the budget is small: neutral grey for everything ordinary, the accent for the
+headline path and at most two focal nodes, and at most four role colours. Six roles
+means two of them are the same role, or not worth a colour; merge them, and let the
+shape or the region carry the difference.
+
+**State the plan first.** Before any code, write four lines: the regions in order,
+the node count per region (each 12 or fewer), the focal path and its one or two
+focal nodes, and what was cut to fit. For example: *regions: structure (6),
+workflow (9), integration (7); focus: description → pack() → gates → files, focal
+node the gates; cut: the per-file boxes of `references/`, merged into one.*
 
 **Per-tool sub-workflows (multi-tool repos only).** A repo that bundles **two or
 more distinct tools / skills / services with distinct flows** (e.g. a plugin with
@@ -46,7 +55,7 @@ single `pipeline()` — do not invent lanes it doesn't have.
 (`route_under`) with real identifiers — using the **fewest nodes that tell the
 real story**. When a layer would need more, add *another lane / sub-region /
 layer*, never more nodes in one region or smaller text. The readability rules
-below (≤20 nodes per region, keep labels short, simplicity first, expand-don't-
+below (9–12 nodes per region, keep labels short, simplicity first, expand-don't-
 cram) **always win**: on any tension, split or drop — do not cram. "Elaborate"
 means *structurally complete*, not *busy*.
 
@@ -73,6 +82,15 @@ doesn't need, fill in the rest from the real code, and run it.
   route around with `route_under()`.
 - **Reflect reality.** When diagramming a codebase, name the real files /
   scripts / functions so the picture is useful to someone reading the code.
+  Put the everyday name first and the file under it: `box("the layout",
+  at, sublabel="pack.py")`.
+- **Reference columns.** A column that only lists possible values is a legend,
+  not a stage; do not draw a long arrow to it across the diagram.
+- **The remove test, before delivery.** Can a node be removed? Can two nodes
+  merge? Can an arrow go because the layout already says it (the next box in a
+  row needs no arrow to say "next")? Can a label go because colour or shape
+  already says it? And would a three-column table say the same thing? Then make
+  a table, not a diagram.
 - **Font & style.** `Scene()` defaults to a normal font with clean outlines —
   the most readable choice for "anyone should understand this". Pass
   `Scene(typeface="hand", sketch=True)` only when the sketchy whiteboard aesthetic
@@ -180,12 +198,14 @@ s.arrow(q, ok); s.arrow(q, err)           # which branch is which?
 ```
 
 ✅ A `diamond()` (or `decision` in a pipeline) with **labelled** branches; dashed
-for the failure path.
+for the failure path, and both at right angles: `elbow=True` leaves the diamond on
+the side facing each branch and turns once, so neither runs on a diagonal and each
+gets its own attach point.
 
 ```python
-q = s.diamond("token\nvalid?", (x, y), paint="gate")
-s.arrow(q, ok,  label="yes")
-s.arrow(q, err, label="no", paint=DASHED)
+q = s.diamond("token\nvalid?", (x, y), paint="accent")    # the focal decision
+s.arrow(q, ok,  label="yes", elbow=True)
+s.arrow(q, err, label="no", paint=DASHED, elbow=True)
 ```
 
 ### 5 · Feedback loop / backward edge
@@ -216,23 +236,34 @@ s.box("barycenter ordering", (x2, y), paint="orange")   # ❌ jargon, undefined
 ```
 
 ✅ A teaching diagram, read top to bottom: a subtitle that says what it is and
-how to read it, everyday words in the boxes, one `section()` per idea
-("the problem", "how you use it", "what is inside"), and a `legend()` +
-`glossary()` that decode every colour and term. This is `make_explainer.py`.
+how to read it, ONE takeaway line under it (what the reader should remember),
+everyday words in the boxes with the real file beneath as a sublabel, one
+`section()` per idea ("the problem", "how you use it", "what is inside"), the main
+path numbered ①②③ and drawn in the accent, at most two margin notes that say
+*why*, and a `legend()` + `glossary()` that decode every colour and term. This is
+`make_explainer.py`.
 
 ```python
-s.title("excalidraw-diagram — how it works", (40, -96), font=32)
-s.label("A tool that turns a DESCRIPTION of a system into a PICTURE of it, and "
-        "refuses to hand you one that cannot be read. Read top to bottom. Every "
-        "special word is explained in the Glossary at the bottom.",
-        (40, -52), font=Font(15, align="left"))
-y = s.section("1 - THE PROBLEM IT SOLVES")
-know = s.box("What someone\nUNDERSTANDS\nabout a system", (120, y, 230, 84), paint="words")
-draw = s.box("What a diagram\nof it would show", (880, y, 230, 84), paint="outside")
-s.arrow(know, draw, paint=Paint(stroke="red", dashed=True), heads="both",
-        label="the picture nobody has the afternoon to draw")
-# ... 2 - HOW YOU USE IT, 3 - WHAT'S INSIDE, 4 - WHERE IT RUNS ...
-s.legend([...]); s.glossary([("gate", "a check that refuses an unreadable diagram"), ...])
+s.title("excalidraw-diagram — how it works", (40, -140), font=32)
+s.label("A tool that turns a DESCRIPTION of a system into a PICTURE of it. Read top "
+        "to bottom; follow the orange path ① to ⑤.", (40, -96), font=Font(15, align="left"))
+s.takeaway("you say what the parts are; the tool places them and refuses to hand "
+           "you a picture nobody can read.", (40, -62))
+y = s.section("2 - HOW YOU USE IT")
+ids = s.pipeline([("describe the\nparts", "process", "words"),
+                  {"text": "readable?", "kind": "decision", "paint": "accent", "label": "yes"},
+                  ("two files", "terminator", "output")],
+                 (120, y + 30), gap=150, numbered=True, line="accent")
+s.note("Why two files? The .excalidraw stays editable; the .html opens anywhere.",
+       ids[-1])                        # in the margin, on a dashed leader
+```
+
+```python
+y = s.section("3 - WHAT'S INSIDE   (everyday name on top, the real file below)")
+s.box("where boxes go", (740, y, 250, 70), paint="engine", sublabel="pack()")
+s.box("the checks", (1070, y, 250, 70), paint="accent", sublabel="gates.py")
+s.legend([("The focus: the path, and where it decides", "accent"), ...], (60, ly))
+s.glossary([("gate", "a check that refuses an unreadable diagram"), ...], (560, ly))
 ```
 
 ### 7 · Timing / waveform diagram (there is no waveform primitive)
@@ -301,3 +332,30 @@ s.path([(x_of["browser"], y), (x_of["api"], y)])                 # a request
 s.path([(x_of["api"], y + 58), (x_of["browser"], y + 58)],
        paint=Paint(dashed=True))                                  # its reply
 ```
+
+## Anti-patterns — refuse these on sight
+
+Each one makes a diagram harder to read while every gate can still pass. The design
+gates catch some of them (`focus`, `orthogonal`, `node_budget`); the rest are yours
+to catch in the pre-delivery checklist.
+
+- **Identical boxes for every node.** Same size, same colour, same weight: nothing
+  says where to look. Neutral grey for the ordinary, the accent for the one or two
+  that matter, the sublabel tier for detail.
+- **Rainbow colouring.** A colour per node, or per file type nobody asked about.
+  At most four role colours, each in the legend; the `focus` gate counts them.
+- **More than two accents.** If you want to accent four things, you have not decided
+  what matters yet. The `focus` gate counts accent-coloured shapes.
+- **Shadows, gradients, 3D.** Excalidraw draws none of them on purpose; a fake drop
+  shadow (a second offset box) is two overlapping shapes and a reader sees two.
+- **Labels sitting on the line.** A label belongs on its connector's middle leg with
+  clear line both sides (`label_fit` measures it), never across a box or a junction.
+- **A legend floating inside the diagram.** The legend and glossary sit below or
+  beside the diagram, outside every region, never between two boxes.
+- **Vertical text.** Nobody tilts their head. Widen the box, wrap the label, or move
+  the detail into a caption.
+- **Diagonal connectors.** They read as noise beside right angles and cross more:
+  `arrow(..., elbow=True)`, `PackOptions(edge_style="orthogonal")`. The `orthogonal`
+  gate names every bound arrow with a diagonal leg.
+- **Placeholder names.** "Service A", "Module 1", "Component": the reader learns
+  nothing. Name the real file, function or system, and decode jargon in the glossary.

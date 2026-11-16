@@ -57,18 +57,18 @@ s = Scene(seed=7)                 # normal font, clean lines (the readable defau
 # Scene(typeface="hand", sketch=True) for the classic whiteboard look instead
 s.title("Auth flow", (40, -40), font=32)
 
-a = s.box("Client",       (40, 60),  paint="grey")
-b = s.box("API gateway",  (40, 240), paint="blue")
+a = s.box("Client",       (40, 60),  paint="grey", sublabel="web/app.js")
+b = s.box("API gateway",  (40, 240), paint="blue", sublabel=":8080")
 c = s.box("Auth service", (40, 420), paint="violet")
-d = s.diamond("Token\nvalid?", (360, 410), paint="orange")
+d = s.diamond("Token\nvalid?", (360, 410), paint="accent")   # the one focal node
 ok = s.box("200 OK", (680, 300), paint="green")
 err = s.box("401",   (680, 520), paint="red")
 
 s.arrow(a, b, label="request")
 s.arrow(b, c, label="verify")
 s.arrow(c, d)
-s.arrow(d, ok, label="yes")
-s.arrow(d, err, label="no", paint=DASHED)
+s.arrow(d, ok, label="yes", elbow=True)                 # right angles, not a diagonal
+s.arrow(d, err, label="no", paint=DASHED, elbow=True)
 
 s.save("auth_flow", out_dir="docs", gates=Gates.strict())
 ```
@@ -90,12 +90,17 @@ can be positioned from it (`s.rect(clear).y`).
 group=None)`. A bare string is the element's *natural* colour: a shape's fill, a
 connector's stroke. So `paint="blue"` on a box and `paint="red"` on an arrow both
 do the obvious thing. `DASHED` is `Paint(dashed=True)`. A colour is a palette
-name, a hex string, or a role declared with `Scene(roles=…)`.
+name, a hex string, a role declared with `Scene(roles=…)`, or `"accent"`: the
+scene's focal colour (`Scene(accent="orange")`, the default), for the headline
+path and at most two focal nodes. A role may itself be declared as `"accent"`.
+Shapes that share `Paint(group=…)` move together in the editor and count as one
+node for the node budget (the cells of one waveform row, a framed trio).
 
 **`font` — how its text is set.** `Font(size=None, color=None, align=None)`. A bare
 number is a size. A field left `None` keeps the calling method's own default, so
 `label(..., font=14)` stays grey and centred, `title(..., font=Font(align="center"))`
-keeps title size.
+keeps title size. A centred `label()` or `title()` treats the x of `at` as the text's
+centre (`"right"`: its right edge), so pass the coordinate it should be centred on.
 
 ## The `scene --from-json` description
 
@@ -111,11 +116,14 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
   "title": "Auth flow",                // -> title()
   "subtitle": "Left to right: ...",    // -> label(), one line, say the direction
   "direction": "LR",                   // "LR" = layers are columns, "TB" = rows
-  "edge_style": "straight",            // or "orthogonal": a bus per fan-out
+  "edge_style": "orthogonal",          // or "straight" (the default): see below
   "seed": 7,                           // byte-identical re-runs; set it if committed
+  "accent": "orange",                  // the focal colour; a fill of "accent" uses it
+  "takeaway": "one writer, many readers",  // -> takeaway(), under the subtitle
   "roles": {"service": "blue"},        // colour = meaning
   "nodes": [
-    {"id": "api", "label": "API gateway", "fill": "service", "kind": "process"},
+    {"id": "api", "label": "API gateway", "fill": "service", "kind": "process",
+     "sublabel": "api/gateway.py", "step": 1},  // code-type second line; ① on the label
     {"id": "old", "label": "archived", "fill": "#5c2d91",
      "font": {"size": 15, "color": "#ffffff"}}
   ],                                   // kind: any box() shape name; font: size/color/align;
@@ -124,6 +132,7 @@ the API above. The MCP tool `build_scene` takes the same object as its `graph`.
     {"src": "api", "dst": "auth", "label": "verify", "dashed": false, "flip": false}
   ],
   "groups": [{"label": "the service", "members": ["api", "auth"]}],
+  "notes": [{"target": "api", "text": "why every call passes here"}],  // <= 2, note()
   "legend": true,                      // -> legend() from `roles`
   "glossary": [["back edge", "an arrow returning to an earlier step"]]
 }
@@ -140,8 +149,11 @@ point at the same targets, one flipped, then sit one before and one after them a
 do not cross; a node that only flipped edges reach sits beside the nearest of them. Use it with
 the `"straight"` edge style. Without the key nothing changes.
 
-`"edge_style": "orthogonal"` draws every edge between neighbouring layers as a bus
-instead: a trunk in the gap beside its source and a square branch into each target,
+`"edge_style": "orthogonal"` is the recommended style: no connector runs on a
+diagonal. It stays opt-in rather than the default because the frozen layout corpus
+(`scripts/layout_corpus/`) and the data-model star layout were tuned on straight edges,
+and switching every existing description would move their labels. It draws every edge
+between neighbouring layers as a bus instead: a trunk in the gap beside its source and a square branch into each target,
 with the label on the branch. It is the shape for a tree or a dependency map, where one
 node fans out to many; every leg lies in the gap between two layers, so none can cut
 a box. The legs are unbound lines, so dragging a box in the editor leaves them behind.
@@ -245,16 +257,16 @@ table holding the key to the table it references). It builds the same graph desc
 
 | Call | Draws / returns |
 | --- | --- |
-| `Scene(typeface="normal", sketch=False, background="#ffffff", seed=None, roles=None)` | the canvas. `typeface`: normal, hand or code. `seed=<int>` → byte-stable file for git |
+| `Scene(typeface="normal", sketch=False, background="#ffffff", seed=None, roles=None, accent="orange")` | the canvas. `typeface`: normal, hand or code. `seed=<int>` → byte-stable file for git. `accent`: the focal colour `paint="accent"` resolves to; `None` turns the accent count off |
 | **Shapes** — each returns a node id | |
-| `s.box(text, at, paint=…, font=…, shape="rectangle", container=False)` | a labelled shape; `container=True` exempts a wrapper from the overlap gate |
+| `s.box(text, at, paint=…, font=…, shape="rectangle", container=False, sublabel=None)` | a labelled shape; `container=True` exempts a wrapper from the overlap gate. `sublabel`: a technical second tier (file, port, command) under the name, code typeface at 12px, grouped with the shape; the `overflow` gate checks both tiers fit |
 | `s.ellipse(text, at, …)` / `s.diamond(text, at, …)` | the same with that shape |
 | `s.process` / `terminator` / `decision` / `data` / `predefined_process` / `preparation` / `connector` `(text, at, …)` | ISO 5807: rectangle / stadium / diamond / parallelogram / framed box / hexagon / small circle, each with its own default size |
 | `s.frame(at, paint=…)` | a rounded container drawn *behind* everything so far (`at` is `(x, y, w, h)`) |
 | **Placing several** — each returns the ids in order | |
 | `s.arrange(items, at, across="x", cell=None, gap=None, connect=False)` | `across`: `"x"` a row, `"y"` a column, an int a grid of that many columns. Default gap 80 / 60 / `(40, 30)` |
 | `s.row(items, at, …)` / `s.column(items, at, …)` / `s.grid(items, at, cols, …)` | `arrange()` with `across` filled in |
-| `s.pipeline(steps, at, gap=80, band=None, font=…, connect=True)` | a horizontal flowchart band on one midline, chained with arrows |
+| `s.pipeline(steps, at, gap=80, band=None, font=…, connect=True, numbered=False, line=None)` | a horizontal flowchart band on one midline, chained with arrows. `numbered=True` opens each step with ①②③; `line="accent"` paints the chaining arrows as the headline path |
 | `s.enclose(ids, label=None, pad=24, paint=None, caption=None)` | a frame sized around placed nodes — dashed unless `paint` is given; the caption goes where no arrow already drawn crosses it, so draw the arrows first → frame id |
 | `s.lane(ids, label, pad=24, paint=None, caption=None)` | a solid frame with a top-left header, one per actor or tool → frame id |
 | `s.align(ids, axis)` / `s.distribute(ids, axis, gap=40)` | move placed nodes (and their labels); `axis`: left/right/center_x/top/bottom/center_y, or `"x"`/`"y"` |
@@ -265,8 +277,10 @@ table holding the key to the table it references). It builds the same graph desc
 | `s.role(name, colour)` | declare a semantic colour so `paint="agent"` works and `legend()` can list it |
 | `s.legend(entries=None, at=(0, 0), title="Legend", font=…)` | colour → meaning key; `entries=[(label, colour), …]` or omit for the roles |
 | `s.glossary(entries, at, title="Glossary", font=…)` | term → meaning key; overlap-checked like a box |
+| `s.takeaway(text, at, font=…)` | the one line a reader should remember, under the subtitle: 15px black, opened by "Takeaway:" |
+| `s.note(text, target, at=None, font=…)` | a margin note saying WHY, joined to `target` by a dashed right-angle leader. Omit `at` and it goes in the margin level with the target (right, left, then below, above) where its leader cuts no shape. At most two per scene; a third raises `ValueError`. The note is overlap-checked; the leader is judged by the `crossing` gate |
 | **Connectors** — each returns its id | |
-| `s.arrow(src, dst, label=None, paint=…, heads="end", curve=False)` | a bound arrow node → node; `heads`: end, start, both, none |
+| `s.arrow(src, dst, label=None, paint=…, heads="end", curve=False, elbow=False)` | a bound arrow node → node; `heads`: end, start, both, none. `elbow=True` draws it with right angles only: one straight leg when the shapes share a row or column, else three legs turning in the gap between them, with the label on the middle leg. Each elbow end takes its own point on the side it meets, 24px from any other, so arrows into one box never share an attach point. It stays bound, so moving a box in the editor keeps it attached |
 | `s.path(points, label=None, paint=…, heads="end")` | an unbound connector through absolute `(x, y)` points; its label gets an overlap-checked knock-out panel |
 | `s.free_arrow(p0, p1, …)` | `path()` with two points |
 | `s.route_under(src, dst, drop=70, label=None, paint=…)` | a dashed grey feedback connector below the row |
@@ -274,15 +288,19 @@ table holding the key to the table it references). It builds the same graph desc
 | `s.pack(nodes, edges=(), groups=(), at=(40, 0), options=None) → {id: node id}` | the coordinate-free layout; `PackOptions(direction, gap_major, gap_minor, lane_gap, font_size, edge_style)` |
 | **Inspection and save** | |
 | `s.bounds()` / `s.rect(node_id)` | `(min_x, min_y, max_x, max_y)` of everything / one node's `Rect` |
-| `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption |
+| `s.check_overlaps()` `check_arrow_crossings()` `check_legend_coverage()` `check_text_overflow()` `check_text_overlaps()` `check_short_arrows()` `check_arrow_label_fit()` | the seven checks, each a list of offenders, `[]` when clean. `check_overlaps()` also names a box inside an `enclose()` frame that was not enclosed; `check_arrow_crossings()` also names an arrow through a frame caption, and judges an elbow arrow or a note leader along its actual legs |
+| `s.check_focus()` `check_node_budget()` `check_orthogonal_arrows()` | the three design checks. `check_focus()`: `[(kind, count, names)]` for more than 2 accent-coloured shapes or more than 4 role fills beside neutral grey and the accent. `check_node_budget()`: `[(region, count)]` for a `section()` region (the whole scene without one) or an `enclose()` frame past 12 nodes. `check_orthogonal_arrows()`: `[(src, dst)]` for a bound arrow with a diagonal leg |
 | `s.save(basename, out_dir=".", gates=None, offline=None, svg=False) → (excalidraw, html[, svg])` | runs the gates and writes both files, once; `svg=True` also writes `<basename>.svg` and returns it third |
 | `fit_text(text, size=14, max_chars=20, min_size=(120, 48)) → (wrapped, w, h)` | wrap a label and size a box that will not overflow; a `\n` in `text` is kept as a line break |
 
-**Gates.** `Gates(advisory="warn", hard="error", **per_gate)` sets each gate to
-`"error"` (raise), `"warn"` (print to stderr) or `"off"`. The hard gates are
+**Gates.** `Gates(advisory="warn", hard="error", design="warn", **per_gate)` sets each
+gate to `"error"` (raise), `"warn"` (print to stderr) or `"off"`. The hard gates are
 `overlap` and `short_arrows`; the advisory ones `crossing`, `legend`, `overflow`,
-`text_overlap`, `label_fit`. `Gates.strict()` puts all seven at `"error"` — ship with
-it. `Gates(overlap="off")` is how a deliberately overlapping demo gets written.
+`text_overlap`, `label_fit`. `Gates.strict()` puts those seven at `"error"` — ship with
+it. `Gates(overlap="off")` is how a deliberately overlapping demo gets written. The three
+**design gates** — `focus`, `node_budget`, `orthogonal` — judge hierarchy rather than
+defects, so they warn, under `strict()` too; name one (`Gates(focus="error")`) to make it
+refuse.
 
 **The viewer's renderer.** `save()` and `render_html()` inline the vendored Excalidraw
 build into the `.html`, so the page opens with no network at all: about 1.6 MB, zero

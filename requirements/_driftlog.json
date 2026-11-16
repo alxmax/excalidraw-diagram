@@ -10,8 +10,8 @@
       "reason": "wikilink REQ-EXCALIDRAW-854 from its parent's Description"
     },
     "ARCH-EXCALIDRAW-031": {
-      "hash": "f6bf8d91c8d6",
-      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+      "hash": "a0f747644c81",
+      "reason": "visual hierarchy pass: three design gates (focus, node budget, orthogonal), elbow arrows, sublabels and the teaching additions; strict() leaves design gates warning"
     },
     "ARCH-EXCALIDRAW-032": {
       "hash": "84271fe3667b",
@@ -66,8 +66,8 @@
       "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "REQ-EXCALIDRAW-850": {
-      "hash": "f230995409f5",
-      "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
+      "hash": "8b5f0a553ac5",
+      "reason": "visual hierarchy pass: three design gates (focus, node budget, orthogonal), elbow arrows, sublabels and the teaching additions; strict() leaves design gates warning"
     },
     "REQ-EXCALIDRAW-851": {
       "hash": "e0b7380e2a31",

@@ -11,7 +11,9 @@ measures edges cutting through BOXES, so the routing is what keeps
 check_arrow_crossings() empty.
 """
 
+from .annotate import numbered_text
 from .geometry import as_point, fit_text, text_extent
+from .shapes import SUBLABEL_SIZE
 from .style import Font, Paint
 
 _DIAMONDS = ("diamond", "decision")
@@ -185,6 +187,7 @@ class _PackRun(object):
         self.layer = layer_of(self.ids, self.forward)
         self._pull_flipped_targets()
         self.placed, self.size, self.font, self.at, self.extent = {}, {}, {}, [], []
+        self.grouped, self.panels = set(), []
 
     def _pull_flipped_targets(self):
         """Longest-path layering starts a node nothing points at in layer 0. For a node that
@@ -233,10 +236,16 @@ class _PackRun(object):
         for nid in self.ids:
             spec = self.specs[nid]
             font = self.font[nid] = Font.coerce(spec.get("font"), Font(self.opts.font_size))
-            text, w, h = fit_text(str(spec.get("label", nid)), size=font.size,
+            label = str(spec.get("label", nid))
+            if spec.get("step"):
+                label = numbered_text(int(spec["step"]), label)
+            text, w, h = fit_text(label, size=font.size,
                                   max_chars=int(spec.get("max_chars", 22)), min_size=(150, 58))
             if spec.get("kind") in _DIAMONDS:
                 w, h = diamond_size(text, font.size)
+            if spec.get("sublabel"):          # the second tier: below the name
+                sw, sh = text_extent(str(spec["sublabel"]), SUBLABEL_SIZE)
+                w, h = max(w, sw + 28), h + sh + 6
             self.size[nid] = (float(spec.get("w", w)), float(spec.get("h", h)), text)
         gaps = [float(self.opts.gap_major)] * max(1, len(layers) - 1)
         for link in self.forward:
@@ -269,14 +278,17 @@ class _PackRun(object):
                 start[nid] = cur
                 cur += self._minor(nid) + gap
         self._clear_frames(layers, groups, start)
+        self.grouped = {str(m) for g in groups for m in g.get("members", ())}
         for k, lay in enumerate(layers):
             for nid in lay:
                 w, h, text = self.size[nid]
                 x, y = (self.at[k], start[nid]) if self.lr else (start[nid], self.at[k])
                 spec = self.specs[nid]
+                sub = spec.get("sublabel")
                 self.placed[nid] = self.scene.box(
                     text, (x, y, w, h), paint=spec.get("fill"),
-                    shape=spec.get("kind", "rectangle"), font=self.font[nid])
+                    shape=spec.get("kind", "rectangle"), font=self.font[nid],
+                    sublabel=str(sub) if sub else None)
                 # the caller's id travels with the shape, so an edited scene can
                 # be matched back to the description that drew it
                 self.scene._element(self.placed[nid])["customData"] = {"id": nid}
@@ -327,7 +339,11 @@ class _PackRun(object):
             members = [self.placed[str(m)] for m in group.get("members", ())
                        if str(m) in self.placed]
             if members:
-                self.scene.enclose(members, label=group.get("label"))
+                fid = self.scene.enclose(members, label=group.get("label"))
+                # a bus label between two members belongs inside their frame
+                ids = {str(m) for m in group.get("members", ())}
+                self.scene._frames[fid][0].update(
+                    p for a, b, p in self.panels if a in ids and b in ids)
 
     def connect(self, margin=0.0):
         """Every edge: a straight arrow where its line is clear, routed otherwise.
@@ -406,7 +422,13 @@ class _PackRun(object):
             pts = [pts[0], pts[3]]
         self.scene.path(pts, paint=Paint(dashed=bool(link.get("dashed"))))
         if link.get("label"):
-            self.scene._path_label(pts[-2:], str(link["label"]), None)
+            branch = list(pts[-2:])
+            if str(link["dst"]) in self.grouped:    # keep the label out of its frame:
+                (bx, by), (ex, ey) = branch         # enclose() pads a group by 24px
+                cut = 32.0
+                branch[1] = (ex - cut, ey) if self.lr else (ex, ey - cut)
+            panel = self.scene._path_label(branch, str(link["label"]), None)
+            self.panels.append((str(link["src"]), str(link["dst"]), panel))
 
     def _route(self, ends, spans, channel, lane, dashed=False):
         """Route a connector out of one box, along a lane past the diagram, and
@@ -452,9 +474,10 @@ class PackMixin(object):
     def pack(self, nodes, edges=(), *, groups=(), at=(40, 0), options=None):
         """Lay out a directed graph from ids and edges alone — no coordinates.
 
-        nodes:   dicts {id, label, fill, kind, w, h, font}; only `id` is required,
-                 `kind` is any box() shape name and `font` a Font, a size or a
-                 dict {size, color, align}.
+        nodes:   dicts {id, label, fill, kind, w, h, font, sublabel, step}; only
+                 `id` is required, `kind` is any box() shape name, `font` a Font, a
+                 size or a dict {size, color, align}, `sublabel` the code-typeface
+                 second line and `step` a number that opens the label with ①②③.
         edges:   dicts {src, dst, label, dashed}.
         groups:  dicts {label, members: [id, ...]}, each drawn as an enclose() frame.
         options: a PackOptions (direction, spacing, font size, edge style).

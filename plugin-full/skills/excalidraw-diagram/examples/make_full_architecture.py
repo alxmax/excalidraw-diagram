@@ -27,10 +27,8 @@ s = Scene(seed=31, roles={
     "skill":    "violet",   # the skill / the plugin
     "words":    "indigo",   # what you write: a description or a generator
     "artifact": "green",    # generated outputs (.excalidraw, .html)
-    "spec":     "pink",     # the requirement corpus
-    "external": "grey",     # systems outside the plugin
-    "gate":     "orange",   # a check / a decision
-    "enum":     "teal",     # schema enum / annotation
+    "external": "grey",     # systems outside the plugin (neutral)
+    "gate":     "accent",   # the focus: where a check decides
 })
 
 s.title("excalidraw-diagram — Architecture", (40, -92), font=32)
@@ -45,7 +43,7 @@ parts = s.row([
     ("excalidraw_builder.py\nstdlib only", "engine"),
     ("references/\napi + examples", "words"),
     ("examples/make_*.py\nfour generators", "artifact"),
-    ("requirements/\n14 promises", "spec"),
+    ("requirements/\n14 promises", "words"),
 ], (80, y + 44), gap=28, cell={"size": (200, 64), "font": 13})
 s.enclose(parts, label="excalidraw-diagram plugin")
 
@@ -127,17 +125,17 @@ record = s.box(
     "legend, glossary",
     (560, ys, 350, 250), paint="words", font=12)
 kinds = s.box("kind: process | decision\nterminator | data | ...", (80, ys + 30, 230, 64),
-              paint="enum", font=12)
+              paint="words", font=12)
 checks = s.box("the seven gates\noverlap, crossing, fit", (80, ys + 170, 230, 64),
                paint="gate", font=13)
-s.arrow(kinds, record, label="shape per node")
-s.arrow(checks, record, label="judge the result")
+s.arrow(kinds, record, label="shape per node", elbow=True)
+s.arrow(checks, record, label="judge the result", elbow=True)
 scene = s.box("scene.excalidraw\nevery element editable", (1090, ys + 20, 240, 84),
               paint="artifact", font=12)
 html = s.box("viewer.html\nopens by double-click", (1140, ys + 180, 240, 64),
              paint="artifact", font=12)
-s.arrow(record, scene, label="pack()")
-s.arrow(record, html, label="save() writes")
+s.arrow(record, scene, label="pack()", elbow=True)
+s.arrow(record, html, label="save() writes", elbow=True)
 
 # ═══════════════════════ legend + glossary ═══════════════════
 _, _, max_x, max_y = s.bounds()
@@ -145,12 +143,10 @@ ly = max_y + 60
 s.legend([
     ("engine - excalidraw_builder.py", "blue"),
     ("the skill / the plugin", "violet"),
-    ("what you write", "indigo"),
+    ("what you write: descriptions, specs", "indigo"),
     ("generated output", "green"),
-    ("requirement corpus", "pink"),
     ("external system", "grey"),
-    ("gate / decision", "orange"),
-    ("schema enum / annotation", "teal"),
+    ("the focus: a gate / decision", "accent"),
 ], (80, ly), title="Legend - colour = role")
 s.glossary([
     ("scene", "the .excalidraw file — the picture, editable box by box"),

@@ -150,7 +150,9 @@ At `save()` time the builder runs seven gates: overlapping shapes, arrows crossi
 unrelated box, a fill colour missing from the legend, text spilling out of its box, captions
 overlapping, arrows too short to draw, and arrow labels wider than their connector. Two of
 them raise by default; the other five warn until `Gates.strict()` turns them into hard
-failures.
+failures. Three design gates judge hierarchy rather than defects and only ever warn: `focus`
+(more than two accent-coloured shapes or four role colours), `node_budget` (more than 12
+nodes in a region) and `orthogonal` (a bound arrow with a diagonal leg).
 
 ![What save() refuses, next to what it writes](docs/gate_demo.png)
 

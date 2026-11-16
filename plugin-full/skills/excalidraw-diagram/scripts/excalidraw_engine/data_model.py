@@ -19,6 +19,7 @@ from .ddl import parse_ddl
 from .review import review_tables
 from .roles import parse_roles
 from .sides import best_right
+from .gates import Gates
 from .spec import scene_from_spec
 
 
@@ -199,8 +200,10 @@ def _draw(tables, lineage, source, stem, out_dir, opts):
                                  overrides=overrides, lineage=lineage)
     except ValueError as exc:
         raise ValueError("%s: %s" % (opts.roles_path or source, exc))
+    # the star layout points facts at dimensions on both sides on purpose, so the
+    # right-angle advice would only repeat what the layout chose
     return scene_from_spec(spec, out_dir, name=opts.name or stem, offline=opts.offline,
-                           svg=opts.svg)
+                           svg=opts.svg, gates=Gates(advisory="error", orthogonal="off"))
 
 
 def scene_from_ddl(ddl_path, out_dir=None, **options):

@@ -30,14 +30,14 @@ def _poster(out):
     s.title("demo", (0, -40), font=24)
     stages = s.row(["ingest", "process", "store"], (0, 0), cell={"paint": "source"},
                    connect=True)
-    workers = s.grid([f"n{i}" for i in range(9)], (0, 150), 3,
+    workers = s.grid([f"n{i}" for i in range(6)], (0, 150), 3,
                      cell={"size": (120, 60), "paint": "worker"})
     s.enclose(workers, label="parallel workers")
     done = s.box("done", (720, 0), paint="green")
     s.arrow(stages[-1], done)
     s.path([(0, 460), (620, 460)], label="feedback")
     s.legend([("source", "blue"), ("worker", "violet"), ("done", "green")], (760, 150))
-    movers = s.column(["a", "b", "c"], (760, 360), cell={"size": (80, 40)})
+    movers = s.column(["a", "b"], (760, 360), cell={"size": (80, 40)})
     s.align(movers, "left")
     s.distribute(movers, "y", gap=20)
     for check in (s.check_overlaps, s.check_arrow_crossings, s.check_legend_coverage,
@@ -63,6 +63,15 @@ def _refusals(out):
     s2.box("M", (200, 0, 80, 40))
     s2.arrow(left, s2.box("R", (400, 0, 80, 40)))
     _expect_refusal(s2, "smoke_err", out, Gates(crossing="error"))
+    s3 = Scene(seed=5)           # the design gates: a rainbow, a crowd, a diagonal
+    boxes = [s3.box(c, (i * 200, 0), paint=c)
+             for i, c in enumerate(("blue", "green", "violet", "teal", "pink"))]
+    s3.grid([f"m{i}" for i in range(8)], (0, 200), 4)
+    s3.arrow(boxes[0], s3.box("low", (-400, 150)))
+    assert [k for k, _n, _x in s3.check_focus()] == ["roles"], s3.check_focus()
+    assert s3.check_node_budget() == [("the scene", 14)], s3.check_node_budget()
+    assert s3.check_orthogonal_arrows() == [("blue", "low")], s3.check_orthogonal_arrows()
+    _expect_refusal(s3, "smoke_design", out, Gates(focus="error"))
 
 
 def _geometry():
@@ -73,6 +82,11 @@ def _geometry():
     assert sc._element(aid)["height"] >= 29, "curved arrow bbox must span the control point"
     mid = polyline_midpoint([(0, 0), (0, 100), (200, 100), (200, 0)])
     assert abs(mid[0] - 100) < 1 and abs(mid[1] - 100) < 1, mid
+    se = Scene(seed=6)           # an elbow arrow is square and clear of the box between
+    a, b = se.box("a", (0, 0)), se.box("b", (500, 300))
+    se.box("between", (240, 0))
+    se.arrow(a, b, label="square", elbow=True)
+    assert not se.check_orthogonal_arrows() and not se.check_arrow_crossings()
     sb = Scene(seed=3)           # bounds() includes a routed connector's dip
     sb.route_under(sb.box("a", (0, 0, 80, 40)), sb.box("b", (200, 0, 80, 40)), drop=60)
     assert sb.bounds()[3] >= 100, sb.bounds()
@@ -87,4 +101,5 @@ def run():
     _refusals(out)
     _geometry()
     print("wrote", pj, ph)
-    print("OK smoke test (legend/role/align/distribute/path-bg/crossing-gate)")
+    print("OK smoke test (legend/role/align/distribute/path-bg/crossing-gate/"
+          "design-gates/elbow)")

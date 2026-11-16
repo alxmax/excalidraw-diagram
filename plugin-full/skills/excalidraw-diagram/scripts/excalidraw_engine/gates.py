@@ -51,9 +51,28 @@ _GATES = (
           "arrow label(s) too wide for their connector (the label crowds the "
           "arrowheads or spills onto the boxes): ",
           ". Widen the gap between the shapes, or shorten or wrap the label."),
+    # the three design gates: hierarchy, not defects
+    _Gate("focus", "check_focus",
+          lambda hits: "; ".join(
+              f"{n} accent-coloured shapes ({', '.join(str(x) for x in names[:4])})"
+              if kind == "accent" else f"{n} role fills ({', '.join(names)})"
+              for kind, n, names in hits),
+          "colour no longer points anywhere: ",
+          ". Keep the accent for the headline path and at most 2 focal nodes, paint "
+          "the rest neutral grey, and use at most 4 role colours the legend explains."),
+    _Gate("node_budget", "check_node_budget",
+          lambda hits: "; ".join(f"{region} holds {n} nodes" for region, n in hits),
+          "region(s) past the 12-node budget: ",
+          ". Split it into an overview region and a detail region below it."),
+    _Gate("orthogonal", "check_orthogonal_arrows",
+          lambda hits: "; ".join(sorted({f"'{a}'->'{b}'" for a, b in hits})),
+          "diagonal connector(s): ",
+          ". Draw them square with arrow(..., elbow=True), or "
+          "PackOptions(edge_style='orthogonal') in pack()."),
 )
 _NAMES = tuple(g.name for g in _GATES)
 _HARD = ("overlap", "short_arrows")
+_DESIGN = ("focus", "node_budget", "orthogonal")
 
 
 class Gates(object):
@@ -61,15 +80,19 @@ class Gates(object):
     stderr, "off" ignores.
 
     The two hard gates — overlap and short_arrows — are real defects and default
-    to "error". The five advisory gates default to "warn". Name any gate to set it
-    alone: Gates(crossing="error"), Gates(overlap="off")."""
+    to "error". The five advisory gates default to "warn". The three design gates —
+    focus, node_budget, orthogonal — judge hierarchy, not defects: they default to
+    "warn" and strict() leaves them there. Name any gate to set it alone:
+    Gates(crossing="error"), Gates(overlap="off"), Gates(orthogonal="error")."""
 
-    def __init__(self, advisory="warn", hard="error", **per_gate):
+    def __init__(self, advisory="warn", hard="error", design="warn", **per_gate):
+        # implements: REQ-EXCALIDRAW-860
         unknown = set(per_gate) - set(_NAMES)
         if unknown:
             raise ValueError("unknown gate(s) %s; the gates are %s"
                              % (sorted(unknown), ", ".join(_NAMES)))
-        self.modes = {n: hard if n in _HARD else advisory for n in _NAMES}
+        self.modes = {n: hard if n in _HARD else design if n in _DESIGN else advisory
+                      for n in _NAMES}
         self.modes.update(per_gate)
         for name, mode in self.modes.items():
             if mode not in _MODES:
@@ -78,7 +101,8 @@ class Gates(object):
 
     @classmethod
     def strict(cls):
-        """Every gate at "error" — a ship-quality diagram."""
+        """Every defect gate at "error" — a ship-quality diagram. The design
+        gates keep warning: they advise on hierarchy and never refuse a file."""
         return cls(advisory="error")
 
 

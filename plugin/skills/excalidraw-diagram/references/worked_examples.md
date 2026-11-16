@@ -24,10 +24,18 @@ Then ONE legend (colour = role) and ONE glossary decode the whole poster.
 
 **Colour discipline across regions:** the single legend must decode every region, so each
 *distinct* meaning gets its own colour. Two regions must not reuse one colour for
-different roles. With nine palette colours, merge only roles that are genuinely the same.
+different roles. But the budget is small: neutral grey for everything ordinary, one
+accent for the headline path and at most two focal nodes, and at most four role colours.
+Six roles means two are the same role, or not worth a colour; merge them.
+
+**State the plan first.** Before the grid table, write four lines: the regions in order,
+the node count per region (each 12 or fewer), the focal path with its focal nodes, and what
+was cut to fit. For example: *regions: structure (6), workflow (9), integration (7);
+focus: request → validate → store, focal node validate; cut: the four helper modules,
+merged into one box.*
 
 **Depth comes from structure, never from cramming.** Show the true flow with the fewest
-nodes that tell it. When a region would need more than ~20 nodes, add another lane or
+nodes that tell it. When a region would need more than 12 nodes, add another lane or
 region; never shrink text.
 
 ## Tips
@@ -36,7 +44,11 @@ region; never shrink text.
 - **One reading direction** per region.
 - **Colour by role**, consistently, never decoratively.
 - **Dashed arrows** for feedback, optional and skip paths; solid for the main flow.
-- **Reflect reality.** Name the real files, scripts and functions.
+- **Reflect reality.** Name the real files, scripts and functions: the everyday name as
+  the bound label, the file beneath it as the sublabel tier.
+- **The remove test, before delivery.** Can a node be removed? Can two nodes merge? Can
+  an arrow go because the layout already says it? Can a label go because colour or shape
+  already says it? Would a three-column table say the same thing? Then make a table.
 - **Font and style.** `fontFamily: 2` with `roughness: 0` is the most readable default.
   Use `fontFamily: 1` with `roughness: 1` only when a sketchy whiteboard look is asked for.
 
@@ -74,7 +86,9 @@ to the frame and ONE from the frame to the merge.
 
 ❌ A rectangle for the choice, with unlabelled branches.
 ✅ A diamond (it needs about 1.4× the width of a rectangle with the same text) with
-labelled branches: `yes` solid, `no` dashed.
+labelled branches: `yes` solid, `no` dashed. A branch to a box that is not level with the
+diamond leaves from the side facing it and turns once, as a four-point elbow; each branch
+meets the diamond at its own point.
 
 ### 5 · Feedback loop
 
@@ -94,8 +108,13 @@ The diagram is accurate and teaches nothing.
 - a 32px title;
 - a subtitle that says what the thing is and how to read the diagram ("Read top to bottom.
   Every special word is explained in the Glossary at the bottom.");
+- ONE takeaway line under the subtitle, 15px, opened by "Takeaway:" — the one sentence
+  the reader should leave with;
 - one region per idea (THE PROBLEM IT SOLVES, HOW YOU USE IT, WHAT'S INSIDE, WHERE IT RUNS),
-  with everyday words in the boxes;
+  with everyday words in the boxes and the real file beneath as a sublabel;
+- the main path numbered ①②③ in the step labels, its arrows in the accent colour;
+- at most two margin notes saying *why*: grey 13px free text right of the region,
+  joined to its element by a dashed unbound grey line that turns only at right angles;
 - a legend and a glossary that decode every colour and term.
 
 ### 7 · Timing / waveform
@@ -118,3 +137,23 @@ unbound line.
 - **Entity-relationship:** an entity is a coloured header box over a body box listing its
   columns. A relationship is a bound arrow with no heads, labelled `1 x : N y`. Join a
   lower table at its header, or the line cuts through it.
+
+## Anti-patterns: refuse these on sight
+
+Each one makes a diagram harder to read while every self-check can still pass.
+
+- **Identical boxes for every node.** Same size, colour and weight: nothing says where to
+  look. Neutral grey for the ordinary, the accent for the one or two that matter.
+- **Rainbow colouring.** A colour per node, or per file type nobody asked about. At most
+  four role colours, each in the legend.
+- **More than two accents.** If you want to accent four things, you have not decided what
+  matters yet.
+- **Shadows, gradients, 3D.** A fake drop shadow is a second offset box: two overlapping
+  shapes, and a reader sees two.
+- **Labels sitting on the line.** A label belongs on its connector's middle leg with clear
+  line both sides (the label_fit check), never across a box or a junction.
+- **A legend floating inside the diagram.** The legend and glossary sit below or beside
+  the diagram, outside every region.
+- **Vertical text.** Widen the box, wrap the label, or move the detail into a caption.
+- **Diagonal connectors.** Draw right-angle elbows; a diagonal fails the orthogonal check.
+- **Placeholder names.** "Service A", "Module 1": name the real file, function or system.

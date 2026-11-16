@@ -1,9 +1,9 @@
 ---
-generated: 2026-11-14
+generated: 2026-11-16
 engine: 2026-11-02.2
-nodes: 41
+nodes: 44
 edges: 6
-design pass-rate: 100% (32/32 source files without a design candidate)
+design pass-rate: 88% (28/32 source files without a design candidate)
 ---
 
 # Requirement Map
@@ -30,10 +30,13 @@ graph LR
     REQ_EXCALIDRAW_854["The viewer carries its renderer<br><small>REQ-EXCALIDRAW-854</small>"]
     REQ_EXCALIDRAW_846["Named gates: crossing, legend, and overflow checks<br><small>REQ-EXCALIDRAW-846</small>"]
     REQ_EXCALIDRAW_847["Text-overlap, label-fit gates, and the two hard gates<br><small>REQ-EXCALIDRAW-847</small>"]
+    REQ_EXCALIDRAW_860["Design gates: one focus and a node budget<br><small>REQ-EXCALIDRAW-860</small>"]
+    REQ_EXCALIDRAW_861["Right-angle connectors and the orthogonal gate<br><small>REQ-EXCALIDRAW-861</small>"]
     REQ_EXCALIDRAW_848["Smoke test, render and discover verbs<br><small>REQ-EXCALIDRAW-848</small>"]
     REQ_EXCALIDRAW_850["The scene verb: a described graph becomes both files<br><small>REQ-EXCALIDRAW-850</small>"]
     REQ_EXCALIDRAW_852["The MCP server: the same entry points as tools<br><small>REQ-EXCALIDRAW-852</small>"]
     REQ_EXCALIDRAW_856["SVG export, on request<br><small>REQ-EXCALIDRAW-856</small>"]
+    REQ_EXCALIDRAW_862["Teaching additions: steps, takeaway, margin notes, two-tier text<br><small>REQ-EXCALIDRAW-862</small>"]
     REQ_EXCALIDRAW_851["pack(): layering, ordering, and routing what will not go straight<br><small>REQ-EXCALIDRAW-851</small>"]
     REQ_EXCALIDRAW_858["pack(): what a node says about itself<br><small>REQ-EXCALIDRAW-858</small>"]
     REQ_RELEASE_855["check_versions.py: every copy of the version agrees<br><small>REQ-RELEASE-855</small>"]
@@ -102,8 +105,8 @@ graph LR
   ARCH_EXCALIDRAW_033["Explanatory output — a diagram a reader with no context can decode<br><small>ARCH-EXCALIDRAW-033</small>"]
   f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:5"]
   ARCH_EXCALIDRAW_033 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_5
-  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-943"]
-  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_943
+  f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_963["plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:6-963"]
+  ARCH_EXCALIDRAW_033 -->|tested-by| f_plugin_full_skills_excalidraw_diagram_scripts_test_excalidraw_py_6_963
   ARCH_EXCALIDRAW_034["Graph auto-layout — a diagram from ids and edges alone<br><small>ARCH-EXCALIDRAW-034</small>"]
   f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6["plugin-full/skills/excalidraw-diagram/scripts/excalidraw_builder.py:6"]
   ARCH_EXCALIDRAW_034 -->|implements| f_plugin_full_skills_excalidraw_diagram_scripts_excalidraw_builder_py_6
@@ -125,7 +128,7 @@ _Area-level coupling: one box per area (N caps), arrow A->B = some capability in
 ```mermaid
 graph LR
   a_ARCH["ARCH<br><small>7 caps</small>"]
-  a_REQ["REQ<br><small>33 caps</small>"]
+  a_REQ["REQ<br><small>36 caps</small>"]
   a_misc["misc<br><small>1 caps</small>"]
 ```
 

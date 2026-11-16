@@ -6,6 +6,9 @@
 # tested-by: ARCH-EXCALIDRAW-033
 # tested-by: REQ-EXCALIDRAW-856
 # tested-by: REQ-EXCALIDRAW-859
+# tested-by: REQ-EXCALIDRAW-860
+# tested-by: REQ-EXCALIDRAW-861
+# tested-by: REQ-EXCALIDRAW-862
 """Regression gate for the excalidraw-diagram skill.
 
 This is the operational definition of "professional / understandable" for a
@@ -96,6 +99,18 @@ def _make_case(path):
             scene.check_arrow_label_fit(), [],
             f"{os.path.basename(path)} has an arrow label wider than its "
             f"connector (the label crowds the arrowheads or spills onto a box)")
+        # the three design gates only warn at save(), but a worked example is
+        # what an assistant copies, so it holds to them in full
+        self.assertEqual(
+            scene.check_focus(), [],
+            f"{os.path.basename(path)} spends colour on too many things: more "
+            f"than 2 accent shapes or more than 4 role fills")
+        self.assertEqual(
+            scene.check_node_budget(), [],
+            f"{os.path.basename(path)} has a region past the 12-node budget")
+        self.assertEqual(
+            scene.check_orthogonal_arrows(), [],
+            f"{os.path.basename(path)} has a diagonal bound arrow")
 
     return case
 
@@ -859,8 +874,11 @@ class CasesExcalidrawValues(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-853
         with self.assertRaises(TypeError):
             s.box("x", (0, 0), paint=3)
 
-    def test_gates_strict_sets_every_gate_to_error(self):
-        self.assertEqual(set(eb.Gates.strict().modes.values()), {"error"})
+    def test_gates_strict_sets_every_defect_gate_to_error(self):
+        strict = eb.Gates.strict().modes
+        design = {"focus", "node_budget", "orthogonal"}
+        self.assertEqual({strict[n] for n in strict if n not in design}, {"error"})
+        self.assertEqual({strict[n] for n in design}, {"warn"})
         default = eb.Gates().modes
         self.assertEqual(default["overlap"], "error")
         self.assertEqual(default["crossing"], "warn")
@@ -917,6 +935,8 @@ class TestReferenceDocs(unittest.TestCase):
             exec(compile(code, "builder_api.md", "exec"), namespace)
             self.assertTrue(os.path.exists(os.path.join(d, "auth_flow.excalidraw")))
         self.assertEqual(_all_gates(namespace["s"]), {})
+        for check in ("check_focus", "check_node_budget", "check_orthogonal_arrows"):
+            self.assertEqual(getattr(namespace["s"], check)(), [], check)
 
 
 class CasesExcalidraw031(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-847
@@ -955,7 +975,7 @@ class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
         with tempfile.TemporaryDirectory() as d:
             s.save("decodable", out_dir=d, gates=eb.Gates(legend="error"))
 
-    def test_explainer_example_is_a_decodable_teaching_diagram(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-2
+    def test_explainer_example_is_a_decodable_teaching_diagram(self):  # verifies: ARCH-EXCALIDRAW-033#CASE-2  # verifies: REQ-EXCALIDRAW-862#CASE-5
         path = os.path.join(EXAMPLES_DIR, "make_explainer.py")
         captured = {}
         original_save = eb.Scene.save
@@ -979,6 +999,14 @@ class CasesExcalidraw033(unittest.TestCase):  # tested-by: ARCH-EXCALIDRAW-033
         # it opens with a title-sized heading
         sizes = [e.get("fontSize", 0) for e in s.elements if e.get("type") == "text"]
         self.assertTrue(any(sz >= 28 for sz in sizes), "explainer has no title")
+        # the teaching shape: one takeaway, a numbered main path, two WHY notes,
+        # and a technical second tier under everyday names
+        texts = [e.get("text") or "" for e in s.elements if e.get("type") == "text"]
+        self.assertEqual(sum(t.startswith("Takeaway:") for t in texts), 1)
+        self.assertTrue(any(t.startswith("① ") for t in texts), "no numbered step")
+        self.assertTrue(any(t.startswith("⑤ ") for t in texts), "the path is not numbered")
+        self.assertEqual(len(s._leaders), 2, "explainer has no margin notes")
+        self.assertTrue(s._sublabels, "explainer shows no technical sublabel")
 
 # ---------------------------------------------------------------------------
 # pack() — the auto-layout. Every case here asserts the SEVEN inspection checks
@@ -1633,6 +1661,239 @@ class CasesSvgExport(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-856
         at = next(i for i, el in enumerate(kids) if el.tag.endswith("text")
                   and "".join(el.itertext()) == "go")
         self.assertTrue(kids[at - 1].tag.endswith("rect"))
+
+
+# ---------------------------------------------------------------------------
+# The three design gates and what they ask for: one focus, a node budget,
+# right-angle connectors, and the teaching additions that make a picture explain.
+# ---------------------------------------------------------------------------
+def _save_warnings(scene, gates=None):
+    """What save() printed to stderr, with the files written to a temp dir."""
+    err = io.StringIO()
+    with tempfile.TemporaryDirectory() as d, contextlib.redirect_stderr(err):
+        scene.save("x", out_dir=d, gates=gates)
+    return err.getvalue()
+
+
+class CasesExcalidrawDesignGates(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-860
+    def _rainbow(self):
+        s = eb.Scene(seed=5)
+        for i, colour in enumerate(("blue", "green", "violet", "teal", "pink")):
+            s.box(colour, (i * 220, 0), paint=colour)
+        return s
+
+    def test_focus_flags_more_than_four_role_fills(self):  # verifies: REQ-EXCALIDRAW-860#CASE-1
+        hits = self._rainbow().check_focus()
+        self.assertEqual([(k, n) for k, n, _ in hits], [("roles", 5)])
+
+    def test_focus_flags_more_than_two_accent_shapes(self):  # verifies: REQ-EXCALIDRAW-860#CASE-1
+        s = eb.Scene(seed=5)
+        for i in range(3):
+            s.box("hot %d" % i, (i * 220, 0), paint="accent")
+        hits = s.check_focus()
+        self.assertEqual([(k, n) for k, n, _ in hits], [("accent", 3)])
+        self.assertEqual(hits[0][2], ["hot 0", "hot 1", "hot 2"])
+
+    def test_focus_is_clean_on_grey_plus_accent_plus_four_roles(self):  # verifies: REQ-EXCALIDRAW-860#CASE-2
+        s = eb.Scene(seed=5)
+        paints = ("grey", "grey", "accent", "accent", "blue", "green", "violet", "teal")
+        for i, colour in enumerate(paints):
+            s.box("n%d" % i, (i * 220, 0), paint=colour)
+        s.legend([("swatches are not nodes", c) for c in ("pink", "red", "yellow")],
+                 (0, 200))
+        self.assertEqual(s.check_focus(), [])
+
+    def test_a_role_declared_as_accent_paints_the_accent(self):  # verifies: REQ-EXCALIDRAW-860#CASE-2
+        s = eb.Scene(seed=5, accent="red", roles={"gate": "accent"})
+        nid = s.box("decide", (0, 0), paint="gate")
+        self.assertEqual(s._element(nid)["backgroundColor"], eb.FILL["red"])
+
+    def test_node_budget_flags_a_region_past_twelve(self):  # verifies: REQ-EXCALIDRAW-860#CASE-3
+        s = eb.Scene(seed=5)
+        s.grid(["n%d" % i for i in range(13)], (0, 0), 5)
+        self.assertEqual(s.check_node_budget(), [("the scene", 13)])
+
+    def test_node_budget_counts_each_section_and_frame(self):  # verifies: REQ-EXCALIDRAW-860#CASE-3
+        s = eb.Scene(seed=5)
+        y = s.section("overview")
+        s.grid(["o%d" % i for i in range(9)], (40, y), 5)
+        y = s.section("detail")
+        ids = s.grid(["d%d" % i for i in range(13)], (40, y), 5)
+        s.enclose(ids, label="the detail")
+        self.assertEqual(sorted(s.check_node_budget()),
+                         [("frame 'the detail'", 13), ("section 'detail'", 13)])
+
+    def test_node_budget_counts_a_painted_group_once(self):  # verifies: REQ-EXCALIDRAW-860#CASE-4
+        s = eb.Scene(seed=5)
+        row = eb.Paint(fill="blue", group="bus")
+        for i in range(20):
+            s.box(str(i), (i * 40, 0, 40, 30), paint=row)
+        self.assertEqual(s.check_node_budget(), [])
+
+    def test_design_gates_warn_by_default_and_under_strict(self):  # verifies: REQ-EXCALIDRAW-860#CASE-5
+        for gates in (None, eb.Gates.strict()):
+            out = _save_warnings(self._rainbow(), gates)
+            self.assertIn("WARNING [focus]", out)
+
+    def test_a_design_gate_named_error_raises(self):  # verifies: REQ-EXCALIDRAW-860#CASE-5
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaisesRegex(ValueError, "5 role fills"):
+                self._rainbow().save("x", out_dir=d, gates=eb.Gates(focus="error"))
+
+
+class CasesExcalidrawElbow(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-861
+    def _legs(self, s, aid):
+        el = s._element(aid)
+        pts = [(el["x"] + x, el["y"] + y) for x, y in el["points"]]
+        return list(zip(pts, pts[1:]))
+
+    def test_an_elbow_arrow_turns_only_at_right_angles(self):  # verifies: REQ-EXCALIDRAW-861#CASE-1
+        s = eb.Scene(seed=5)
+        a = s.box("A", (0, 0))
+        b = s.box("B", (400, 300))
+        aid = s.arrow(a, b, label="goes", elbow=True)
+        legs = self._legs(s, aid)
+        self.assertEqual(len(legs), 3)
+        for (x0, y0), (x1, y1) in legs:
+            self.assertTrue(abs(x0 - x1) < 1e-6 or abs(y0 - y1) < 1e-6, legs)
+        el = s._element(aid)
+        self.assertEqual((el["startBinding"]["elementId"], el["endBinding"]["elementId"]),
+                         (a, b))
+        self.assertEqual(s.check_orthogonal_arrows(), [])
+        self.assertEqual(_all_gates(s), {})
+
+    def test_shapes_sharing_a_row_get_one_straight_leg(self):  # verifies: REQ-EXCALIDRAW-861#CASE-1
+        s = eb.Scene(seed=5)
+        aid = s.arrow(s.box("A", (0, 0, 160, 70)), s.box("B", (400, 30, 160, 70)), elbow=True)
+        (x0, y0), (x1, y1) = self._legs(s, aid)[0]
+        self.assertEqual(len(self._legs(s, aid)), 1)
+        self.assertEqual(y0, y1)
+
+    def test_connectors_on_one_side_get_their_own_points(self):  # verifies: REQ-EXCALIDRAW-861#CASE-2
+        s = eb.Scene(seed=5)
+        hub = s.box("hub", (300, 300, 240, 70))
+        ends = []
+        for i in range(3):
+            src = s.box("s%d" % i, (i * 300, 0))
+            ends.append(self._legs(s, s.arrow(src, hub, elbow=True))[-1][1][0])
+        gaps = [abs(a - b) for i, a in enumerate(ends) for b in ends[i + 1:]]
+        self.assertTrue(all(g >= 12 for g in gaps), ends)
+
+    def test_the_orthogonal_gate_flags_a_diagonal(self):  # verifies: REQ-EXCALIDRAW-861#CASE-3
+        s = eb.Scene(seed=5)
+        s.arrow(s.box("A", (0, 0)), s.box("B", (400, 300)))
+        self.assertEqual(s.check_orthogonal_arrows(), [("A", "B")])
+        self.assertIn("WARNING [orthogonal]", _save_warnings(s, eb.Gates.strict()))
+
+    def test_an_elbow_through_a_box_is_a_crossing(self):  # verifies: REQ-EXCALIDRAW-861#CASE-4
+        s = eb.Scene(seed=5)
+        a = s.box("A", (0, 0))
+        s.box("wall", (240, 150, 120, 200))
+        s.arrow(a, s.box("B", (500, 400)), elbow=True)
+        self.assertEqual([c for *_, c in s.check_arrow_crossings()], ["wall"])
+
+    def test_an_elbow_label_sits_on_its_middle_leg(self):  # verifies: REQ-EXCALIDRAW-861#CASE-1
+        s = eb.Scene(seed=5)
+        aid = s.arrow(s.box("A", (0, 0)), s.box("B", (500, 300)), label="hi", elbow=True)
+        el = s._element(aid)
+        lab = next(e for e in s.elements if e.get("containerId") == aid)
+        (ax, ay), (bx, by) = self._legs(s, aid)[1]
+        self.assertAlmostEqual(lab["x"] + lab["width"] / 2, (ax + bx) / 2)
+        self.assertAlmostEqual(lab["y"] + lab["height"] / 2, (ay + by) / 2)
+        self.assertTrue(el["boundElements"])
+
+
+class CasesExcalidrawTeaching(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-862
+    def test_a_sublabel_is_a_second_code_tier_inside_the_shape(self):  # verifies: REQ-EXCALIDRAW-862#CASE-1
+        s = eb.Scene(seed=5)
+        nid = s.box("Orders API", (0, 0, 200, 76), sublabel="orders/api.py")
+        sub = next(e for e in s.elements if e.get("text") == "orders/api.py")
+        name = next(e for e in s.elements if e.get("text") == "Orders API")
+        self.assertEqual(sub["fontFamily"], 3)
+        self.assertLess(sub["fontSize"], name["fontSize"])
+        self.assertGreaterEqual(sub["y"], name["y"] + name["height"])
+        self.assertEqual(sub["groupIds"], s._element(nid)["groupIds"])
+        self.assertTrue(sub["groupIds"])
+        self.assertEqual(_all_gates(s), {})
+
+    def test_a_sublabel_too_wide_for_its_shape_is_an_overflow(self):  # verifies: REQ-EXCALIDRAW-862#CASE-1
+        s = eb.Scene(seed=5)
+        s.box("API", (0, 0, 120, 70), sublabel="src/services/orders/http_api.py")
+        self.assertEqual([h[0] for h in s.check_text_overflow()],
+                         ["src/services/orders/http_api.py"])
+
+    def test_pack_sizes_a_node_for_its_sublabel_and_step(self):  # verifies: REQ-EXCALIDRAW-862#CASE-2
+        s = eb.Scene(seed=5)
+        placed = s.pack([{"id": "a", "label": "read", "sublabel": "reader.py", "step": 1},
+                         {"id": "b", "label": "write", "step": 2,
+                          "sublabel": "a_rather_long_module_name.py"}],
+                        [{"src": "a", "dst": "b"}])
+        texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
+        self.assertIn("① read", texts)
+        self.assertIn("② write", texts)
+        self.assertEqual(_all_gates(s), {})
+        self.assertEqual(len(placed), 2)
+
+    def test_a_pipeline_numbers_its_steps(self):  # verifies: REQ-EXCALIDRAW-862#CASE-2
+        s = eb.Scene(seed=5)
+        ids = s.pipeline(["ask", "build", "check"], (0, 0), numbered=True, line="accent")
+        texts = [s._element(b["id"])["text"] for i in ids
+                 for b in s._element(i)["boundElements"] if b["type"] == "text"]
+        self.assertEqual(texts, ["① ask", "② build", "③ check"])
+        arrows = [e for e in s.elements if e["type"] == "arrow"]
+        self.assertTrue(all(a["strokeColor"] == eb.STROKE["orange"] for a in arrows))
+
+    def test_a_takeaway_opens_with_its_word(self):  # verifies: REQ-EXCALIDRAW-862#CASE-3
+        s = eb.Scene(seed=5)
+        tid = s.takeaway("one writer, many readers", (0, 0))
+        self.assertEqual(s._element(tid)["text"], "Takeaway: one writer, many readers")
+
+    def test_a_note_is_joined_by_a_dashed_right_angle_leader(self):  # verifies: REQ-EXCALIDRAW-862#CASE-4
+        s = eb.Scene(seed=5)
+        a = s.box("A", (0, 0))
+        b = s.box("B", (300, 0))
+        s.arrow(a, b)
+        s.note("why B is here", b)
+        (aid, target), = s._leaders.items()
+        leader = s._element(aid)
+        self.assertEqual(target, b)
+        self.assertEqual(leader["strokeStyle"], "dashed")
+        note = next(e for e in s.elements if e.get("text") == "why B is here")
+        self.assertGreater(note["x"], s.rect(b).right)      # in the margin
+        self.assertEqual(_all_gates(s), {})
+
+    def test_a_third_note_is_refused(self):  # verifies: REQ-EXCALIDRAW-862#CASE-4
+        s = eb.Scene(seed=5)
+        a = s.box("A", (0, 0))
+        s.note("one", a)
+        s.note("two", a, at=(0, 200))
+        with self.assertRaisesRegex(ValueError, "at most 2"):
+            s.note("three", a, at=(0, 300))
+
+    def test_a_note_leader_through_a_box_is_a_crossing(self):  # verifies: REQ-EXCALIDRAW-862#CASE-4
+        s = eb.Scene(seed=5)
+        a = s.box("A", (0, 0))
+        s.box("wall", (300, 0))
+        s.note("why A", a, at=(600, 20))
+        self.assertEqual([c for *_, c in s.check_arrow_crossings()], ["wall"])
+
+    def test_a_graph_description_carries_the_teaching_keys(self):  # verifies: REQ-EXCALIDRAW-862#CASE-3
+        spec = {"title": "t", "subtitle": "left to right", "takeaway": "remember this",
+                "seed": 1, "nodes": [{"id": "a", "step": 1, "sublabel": "a.py"},
+                                     {"id": "b", "step": 2, "fill": "accent"}],
+                "edges": [{"src": "a", "dst": "b"}],
+                "notes": [{"target": "b", "text": "why b"}]}
+        captured = {}
+        with mock.patch.object(eb.Scene, "save",
+                               lambda scene, *a, **k: captured.setdefault("s", scene)):
+            eb.scene_from_spec(spec, HERE)
+        s = captured["s"]
+        texts = [e.get("text") for e in s.elements if e.get("type") == "text"]
+        for want in ("Takeaway: remember this", "① a", "② b", "a.py", "why b"):
+            self.assertIn(want, texts)
+        self.assertEqual(_all_gates(s), {})
+        with self.assertRaisesRegex(ValueError, "not a node"):
+            eb.scene_from_spec(dict(spec, notes=[{"target": "zz", "text": "x"}]), HERE)
 
 
 if __name__ == "__main__":
