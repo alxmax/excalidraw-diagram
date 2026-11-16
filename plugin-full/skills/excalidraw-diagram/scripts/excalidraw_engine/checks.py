@@ -1,12 +1,30 @@
-"""The seven inspection checks: what makes a diagram unreadable while its JSON
-stays perfectly valid. Each returns its offenders, `[]` when clean, and none of
-them writes or raises — save() decides what a hit means (see gates.py)."""
+"""The inspection checks: what makes a diagram unreadable while its JSON stays
+perfectly valid. Seven judge defects; three more judge hierarchy (focus, node
+budget, right-angle connectors). Each returns its offenders, `[]` when clean, and
+none of them writes or raises — save() decides what a hit means (see gates.py)."""
 
 import math
 
 from .geometry import overlap_2d, seg_rect_overlap
+from .style import FILL, resolve
 
 _FILLABLE = {"rectangle", "ellipse", "diamond"}
+
+# The design limits the three hierarchy checks hold a scene to.
+MAX_ACCENTS = 2        # shapes in the accent colour: the headline path's focal nodes
+MAX_ROLE_FILLS = 4     # distinct role colours beside neutral grey and the accent
+NODE_BUDGET = 12       # nodes one region or frame holds before it should split
+
+
+def _length(pts):
+    """The length of a polyline given as [[x, y], ...]."""
+    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(pts, pts[1:]))
+
+
+def _legs(el):
+    """[((x0, y0), (x1, y1)), ...]: an arrow or line's legs in scene coordinates."""
+    pts = [(el["x"] + px, el["y"] + py) for px, py in el.get("points") or []]
+    return list(zip(pts, pts[1:]))
 
 
 def _bound_ends(el):
@@ -98,12 +116,34 @@ class ChecksMixin(object):
         hits = []
         for el in self.elements:
             ends = _bound_ends(el)
-            if not ends or ends[0] not in self._geom or ends[1] not in self._geom:
+            if el["id"] in self._leaders:           # a note's leader: its own legs
+                ends = (None, self._leaders[el["id"]])
+                crossed = self._leg_hits(el, ends, threshold, inset)
+            elif not ends or ends[0] not in self._geom or ends[1] not in self._geom:
                 continue
-            for nid in self._straight_hits(ends[0], ends[1], threshold, inset):
-                hits.append((labels.get(ends[0], "?"), labels.get(ends[1], "?"),
+            elif el["id"] in self._elbows:          # a right-angle arrow: its legs
+                crossed = self._leg_hits(el, ends, threshold, inset)
+            else:
+                crossed = self._straight_hits(ends[0], ends[1], threshold, inset)
+            for nid in crossed:
+                hits.append((labels.get(ends[0], "note"), labels.get(ends[1], "?"),
                              labels.get(nid, "?")))
         return hits + self._caption_crossings(labels)
+
+    def _leg_hits(self, el, ends, threshold, inset):
+        """Ids of the nodes any leg of `el` cuts through, its own ends excepted —
+        how a connector that turns corners is judged, since its centre line is
+        not where it runs."""
+        hits = []
+        for nid, (nx, ny, nw, nh, _s) in self._geom.items():
+            if nid in ends or nid in self._containers:
+                continue
+            rw, rh = nw - 2 * inset, nh - 2 * inset
+            rect = (nx + inset, ny + inset, rw, rh)
+            if rw > 0 and rh > 0 and any(seg_rect_overlap(a, b, rect) > threshold
+                                         for a, b in _legs(el)):
+                hits.append(nid)
+        return hits
 
     def _caption_crossings(self, labels):
         """[(src, dst, caption), ...] for any drawn arrow or line — bound or
@@ -162,6 +202,23 @@ class ChecksMixin(object):
             if tw - cw > tol or th - ch > tol:
                 hits.append(((e.get("text") or "").split("\n")[0], round(tw, 1),
                              round(cw, 1), round(th, 1), round(ch, 1)))
+        return hits + self._sublabel_overflow(by_id, tol)
+
+    def _sublabel_overflow(self, by_id, tol):
+        """The same rows for a sublabel: it must fit the shape's width, end above
+        the shape's bottom, and start below the name it sits under."""
+        # implements: REQ-EXCALIDRAW-862
+        hits = []
+        for tid, (cid, name_id) in self._sublabels.items():
+            sub, cont, name = by_id.get(tid), by_id.get(cid), by_id.get(name_id)
+            if not sub or not cont:
+                continue
+            tw, cw = sub.get("width", 0), cont.get("width", 0)
+            low = sub["y"] + sub.get("height", 0) - (cont["y"] + cont.get("height", 0))
+            under = name["y"] + name.get("height", 0) - sub["y"] if name else 0
+            if tw - cw > tol or low > tol or under > tol:
+                hits.append((sub.get("text") or "", round(tw, 1), round(cw, 1),
+                             round(sub.get("height", 0), 1), round(cont.get("height", 0), 1)))
         return hits
 
     def check_text_overlaps(self, tol=2.0):
@@ -193,7 +250,7 @@ class ChecksMixin(object):
             ends, pts = _bound_ends(el), el.get("points") or []
             if not ends or len(pts) < 2:
                 continue
-            length = math.hypot(pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1])
+            length = _length(pts)
             if length < min_len:
                 src, dst = ends
                 hits.append((labels.get(src, "?"), labels.get(dst, "?"), round(length, 1)))
@@ -213,13 +270,101 @@ class ChecksMixin(object):
                 continue
             lab = next((by_id.get(b["id"]) for b in (el.get("boundElements") or [])
                         if b.get("type") == "text"), None)
-            dx, dy = pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1]
+            # a connector with an even count of points carries its label on the
+            # middle leg, so that leg is the line the label must leave visible
+            a, b = ((pts[len(pts) // 2 - 1], pts[len(pts) // 2])
+                    if len(pts) % 2 == 0 else (pts[0], pts[-1]))
+            dx, dy = b[0] - a[0], b[1] - a[1]
             line = math.hypot(dx, dy)
             if not lab or line == 0:       # zero length is check_short_arrows' job
                 continue
             # the label box's extent along the arrow's direction
             extent = (abs(lab.get("width", 0) * dx) + abs(lab.get("height", 0) * dy)) / line
             stub = (line - extent) / 2
+            if stub >= min_stub and el["id"] in self._elbows:
+                stub = min(stub, self._label_clearance(lab, _bound_ends(el)))
             if stub < min_stub:
                 hits.append(((lab.get("text") or "").split("\n")[0], round(stub, 1)))
+        return hits
+
+    def _label_clearance(self, lab, ends):
+        """-1 when a right-angle arrow's label lands on either shape it joins, else
+        infinity: a label on a leg across the flow can reach sideways onto them."""
+        box = (lab["x"], lab["y"], lab.get("width", 0), lab.get("height", 0))
+        for nid in ends:
+            if nid in self._geom and min(overlap_2d(box, self._geom[nid][:4])) > 0:
+                return -1.0
+        return float("inf")
+
+    # -- the three hierarchy checks -------------------------------------------
+    def _real_nodes(self):
+        """[(id, x, y, w, h, label), ...] for every placed shape that is not a
+        container: what a reader counts as a node."""
+        return [n for n in self._nodes if n[0] in self._geom]
+
+    def check_focus(self, max_accents=MAX_ACCENTS, max_roles=MAX_ROLE_FILLS):
+        """[(kind, count, names), ...] when colour stops pointing anywhere: more
+        than `max_accents` shapes in the accent colour ("accent", their labels),
+        or more than `max_roles` distinct role fills beside neutral grey and the
+        accent ("roles", the hex fills). `[]` when the scene has one clear focus."""
+        # implements: REQ-EXCALIDRAW-860
+        neutral = {"transparent", "#ffffff", self.background, FILL["grey"]}
+        accent = resolve(self.accent, FILL, None) if self.accent else None
+        accented, roles = [], set()
+        for nid, _x, _y, _w, _h, label in self._real_nodes():
+            fill = (self._element(nid) or {}).get("backgroundColor")
+            if not fill or fill in neutral:
+                continue
+            if fill == accent:
+                accented.append(label)
+            else:
+                roles.add(fill)
+        hits = []
+        if len(accented) > max_accents:
+            hits.append(("accent", len(accented), accented))
+        if len(roles) > max_roles:
+            hits.append(("roles", len(roles), sorted(roles)))
+        return hits
+
+    def check_node_budget(self, limit=NODE_BUDGET):
+        """[(region, count), ...] for every region holding more than `limit`
+        nodes: each section() region (the whole scene when there is none) and
+        each enclose() frame. Shapes sharing a `Paint(group=...)` count once, as a
+        reader sees them: the cells of one waveform row are one thing. Past the
+        budget a reader stops seeing the shape of the thing; split it into an
+        overview and a detail region."""
+        # implements: REQ-EXCALIDRAW-860
+        units = {}                      # node id -> the unit a reader counts
+        for nid, *_rest in self._real_nodes():
+            groups = (self._element(nid) or {}).get("groupIds") or []
+            units[nid] = groups[0] if groups and not groups[0].startswith("node-") else nid
+        tops = sorted(self._sections)
+        regions = {}
+        for nid, _x, y, _w, h, _label in self._real_nodes():
+            name = "the scene" if not tops else "above the first section"
+            for top, heading in tops:
+                if y + h / 2 >= top:
+                    name = "section %r" % heading
+            regions.setdefault(name, set()).add(units[nid])
+        hits = [(name, len(u)) for name, u in regions.items() if len(u) > limit]
+        for fid in self._frames:
+            count = len({units[n] for n in self._members(fid) if n in units})
+            if count > limit:
+                hits.append(("frame %r" % self._caption_text(fid), count))
+        return hits
+
+    def check_orthogonal_arrows(self, tol=1.0):
+        """[(src_label, dst_label), ...] for every bound arrow with a leg that is
+        neither horizontal nor vertical. A diagonal reads as noise beside right
+        angles; `arrow(..., elbow=True)` or `PackOptions(edge_style="orthogonal")`
+        draws the same connection square."""
+        # implements: REQ-EXCALIDRAW-861
+        labels = self._labels()
+        hits = []
+        for el in self.elements:
+            ends = _bound_ends(el)
+            if not ends:
+                continue
+            if any(abs(b[0] - a[0]) > tol and abs(b[1] - a[1]) > tol for a, b in _legs(el)):
+                hits.append((labels.get(ends[0], "?"), labels.get(ends[1], "?")))
         return hits

@@ -96,9 +96,37 @@ be a good initial straight line. Compute it border to border.
 4. The arrow's `x,y` is the start point and `points` is `[[0,0],[end-start]]`.
    `width` and `height` are the span of the points.
 
+**Right-angle (elbow) arrow.** When the two shapes do not share a row or a column, a
+straight line between them is a diagonal, and diagonals fail the self-check. Draw the
+same bound arrow through four points instead: out of the side facing the target, along
+to the middle of the gap, across, and into the facing side. A Z from a box on the left
+to a box lower right, with the turn at `xm` (the middle of the horizontal gap):
+
+```json
+"x": 214, "y": 95,
+"points": [[0, 0], [xm - 214, 0], [xm - 214, 180], [412 - 214, 180]],
+"elbowed": false
+```
+
+Every leg is horizontal or vertical. The bindings are the same as a straight arrow's,
+both shapes list it, and Excalidraw 0.17.6 keeps the inner points on load and re-fits
+only the ends. Leave `elbowed: false`: `true` is a later version's auto-router and
+discards your points. A label sits at the midpoint of the middle leg (for an even count
+of points) or on the middle point (for an odd count): that is where the editor draws it.
+**Attach points:** when two or more connectors meet the same side of a shape, give each
+its own point on that side, at least 12px apart (24px keeps the arrowheads apart),
+leaning toward the shape at the other end. Never let two connectors share one point.
+
 **Arrow label.** Text with `containerId` = the arrow's id, `fontSize` 14, stroke
-`#343a40`, centred on the arrow's midpoint. The arrow lists it in its own
-`boundElements`.
+`#343a40`, centred on the arrow's midpoint (on an elbow arrow, its middle leg). The arrow
+lists it in its own `boundElements`.
+
+**Sublabel (the second text tier).** A node's technical detail (a file, a port, a
+command) is a separate free text under the name: `fontFamily: 3`, `fontSize` 12–13,
+`containerId: null`, inside the shape below the bound name with 4px between them. Give
+the shape, its name and the sublabel one shared `groupIds` entry so they move together,
+set the name's `verticalAlign` to `"top"` so a re-layout keeps it above, and size the
+shape for both tiers: `h ≥ name height + 4 + sublabel height + 16`.
 
 **Unbound connectors** (a feedback edge routed under a row, a lifeline, a timing trace)
 have `startBinding: null` and `endBinding: null`, and appear in no shape's

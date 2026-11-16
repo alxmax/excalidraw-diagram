@@ -56,10 +56,11 @@ def hline(y, x1, text):
 
 
 def cells(spans, top, step):
-    """Adjacent state cells: (text, role, slots) laid left to right from X0."""
-    x = X0
+    """Adjacent state cells: (text, role, slots) laid left to right from X0.
+    One row is one group: it moves as one, and the node budget counts it once."""
+    x, row = X0, "cells-%d" % int(top)
     for text, role, n in spans:
-        s.box(text, (x, top, n * step, ROW_H), paint=role, font=13)
+        s.box(text, (x, top, n * step, ROW_H), paint=Paint(fill=role, group=row), font=13)
         x += n * step
 
 

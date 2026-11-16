@@ -3,12 +3,13 @@ grids, the pipeline band, the frames that group them, and moving placed nodes.""
 
 import sys
 
+from .annotate import numbered_text
 from .geometry import as_point, fit_text, free_spans, seg_rect_overlap, text_extent
 from .shapes import SIZES
 from .style import DASHED, Font, Paint
 
 # the keys an item (or a cell template) may carry — box()'s options, by name
-_ITEM_KEYS = {"text", "size", "paint", "font", "shape", "container"}
+_ITEM_KEYS = {"text", "size", "paint", "font", "shape", "container", "sublabel"}
 _GAPS = {"x": 80, "y": 60}
 _GRID_GAP = (40, 30)
 
@@ -40,7 +41,7 @@ def _item(it):  # implements: REQ-EXCALIDRAW-853
 
 def _step(st):
     """One pipeline step as a dict: a text string, a (text, kind[, paint]) tuple,
-    or a dict of {text, kind, paint, size, label, font}."""
+    or a dict of {text, kind, paint, size, label, font, sublabel}."""
     if isinstance(st, str):
         d = {"text": st}
     elif isinstance(st, (tuple, list)):
@@ -108,7 +109,8 @@ class ArrangeMixin(object):  # implements: REQ-EXCALIDRAW-844
         return self.box(opts.get("text", ""), (xy[0], xy[1], size[0], size[1]),
                         paint=opts.get("paint"), font=opts.get("font"),
                         shape=opts.get("shape", "rectangle"),
-                        container=opts.get("container", False))
+                        container=opts.get("container", False),
+                        sublabel=opts.get("sublabel"))
 
     def row(self, items, at, **kw):
         """arrange() left -> right."""
@@ -122,15 +124,22 @@ class ArrangeMixin(object):  # implements: REQ-EXCALIDRAW-844
         """arrange() in a `cols`-wide grid of uniform cells."""
         return self.arrange(items, at, across=cols, **kw)
 
-    def pipeline(self, steps, at, *, gap=80, band=None, font=None, connect=True):
+    def pipeline(self, steps, at, *, gap=80, band=None, font=None, connect=True,
+                 numbered=False, line=None):
         """A horizontal flowchart band, left -> right, vertically centred on one
         midline, chained with bound arrows. Each step is a string, a
         (text, kind[, paint]) tuple, or a dict of {text, kind, paint, size, label,
-        font}; `kind` is an ISO shape verb or "box"; a step's `label` names the
-        arrow leaving it. `band` fixes the band height. Returns the node ids."""
+        font, sublabel}; `kind` is an ISO shape verb or "box"; a step's `label`
+        names the arrow leaving it. `band` fixes the band height. numbered=True
+        opens each step's text with ①②③, the order a reader follows; `line` is
+        the Paint of the chaining arrows (line="accent" marks the headline path).
+        Returns the node ids."""
         norm = [_step(st) for st in steps]
         if not norm:
             return []
+        if numbered:
+            for n, d in enumerate(norm, 1):
+                d["text"] = numbered_text(n, d["text"])
         if connect and gap < 80 and any(d.get("label") for d in norm):
             print(f"excalidraw_builder: pipeline gap={gap}px with labeled arrows — "
                   f"labels may overlap (recommended: >=80px; >=100px for multi-word "
@@ -142,11 +151,12 @@ class ArrangeMixin(object):  # implements: REQ-EXCALIDRAW-844
             w, h = d["size"]
             d["_id"] = self.box(d["text"], (x, mid - h / 2, w, h), paint=d.get("paint"),
                                 font=Font.coerce(d.get("font"), font),
-                                shape=_STEP_SHAPES.get(d["kind"], d["kind"]))
+                                shape=_STEP_SHAPES.get(d["kind"], d["kind"]),
+                                sublabel=d.get("sublabel"))
             x += w + gap
         if connect:
             for a, b in zip(norm, norm[1:]):
-                self.arrow(a["_id"], b["_id"], label=a.get("label"))
+                self.arrow(a["_id"], b["_id"], label=a.get("label"), paint=line)
         return [d["_id"] for d in norm]
 
     # -- grouping frames ---------------------------------------------------

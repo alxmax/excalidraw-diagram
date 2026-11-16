@@ -64,7 +64,7 @@ s.label("Left to right. Each box is a state the order can be in; each arrow is t
         (40, -108), font=Font(14, align="left"))
 s.pack(nodes, edges,
        groups=[{"label": "in the warehouse's hands", "members": ["packed", "shipped"]}],
-       at=(40, 0), options=PackOptions(direction="LR"))
+       at=(40, 0), options=PackOptions(direction="LR", edge_style="orthogonal"))
 
 key_y = s.bounds()[3] + 70
 s.legend([("start or end state", "endpoint"), ("a normal state", "normal"),

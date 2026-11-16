@@ -71,7 +71,7 @@ for one, many, rows in RELATIONS:
     dy = TABLES[many][1][1] - TABLES[one][1][1]
     src = head[one] if dy < 0 else body[one]
     dst = head[many] if dy > 0 else body[many]
-    s.arrow(src, dst, label="1 %s : N %s" % (one, rows), heads="none")
+    s.arrow(src, dst, label="1 %s : N %s" % (one, rows), heads="none", elbow=True)
 
 key_y = s.bounds()[3] + 70
 s.legend([("who buys", "people"), ("what they buy", "sales"),

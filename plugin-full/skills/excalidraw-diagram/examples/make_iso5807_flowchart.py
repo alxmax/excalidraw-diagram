@@ -5,10 +5,11 @@ Doubles as the demonstration/regression example for the builder's ISO 5807 shape
 set: terminator (start/end), preparation (init), data (I/O parallelogram),
 process, predefined process (subroutine), decision, and the on-page connector.
 
-Deliberately *not* 100% ISO: the standard says shape carries meaning and colour
-is undefined — here colour reinforces the shape category (redundant encoding),
-purely so the diagram reads with some life. The coloured shape key decodes both
-axes.
+Shape carries the meaning, as the standard says; colour is spent sparingly on top.
+Ordinary steps stay neutral grey, the one decision that matters takes the accent,
+and four category colours mark the ends, the data, the subroutine and the
+connectors. The shape key decodes both, drawn as swatches so it is not counted as
+part of the flow.
 
 Top -> bottom is the flow. The first decision is the one that matters: an edge
 becomes a straight arrow only if its line clears every box, and the "no" branch
@@ -24,14 +25,14 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from excalidraw_builder import Font, Gates, Scene
 
-# colour by ISO category (the 20% we add on top of the standard shapes)
+# colour by ISO category, at most four of them; the rest is neutral or the accent
 ROLES = {
     "startend": "green",    # terminator
-    "init":     "teal",     # preparation
+    "init":     "grey",     # preparation (neutral)
     "io":       "blue",     # data (input/output)
-    "step":     "violet",   # process
-    "sub":      "indigo",   # predefined process
-    "branch":   "orange",   # decision
+    "step":     "grey",     # process (neutral)
+    "sub":      "violet",   # predefined process
+    "branch":   "accent",   # the decision that matters
     "conn":     "yellow",   # connector
 }
 
@@ -44,8 +45,8 @@ def at(w, h, y):  # a w x h box centred on cx, top at y
 
 
 s.title("From a description to two files — ISO 5807 flowchart", (40, -78), font=28)
-s.label("Top -> bottom. ~80% ISO 5807 (shape = meaning) + colour by category for "
-        "readability. A crossing edge is routed, then resumes at on-page connector A.",
+s.label("Top -> bottom. ISO 5807: shape = meaning; the accent marks the decision that "
+        "matters. A crossing edge is routed, then resumes at on-page connector A.",
         (cx, -44), font=14)
 
 # ── main flow (top -> bottom) ─────────────────────────────────────────────
@@ -90,7 +91,7 @@ s.arrow(order, clear)
 s.arrow(clear, gates, label="yes: draw it straight")
 s.arrow(gates, outp)
 s.arrow(outp, done)
-s.arrow(clear, route, label="no")
+s.arrow(clear, route, label="no", elbow=True)
 s.arrow(route, connA1)
 s.arrow(connA2, gates, label="resume (A)")
 s.label("on-page connector A: once routed, the edge rejoins at the gates",
@@ -110,7 +111,7 @@ key = [
 ]
 row_y = ky
 for fn, role, meaning in key:
-    fn("", (kx, row_y, 64, 34), paint=role)
+    fn("", (kx, row_y, 64, 34), paint=role, container=True)   # a swatch, not a node
     s.label(meaning, (kx + 76, row_y + 9), font=Font(12, align="left"))
     row_y += 58
 

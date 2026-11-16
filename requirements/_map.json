@@ -186,11 +186,11 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:692"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:58"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:59"
         },
         {
           "role": "implements",
@@ -202,7 +202,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:36"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:41"
         },
         {
           "role": "implements",
@@ -255,7 +255,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:677"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:692"
         },
         {
           "role": "implements",
@@ -263,11 +263,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:73"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:91"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:118"
         }
       ],
       "test_exempt": null,
@@ -324,11 +324,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:790"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:805"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:27"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py:28"
         },
         {
           "role": "implements",
@@ -394,7 +394,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1475"
         },
         {
           "role": "implements",
@@ -423,7 +423,8 @@
       "intent": "A diagram that ships with overlapping shapes, arrows that cut through unrelated boxes, unlegended colours, text that spills outside its box, an arrow too short to draw a visible line, or a label wider than the arrow it sits on is unreadable to an outsider. Hard-fail gates at `.save()` time make these defects impossible to ship silently.",
       "contract": [
         "`.save(gates=Gates(...))` runs five advisory gates (`crossing`, `legend`, `overflow`, `text_overlap`, `label_fit`), each set to `\"warn\"` (the default, prints to stderr), `\"error\"` (raises `ValueError`) or `\"off\"`. [[REQ-EXCALIDRAW-846]]",
-        "`.save()` additionally enforces two hard gates that raise `ValueError` by default — overlapping shapes and arrows clamped too short to render — each switchable through the same `Gates` object for a deliberate exception. [[REQ-EXCALIDRAW-847]]"
+        "`.save()` additionally enforces two hard gates that raise `ValueError` by default — overlapping shapes and arrows clamped too short to render — each switchable through the same `Gates` object for a deliberate exception. [[REQ-EXCALIDRAW-847]]",
+        "`.save()` also runs three design gates that judge hierarchy rather than defects: one focus and a node budget [[REQ-EXCALIDRAW-860]], and right-angle connectors [[REQ-EXCALIDRAW-861]]. They warn by default and under `Gates.strict()`, so they advise and never refuse a file unless a caller names one."
       ],
       "verify": [],
       "notes": [
@@ -435,7 +436,7 @@
         "`plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` (gate regression suite).",
         "-------------------"
       ],
-      "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` is raised; with the default `Gates()` a warning is\n         printed and the files are written\n\nCASE-2\n  Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five\n         advisory gates and both hard gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(gates=Gates(short_arrows=\"off\"))` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
+      "accept": "CASE-1\n  Given  a scene where a bound arrow's path passes through an unrelated box\n  When   `save(gates=Gates(crossing=\"error\"))` is called\n  Then   a `ValueError` is raised; with the default `Gates()` a warning is\n         printed and the files are written\n\nCASE-2\n  Given  a scene with `paint=\"blue\"` on a box and a `legend()` that omits blue\n  When   `save(gates=Gates(legend=\"error\"))` is called\n  Then   a `ValueError` is raised naming the unlegended colour\n\nCASE-3\n  Given  a box whose bound text is wider than the box width\n  When   `save(gates=Gates(overflow=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_text_overflow()` returns the\n         offending shape\n\nCASE-4\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` is raised naming the overlapping pair\n\nCASE-5\n  Given  each maintained example generator in `examples/`\n  When   `test_excalidraw.py` runs it\n  Then   the generator produces zero violations on every gate (the five\n         advisory gates, both hard gates and the three design gates)\n\nCASE-6\n  Given  two boxes placed close but not overlapping, joined by a bound arrow\n  When   `save()` is called with defaults\n  Then   a `ValueError` is raised (the connector is too short to render);\n         `save(gates=Gates(short_arrows=\"off\"))` writes the files, and\n         `check_short_arrows()` returns the offending pair\n\nCASE-7\n  Given  a bound arrow whose label is wider than the arrow's visible line\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised; `check_arrow_label_fit()` returns the\n         offending label",
       "input": "",
       "output": "",
       "desc": "",
@@ -450,7 +451,9 @@
       ],
       "satisfied_by": [
         "REQ-EXCALIDRAW-846",
-        "REQ-EXCALIDRAW-847"
+        "REQ-EXCALIDRAW-847",
+        "REQ-EXCALIDRAW-860",
+        "REQ-EXCALIDRAW-861"
       ],
       "members": [
         {
@@ -501,23 +504,23 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:188"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:96"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:114"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:133"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:173"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:153"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:193"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:94"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:118"
         }
       ],
       "test_exempt": null,
@@ -547,7 +550,7 @@
       "verify": [],
       "notes": [],
       "current_impl": [],
-      "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list\n\nCASE-5 — the overlap gate sees a box that strayed into a frame\n  Given  a frame drawn around two boxes, and a third box placed inside it\n  When   `check_overlaps()` is called\n  Then   it names the third box and the frame's caption, and not the two members",
+      "accept": "CASE-1 — the text_overlap gate fires when two labels geometrically overlap\n  Given  two `label()` elements placed at overlapping coordinates\n  When   `save(gates=Gates(text_overlap=\"error\"))` is called\n  Then   a `ValueError` naming the overlapping pair is raised\n\nCASE-2 — the label_fit gate fires when a label crowds a short arrow\n  Given  a bound arrow whose label leaves less than ~24px of visible line on one side\n  When   `save(gates=Gates(label_fit=\"error\"))` is called\n  Then   a `ValueError` is raised\n\nCASE-3 — the two hard gates raise by default and can be switched off\n  Given  two overlapping non-container shapes, and separately a bound arrow clamped too short to\n         render\n  When   `save()` is called with defaults, then again with `Gates(overlap=\"off\")` /\n         `Gates(short_arrows=\"off\")`\n  Then   the default calls raise `ValueError`, and the switched calls write the files without\n         raising\n\nCASE-4 — an inspection method returns offending items without saving\n  Given  a scene with one crossing-arrow violation and no other defects\n  When   `check_arrow_crossings()` is called before `.save()`\n  Then   it returns a list containing that one item, while an unaffected check like\n         `check_text_overflow()` returns an empty list\n\nCASE-5 — the overlap gate sees a box that strayed into a frame\n  Given  a frame drawn around two boxes, and a third box placed inside it\n  When   `check_overlaps()` is called\n  Then   it names the third box and the frame's caption, and not the two members\n\n\n--------------------",
       "input": "",
       "output": "",
       "desc": "",
@@ -560,31 +563,31 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:188"
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:922"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:942"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:32"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:50"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:171"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:228"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:189"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:246"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:207"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:264"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:95"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:119"
         }
       ],
       "test_exempt": null,
@@ -602,6 +605,164 @@
           "quote": "",
           "question": "There are 6 clauses and 5 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
           "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
+    },
+    {
+      "id": "REQ-EXCALIDRAW-860",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Design gates: one focus and a node budget",
+      "intent": "A diagram can pass every defect gate and still not say where to look: a box per colour of the palette, five things in the accent, thirty nodes in one region. Two design gates name those cases, so the builder advises on hierarchy the way it refuses defects, without refusing a file for a judgement call.",
+      "contract": [
+        "`Scene(accent=...)` names the focal colour, orange by default. A paint of `\"accent\"` resolves to it, and so does a role declared as `\"accent\"`.",
+        "`check_focus()` reports more than 2 shapes filled in the accent colour, with their labels.",
+        "`check_focus()` also reports more than 4 distinct role fills, counting neither neutral grey, white, transparent nor the accent.",
+        "`check_node_budget()` reports every `section()` region, or the whole scene without one, holding more than 12 nodes.",
+        "`check_node_budget()` also reports every `enclose()` frame holding more than 12 nodes.",
+        "`check_node_budget()` counts shapes sharing one `Paint(group=...)` as one node.",
+        "`Gates` carries `focus` and `node_budget` as design gates. They default to `\"warn\"`, and `Gates.strict()` leaves them at `\"warn\"`; naming one as `\"error\"` makes it raise."
+      ],
+      "verify": [],
+      "notes": [
+        "The limits are `MAX_ACCENTS`, `MAX_ROLE_FILLS` and `NODE_BUDGET` in `checks.py`. The contract states them as a rule in `SKILL.md` under the quality rules **One focus** and **Node budget: 9–12 nodes per region**, cited here by name.",
+        "Every maintained example holds to both checks in full: `TestExampleDiagrams` asserts them empty, although `save()` only warns."
+      ],
+      "current_impl": [
+        "`check_focus()` and `check_node_budget()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`; the `focus` and `node_budget` rows of `_GATES` and the `design` mode in `excalidraw_engine/gates.py`; `Scene(accent=...)` in `excalidraw_engine/canvas.py`.",
+        "`CasesExcalidrawDesignGates` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.",
+        "-------------------"
+      ],
+      "accept": "CASE-1 — the focus gate names a rainbow and a crowd of accents\n  Given  five boxes in five role colours, and separately three boxes painted \"accent\"\n  When   `check_focus()` is called on each scene\n  Then   the first reports 5 role fills, and the second reports 3 accent shapes by label\n\nCASE-2 — grey, the accent and four roles is one clear focus\n  Given  two grey boxes, two accent boxes, four boxes in four role colours, and a legend\n  When   `check_focus()` is called\n  Then   it returns an empty list, because legend swatches are not nodes\n\nCASE-3 — the node budget counts per region and per frame\n  Given  a section of 9 nodes, and a second section of 13 nodes framed by `enclose()`\n  When   `check_node_budget()` is called\n  Then   it names the second section and the frame, each with 13, and not the first\n\nCASE-4 — a painted group counts once\n  Given  twenty boxes that share one `Paint(group=...)`, like the cells of one waveform row\n  When   `check_node_budget()` is called\n  Then   it returns an empty list\n\nCASE-5 — the design gates warn, even under strict\n  Given  a scene with five role fills\n  When   it is saved with the default `Gates()`, then with `Gates.strict()`, then with\n         `Gates(focus=\"error\")`\n  Then   the first two print a `focus` warning and write the files, and the third raises\n         `ValueError`",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-031"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:9"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1678"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:310"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:336"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/gates.py:89"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 5,
+      "covered": 5,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 7 clauses and 5 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
+    },
+    {
+      "id": "REQ-EXCALIDRAW-861",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Right-angle connectors and the orthogonal gate",
+      "intent": "A diagonal connector reads as noise beside boxes that sit on a grid, and it cuts through more of the diagram than a connector that turns once. The builder can draw every bound arrow at right angles, and a design gate names each one that is not.",
+      "contract": [
+        "`arrow(src, dst, elbow=True)` draws a bound arrow whose every leg is horizontal or vertical.",
+        "An elbow arrow between shapes that share a row or a column is one straight leg in the shared span.",
+        "Any other elbow arrow has three legs. It leaves the side facing the target, turns in the gap between the shapes, and enters the facing side.",
+        "An elbow arrow's label sits at the midpoint of its middle leg, where the editor draws it.",
+        "Each elbow connector takes its own attach point on a side it shares, at least 12px from any other.",
+        "`check_arrow_crossings()` judges an elbow arrow along its actual legs, not the line between centres.",
+        "`check_orthogonal_arrows()` reports every bound arrow with a leg that is neither horizontal nor vertical. `Gates` carries it as the `orthogonal` design gate."
+      ],
+      "verify": [],
+      "notes": [
+        "`PackOptions(edge_style=\"orthogonal\")` is the auto-layout's right-angle style and the one `SKILL.md` recommends. It stays opt-in: making it the default moved labels in the frozen layout corpus and the data-model star layout, which the ratchet refuses.",
+        "The data-model command saves with `orthogonal=\"off\"`: its star layout draws diagonals on purpose, and a warning the user cannot act on is noise."
+      ],
+      "current_impl": [
+        "`arrow(..., elbow=True)`, `_elbow_route()` and `_port()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py`; `check_orthogonal_arrows()` and the leg-wise crossing test in `excalidraw_engine/checks.py`.",
+        "`CasesExcalidrawElbow` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "accept": "CASE-1 — an elbow arrow turns only at right angles\n  Given  two boxes that share neither a row nor a column\n  When   `arrow(a, b, label=\"goes\", elbow=True)` is called\n  Then   the arrow has three axis-aligned legs and stays bound to both boxes. Its label\n         sits on the middle leg, and two boxes sharing a row get one straight leg instead\n\nCASE-2 — connectors sharing a side get their own points\n  Given  three boxes that each send an elbow arrow to one wide box below them\n  When   the end points on that box's top side are compared\n  Then   every two of them are at least 12px apart\n\nCASE-3 — the orthogonal gate names a diagonal\n  Given  a straight bound arrow between two boxes on a diagonal\n  When   `check_orthogonal_arrows()` is called, and the scene is saved with `Gates.strict()`\n  Then   it names the pair, and the save prints an `orthogonal` warning and writes the files\n\nCASE-4 — an elbow arrow through a box is a crossing\n  Given  an elbow arrow whose turn runs through an unrelated box\n  When   `check_arrow_crossings()` is called\n  Then   it names that box",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-031"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:10"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1744"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:361"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py:91"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 4,
+      "covered": 4,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 7 clauses and 4 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        },
+        {
+          "rule": "no-failure-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "What happens on the failure path -- missing input, invalid value, nothing to do?",
+          "suggest": "Add one case for the way this can go wrong; it is the case implementations skip."
         }
       ]
     },
@@ -702,7 +863,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:495"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:510"
         },
         {
           "role": "implements",
@@ -739,8 +900,8 @@
       "intent": "`scene --from-json` is the short path to a diagram. A caller writes what the parts are and what connects to what — no coordinates anywhere — and gets back the same two files a generator script would have produced, judged by the same gates. It exists so that wanting a picture of a fifteen-node flow does not first require writing and debugging a Python script.",
       "contract": [
         "`scene_from_json(spec_path, out_dir)` reads a JSON object describing `nodes`, `edges`, `groups` and a `direction`, lays it out with `pack()`, and writes both `<name>.excalidraw` and `<name>.html`. The name comes from the description's `name`, else from the file's own stem.",
-        "Every key the description accepts maps to one `Scene` call: `title` and `subtitle` to `title()` and `label()`, `roles` and `legend` to `legend()`, `glossary` to `glossary()`, `seed` to `Scene(seed=...)`.",
-        "`scene_from_json` saves with every gate set to `\"error\"` (`Gates.strict()`), so a description that cannot be drawn readably fails instead of shipping. `scene_from_spec(spec, out_dir, name)` does the same for a description already in memory.",
+        "Every key the description accepts maps to one `Scene` call: `title` and `subtitle` to `title()` and `label()`, `takeaway` to `takeaway()`, `notes` to `note()`, `roles` and `legend` to `legend()`, `glossary` to `glossary()`, `seed` and `accent` to `Scene(seed=..., accent=...)`.",
+        "`scene_from_json` saves with every defect gate set to `\"error\"` (`Gates.strict()`), so a description that cannot be drawn readably fails instead of shipping; the design gates warn. `scene_from_spec(spec, out_dir, name)` does the same for a description already in memory, and its `gates=` replaces the default.",
         "A description the builder cannot use raises `ValueError`, and the CLI turns that into one line on stderr and exit code 1. Invoking `scene` with no description prints usage and exits 2."
       ],
       "verify": [],
@@ -766,15 +927,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1287"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1315"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:56"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:77"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:88"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/spec.py:110"
         }
       ],
       "test_exempt": null,
@@ -881,7 +1042,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1549"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1577"
         },
         {
           "role": "implements",
@@ -911,6 +1072,7 @@
       "contract": [
         "`Scene` exposes two decoding helpers, `legend()` for colour → meaning and `glossary()` for term → meaning, so every colour and every project-specific term used on the canvas is explained on that same canvas. [[REQ-EXCALIDRAW-849]] details the behaviour.",
         "A diagram produced for a reader who does not know the system opens with a `title()` and a one-line `label()` subtitle that states what the picture shows and its reading direction. Node text uses everyday words; jargon goes to the glossary rather than into a box.",
+        "A teaching diagram numbers its main path ①②③, states one takeaway under its subtitle, and explains at most two *why*s in margin notes on dashed leaders. The node text has two tiers: an everyday name, and the real file or call beneath it. [[REQ-EXCALIDRAW-862]] details the calls.",
         "`examples/make_explainer.py` is the maintained reference for this shape (a teaching diagram read top to bottom, with a legend and a glossary) and builds clean on every gate."
       ],
       "verify": [],
@@ -921,7 +1083,8 @@
       "current_impl": [
         "`Scene.legend()` and `Scene.glossary()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`.",
         "`plugin-full/skills/excalidraw-diagram/examples/make_explainer.py` (the reference teaching diagram); `TestExampleDiagrams` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py` runs it.",
-        "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`."
+        "The trigger phrases (\"explain how X works\", \"I don't understand X\") and the explainer recipe live in `SKILL.md` / `SKILL.universal.md`.",
+        "-------------------"
       ],
       "accept": "CASE-1 — a reader with no context can decode every colour and term\n  Given  a scene that uses role colours and at least one project-specific term\n  When   it is saved with `Gates(legend=\"error\")`\n  Then   a `legend()` decodes every fill colour used and a `glossary()` lists the\n         term with its meaning, both on the same canvas\n\nCASE-2 — the explainer example stays a clean teaching diagram\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   the built scene contains a legend and a glossary, opens with a title,\n         and produces zero violations on every gate\n\nCASE-3 — the asker who does not know the system gets a picture that teaches it  <!-- verifiable by: inspection -->\n  Given  a request phrased as \"explain how X works\" or \"I don't understand X\",\n         with no mention of a diagram\n  When   the skill runs\n  Then   the delivered diagram opens with a title plus a one-line subtitle\n         naming the reading direction. Its boxes use everyday words rather than\n         file names alone. A legend decodes every colour; a glossary decodes\n         every term. Checked by inspection; the reference shape is\n         `make_explainer.py`",
       "input": "",
@@ -935,6 +1098,7 @@
         "SYS-DIAGRAM-001"
       ],
       "satisfied_by": [
+        "REQ-EXCALIDRAW-862",
         "REQ-EXCALIDRAW-849"
       ],
       "members": [
@@ -948,7 +1112,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:943"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:963"
         }
       ],
       "test_exempt": null,
@@ -958,6 +1122,92 @@
       "clauses": 2,
       "covered": 2,
       "clarify": []
+    },
+    {
+      "id": "REQ-EXCALIDRAW-862",
+      "layer": "feature",
+      "level": "code",
+      "status": "confirmed",
+      "area": "REQ",
+      "title": "Teaching additions: steps, takeaway, margin notes, two-tier text",
+      "intent": "A reader who does not know the system needs to know where to start, what to keep, and why the odd part is odd. Numbered steps give the order, one takeaway line gives the point, and two margin notes give the reasons. A second, smaller tier of node text keeps the real file names on the canvas without making them the headline.",
+      "contract": [
+        "`box(..., sublabel=...)` sets a second text tier under the name, in the code typeface at 12px, grouped with the shape.",
+        "`check_text_overflow()` reports a sublabel wider than its shape, below its bottom, or above the end of the name.",
+        "`pipeline(..., numbered=True)` opens each step's text with ①, ②, ③ in order. Its `line=` paints the chaining arrows.",
+        "`pack()` sizes a node for its `sublabel` and opens the label of a node with `step`.",
+        "`takeaway(text, at)` draws one line opened by \"Takeaway:\".",
+        "`note(text, target, at=None)` draws a margin note joined to `target` by a dashed right-angle leader. Without `at` it goes in the first margin whose leader cuts no shape.",
+        "`note()` raises `ValueError` on a third note in one scene.",
+        "`check_arrow_crossings()` judges a note's leader along its legs.",
+        "A graph description carries `takeaway`, `notes`, and a node's `sublabel` and `step`."
+      ],
+      "verify": [],
+      "notes": [
+        "`MAX_NOTES` in `annotate.py` is the limit of two. A third reason belongs in the text around the diagram, not on it.",
+        "A sublabel is free text, not bound text, because a shape binds one label. Sharing the shape's group is what moves it with the shape in the editor."
+      ],
+      "current_impl": [
+        "`numbered_text()`, `takeaway()` and `note()` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py`; `box(..., sublabel=...)` in `excalidraw_engine/shapes.py`; the `step` and `sublabel` keys in `excalidraw_engine/pack.py`; `takeaway` and `notes` in `excalidraw_engine/spec.py`.",
+        "`CasesExcalidrawTeaching` and the explainer case in `CasesExcalidraw033`, in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
+      ],
+      "accept": "CASE-1 — a sublabel is a second code tier that must fit\n  Given  a box named \"Orders API\" with the sublabel \"orders/api.py\"\n  When   it is drawn, and separately a box too narrow for its sublabel is drawn\n  Then   the sublabel is code type, smaller, under the name and grouped with the shape. The\n         narrow box's sublabel is reported by `check_text_overflow()`\n\nCASE-2 — steps are numbered on the path\n  Given  a three-step `pipeline(numbered=True, line=\"accent\")`, and a `pack()` of two nodes\n         with `step` 1 and 2\n  When   the scenes are built\n  Then   the steps read \"① ask\", \"② build\", \"③ check\" with accent arrows, and the packed\n         labels open with ① and ②\n\nCASE-3 — the takeaway opens with its word\n  Given  a scene, and a graph description with a `takeaway` key\n  When   `takeaway(\"one writer, many readers\", (0, 0))` is called, and the description is built\n  Then   each scene holds a line that starts with \"Takeaway:\"\n\nCASE-4 — a margin note is joined, limited and checked\n  Given  a box with a margin note, a box with two notes, and a note whose leader runs\n         through an unrelated box\n  When   each note is drawn\n  Then   the first note sits in the margin on a dashed leader with every check clean. The\n         third note raises `ValueError`, and the leader through a box is a crossing\n\nCASE-5 — the explainer carries the teaching shape\n  Given  `examples/make_explainer.py`\n  When   `test_excalidraw.py` runs it\n  Then   its scene holds one takeaway, steps ① to ⑤, two margin notes and a sublabel",
+      "input": "",
+      "output": "",
+      "desc": "",
+      "depends_on": [],
+      "used_by": [],
+      "satisfies": [
+        "ARCH-EXCALIDRAW-033"
+      ],
+      "satisfied_by": [],
+      "members": [
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:11"
+        },
+        {
+          "role": "tested-by",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1806"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:23"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:60"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:73"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py:210"
+        },
+        {
+          "role": "implements",
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py:94"
+        }
+      ],
+      "test_exempt": null,
+      "milestone": null,
+      "priority": "",
+      "risks": [],
+      "clauses": 5,
+      "covered": 5,
+      "clarify": [
+        {
+          "rule": "clause-without-case",
+          "severity": "advisory",
+          "basis": "wording",
+          "where": "Cases",
+          "quote": "",
+          "question": "There are 9 clauses and 5 cases. Does each clause have a case that proves it? This check compares counts, not coverage: one case may prove two clauses, so it cannot say which clause, if any, is unproven.",
+          "suggest": "Read the clauses against the cases. If an obligation is unproven, add or extend a case, or move the clause to the requirement that already carries its cases."
+        }
+      ]
     },
     {
       "id": "ARCH-EXCALIDRAW-034",
@@ -1060,11 +1310,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1031"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:462"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:485"
         }
       ],
       "test_exempt": null,
@@ -1122,11 +1372,11 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1003"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1031"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:463"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:486"
         }
       ],
       "test_exempt": null,
@@ -1405,11 +1655,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:50"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:214"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:217"
         }
       ],
       "test_exempt": null,
@@ -1599,7 +1849,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:51"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
         }
       ],
       "test_exempt": null,
@@ -1652,7 +1902,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:52"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
         }
       ],
       "test_exempt": null,
@@ -1772,11 +2022,11 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:53"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:236"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:239"
         },
         {
           "role": "implements",
@@ -1960,7 +2210,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:237"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:240"
         }
       ],
       "test_exempt": null,
@@ -2016,7 +2266,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:54"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:55"
         },
         {
           "role": "implements",
@@ -2084,7 +2334,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:238"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:241"
         }
       ],
       "test_exempt": null,
@@ -2137,7 +2387,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:122"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:123"
         },
         {
           "role": "implements",
@@ -2188,7 +2438,7 @@
       "members": [
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:112"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/data_model.py:113"
         }
       ],
       "test_exempt": null,
@@ -2398,15 +2648,15 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:173"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:188"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:81"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:187"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:107"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py:213"
         }
       ],
       "test_exempt": null,
@@ -2456,11 +2706,11 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1404"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1432"
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:170"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:172"
         }
       ],
       "test_exempt": null,
@@ -2575,6 +2825,14 @@
       "ARCH-EXCALIDRAW-031"
     ],
     [
+      "REQ-EXCALIDRAW-860",
+      "ARCH-EXCALIDRAW-031"
+    ],
+    [
+      "REQ-EXCALIDRAW-861",
+      "ARCH-EXCALIDRAW-031"
+    ],
+    [
       "ARCH-EXCALIDRAW-032",
       "SYS-DIAGRAM-001"
     ],
@@ -2597,6 +2855,10 @@
     [
       "ARCH-EXCALIDRAW-033",
       "SYS-DIAGRAM-001"
+    ],
+    [
+      "REQ-EXCALIDRAW-862",
+      "ARCH-EXCALIDRAW-033"
     ],
     [
       "ARCH-EXCALIDRAW-034",
@@ -2863,9 +3125,9 @@
     },
     {
       "month": "2026-11",
-      "count": 15,
+      "count": 16,
       "first": "2026-11-06",
-      "last": "2026-11-14",
+      "last": "2026-11-16",
       "versions": [
         "v2.10.0",
         "v2.11.0",
@@ -2881,11 +3143,20 @@
         "v2.18.0",
         "v2.19.0",
         "v2.20.0",
-        "v2.21.0"
+        "v2.21.0",
+        "v2.22.0"
       ],
-      "landmark": "v2.21.0",
-      "headline": "**The two editions swapped folders: `plugin/` is now the instructions-only edition and the",
+      "landmark": "v2.22.0",
+      "headline": "**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,",
       "entries": [
+        {
+          "version": "v2.22.0",
+          "date": "2026-11-16",
+          "headline": "**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,",
+          "body": "**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,\nand a teaching shape that says what to remember and why.** Both editions.\n\n- **One focus (rule and design gate).** Fills default to neutral grey; one accent colour\n  (`Scene(accent=\"orange\")`, `paint=\"accent\"`) marks the headline path and at most two\n  focal nodes; role colours, at most four, only where the legend explains them. \"If you\n  want to accent four things, you have not decided what matters yet.\" The new `focus`\n  gate flags more than 2 accent-coloured shapes or more than 4 role fills.\n- **Node budget 9–12 per region** (was 20). The `node_budget` gate flags a `section()`\n  region (or the scene) or an `enclose()` frame past 12 nodes; shapes sharing a\n  `Paint(group=…)`, like the cells of one waveform row, count once.\n- **Right angles, never diagonals.** `arrow(..., elbow=True)` draws a bound arrow as one\n  straight leg, or three legs turning in the gap between the shapes, with its label on the\n  middle leg; connectors sharing a side each get their own attach point. The `orthogonal`\n  gate flags a bound arrow with a diagonal leg, and the crossing gate now judges an elbow\n  along its actual legs. `PackOptions(edge_style=\"orthogonal\")` is the recommended style;\n  it stays opt-in because making it the default moved labels in the frozen layout corpus\n  and the data-model star layout. A bus label between two members of a group now stays\n  inside their frame.\n- **The three design gates warn, under `Gates.strict()` too** (`Gates(design=\"warn\")`);\n  name one (`Gates(focus=\"error\")`) to make it refuse. Every worked example holds to all\n  three: the skill flow, the architecture poster, the ISO flowchart, the explainer, the\n  ER diagram, the state machine and both timing diagrams were reworked to pass.\n- **Two-tier node text.** `box(..., sublabel=\"pack.py\")` sets the file, port or command\n  under the name in the code typeface at 12px, grouped with the shape; the overflow gate\n  checks both tiers fit. `pack()` and `graph.json` take a node `\"sublabel\"`.\n- **Teaching additions** for \"explain how X works\": `pipeline(numbered=True)` and a node\n  `\"step\"` number the main path ①②③; `takeaway()` (graph.json `\"takeaway\"`) states the\n  one line to remember under the subtitle; `note()` (graph.json `\"notes\"`) adds at most\n  two margin notes saying *why*, joined by a dashed right-angle leader that the crossing\n  gate checks. `make_explainer.py` shows all of them.\n- **State the plan before drawing**, a new workflow step: the regions, the node count per\n  region, the focal path and what was cut. The pre-delivery checklist gains the **remove\n  test** (can a node go, two merge, an arrow or a label go?) and \"would a 3-column table\n  say the same thing?\". The three-layers rule now includes a layer only when it carries\n  information for this reader.\n- **Anti-patterns** listed in both editions' `references/worked_examples.md`: identical\n  boxes, rainbow colouring, shadows, labels on the line, a legend inside the diagram,\n  vertical text, more than two accents, diagonal connectors, placeholder names.\n- **Instructions-only edition:** off-axis arrows are right-angle elbows written as\n  multi-point `points` (works in Excalidraw 0.17.6), each with its own attach point 12px+\n  apart; the sublabel tier is `fontFamily: 3` free text grouped with its shape; three\n  design checks join the seven self-checks.\n- Requirements: `REQ-EXCALIDRAW-860` (focus, node budget), `REQ-EXCALIDRAW-861` (elbow\n  arrows, orthogonal gate), `REQ-EXCALIDRAW-862` (steps, takeaway, notes, sublabels).",
+          "first_commit": "2026-11-16",
+          "last_commit": "2026-11-16"
+        },
         {
           "version": "v2.21.0",
           "date": "2026-11-14",
@@ -3309,28 +3580,72 @@
   ],
   "design": {
     "files": 32,
-    "clean_files": 32,
-    "score": 100,
+    "clean_files": 28,
+    "score": 88,
     "candidates": {
-      "encapsulation": 0,
+      "encapsulation": 5,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
       "standards": 0
     },
-    "findings": [],
-    "advice": {}
+    "findings": [
+      {
+        "pillar": "encapsulation",
+        "kind": "data-clump",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/annotate.py",
+        "line": 34,
+        "name": "title",
+        "detail": "at, font, text travel together through 4 functions: label, note, takeaway, title"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "long-parameter-list",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/arrange.py",
+        "line": 127,
+        "name": "pipeline",
+        "detail": "`pipeline` takes 8 parameters (over 6)"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "long-parameter-list",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py",
+        "line": 82,
+        "name": "arrow",
+        "detail": "`arrow` takes 7 parameters (over 6)"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "long-parameter-list",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py",
+        "line": 44,
+        "name": "box",
+        "detail": "`box` takes 7 parameters (over 6)"
+      },
+      {
+        "pillar": "encapsulation",
+        "kind": "data-clump",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py",
+        "line": 83,
+        "name": "_tiers",
+        "detail": "rect, text, ts travel together through 3 functions: _native, _polygon, _tiers"
+      }
+    ],
+    "advice": {
+      "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
+      "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together"
+    }
   },
   "health": {
     "score": 93,
-    "total": 41,
-    "scored": 41,
-    "healthy": 38,
+    "total": 44,
+    "scored": 44,
+    "healthy": 41,
     "exempt": 0,
     "deprecated": 0,
-    "confirmed": 41,
-    "implemented": 40,
-    "tested": 37,
+    "confirmed": 44,
+    "implemented": 43,
+    "tested": 40,
     "drafts": 0,
     "orphans": 0,
     "untested": 3,

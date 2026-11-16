@@ -21,6 +21,7 @@ satisfies: [SYS-DIAGRAM-001]
 Every bullet below is binding.
 - `.save(gates=Gates(...))` runs five advisory gates (`crossing`, `legend`, `overflow`, `text_overlap`, `label_fit`), each set to `"warn"` (the default, prints to stderr), `"error"` (raises `ValueError`) or `"off"`. [[REQ-EXCALIDRAW-846]]
 - `.save()` additionally enforces two hard gates that raise `ValueError` by default — overlapping shapes and arrows clamped too short to render — each switchable through the same `Gates` object for a deliberate exception. [[REQ-EXCALIDRAW-847]]
+- `.save()` also runs three design gates that judge hierarchy rather than defects: one focus and a node budget [[REQ-EXCALIDRAW-860]], and right-angle connectors [[REQ-EXCALIDRAW-861]]. They warn by default and under `Gates.strict()`, so they advise and never refuse a file unless a caller names one.
 
 ## Cases
 CASE-1
@@ -49,7 +50,7 @@ CASE-5
   Given  each maintained example generator in `examples/`
   When   `test_excalidraw.py` runs it
   Then   the generator produces zero violations on every gate (the five
-         advisory gates and both hard gates)
+         advisory gates, both hard gates and the three design gates)
 
 CASE-6
   Given  two boxes placed close but not overlapping, joined by a bound arrow
@@ -213,3 +214,154 @@ CASE-5 — the overlap gate sees a box that strayed into a frame
   Given  a frame drawn around two boxes, and a third box placed inside it
   When   `check_overlaps()` is called
   Then   it names the third box and the frame's caption, and not the two members
+
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-860
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-031]
+---
+
+# Design gates: one focus and a node budget
+
+## Description
+> A diagram can pass every defect gate and still not say where to look: a box per
+> colour of the palette, five things in the accent, thirty nodes in one region. Two
+> design gates name those cases, so the builder advises on hierarchy the way it
+> refuses defects, without refusing a file for a judgement call.
+
+Every bullet below is binding.
+- `Scene(accent=...)` names the focal colour, orange by default. A paint of `"accent"`
+  resolves to it, and so does a role declared as `"accent"`.
+- `check_focus()` reports more than 2 shapes filled in the accent colour, with their labels.
+- `check_focus()` also reports more than 4 distinct role fills, counting neither neutral grey,
+  white, transparent nor the accent.
+- `check_node_budget()` reports every `section()` region, or the whole scene without one,
+  holding more than 12 nodes.
+- `check_node_budget()` also reports every `enclose()` frame holding more than 12 nodes.
+- `check_node_budget()` counts shapes sharing one `Paint(group=...)` as one node.
+- `Gates` carries `focus` and `node_budget` as design gates. They default to `"warn"`, and
+  `Gates.strict()` leaves them at `"warn"`; naming one as `"error"` makes it raise.
+
+## Cases
+CASE-1 — the focus gate names a rainbow and a crowd of accents
+  Given  five boxes in five role colours, and separately three boxes painted "accent"
+  When   `check_focus()` is called on each scene
+  Then   the first reports 5 role fills, and the second reports 3 accent shapes by label
+
+CASE-2 — grey, the accent and four roles is one clear focus
+  Given  two grey boxes, two accent boxes, four boxes in four role colours, and a legend
+  When   `check_focus()` is called
+  Then   it returns an empty list, because legend swatches are not nodes
+
+CASE-3 — the node budget counts per region and per frame
+  Given  a section of 9 nodes, and a second section of 13 nodes framed by `enclose()`
+  When   `check_node_budget()` is called
+  Then   it names the second section and the frame, each with 13, and not the first
+
+CASE-4 — a painted group counts once
+  Given  twenty boxes that share one `Paint(group=...)`, like the cells of one waveform row
+  When   `check_node_budget()` is called
+  Then   it returns an empty list
+
+CASE-5 — the design gates warn, even under strict
+  Given  a scene with five role fills
+  When   it is saved with the default `Gates()`, then with `Gates.strict()`, then with
+         `Gates(focus="error")`
+  Then   the first two print a `focus` warning and write the files, and the third raises
+         `ValueError`
+
+## Context
+**Notes**
+- The limits are `MAX_ACCENTS`, `MAX_ROLE_FILLS` and `NODE_BUDGET` in `checks.py`. The
+  contract states them as a rule in `SKILL.md` under the quality rules **One focus** and
+  **Node budget: 9–12 nodes per region**, cited here by name.
+- Every maintained example holds to both checks in full: `TestExampleDiagrams` asserts
+  them empty, although `save()` only warns.
+
+**Current implementation**
+- `check_focus()` and `check_node_budget()` in
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/checks.py`; the
+  `focus` and `node_budget` rows of `_GATES` and the `design` mode in
+  `excalidraw_engine/gates.py`; `Scene(accent=...)` in `excalidraw_engine/canvas.py`.
+- `CasesExcalidrawDesignGates` in
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+
+
+--------------------
+
+
+---
+id: REQ-EXCALIDRAW-861
+status: confirmed
+level: code
+layer: feature
+owner: Alex
+satisfies: [ARCH-EXCALIDRAW-031]
+---
+
+# Right-angle connectors and the orthogonal gate
+
+## Description
+> A diagonal connector reads as noise beside boxes that sit on a grid, and it cuts
+> through more of the diagram than a connector that turns once. The builder can draw
+> every bound arrow at right angles, and a design gate names each one that is not.
+
+Every bullet below is binding.
+- `arrow(src, dst, elbow=True)` draws a bound arrow whose every leg is horizontal or vertical.
+- An elbow arrow between shapes that share a row or a column is one straight leg in the
+  shared span.
+- Any other elbow arrow has three legs. It leaves the side facing the target, turns in the
+  gap between the shapes, and enters the facing side.
+- An elbow arrow's label sits at the midpoint of its middle leg, where the editor draws it.
+- Each elbow connector takes its own attach point on a side it shares, at least 12px from
+  any other.
+- `check_arrow_crossings()` judges an elbow arrow along its actual legs, not the line
+  between centres.
+- `check_orthogonal_arrows()` reports every bound arrow with a leg that is neither
+  horizontal nor vertical. `Gates` carries it as the `orthogonal` design gate.
+
+## Cases
+CASE-1 — an elbow arrow turns only at right angles
+  Given  two boxes that share neither a row nor a column
+  When   `arrow(a, b, label="goes", elbow=True)` is called
+  Then   the arrow has three axis-aligned legs and stays bound to both boxes. Its label
+         sits on the middle leg, and two boxes sharing a row get one straight leg instead
+
+CASE-2 — connectors sharing a side get their own points
+  Given  three boxes that each send an elbow arrow to one wide box below them
+  When   the end points on that box's top side are compared
+  Then   every two of them are at least 12px apart
+
+CASE-3 — the orthogonal gate names a diagonal
+  Given  a straight bound arrow between two boxes on a diagonal
+  When   `check_orthogonal_arrows()` is called, and the scene is saved with `Gates.strict()`
+  Then   it names the pair, and the save prints an `orthogonal` warning and writes the files
+
+CASE-4 — an elbow arrow through a box is a crossing
+  Given  an elbow arrow whose turn runs through an unrelated box
+  When   `check_arrow_crossings()` is called
+  Then   it names that box
+
+## Context
+**Notes**
+- `PackOptions(edge_style="orthogonal")` is the auto-layout's right-angle style and the
+  one `SKILL.md` recommends. It stays opt-in: making it the default moved labels in the
+  frozen layout corpus and the data-model star layout, which the ratchet refuses.
+- The data-model command saves with `orthogonal="off"`: its star layout draws diagonals
+  on purpose, and a warning the user cannot act on is noise.
+
+**Current implementation**
+- `arrow(..., elbow=True)`, `_elbow_route()` and `_port()` in
+  `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/connectors.py`;
+  `check_orthogonal_arrows()` and the leg-wise crossing test in
+  `excalidraw_engine/checks.py`.
+- `CasesExcalidrawElbow` in
+  `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`.
+

@@ -10,9 +10,9 @@ the examples and every generated stub use; this package is how it is organised.
     shapes      box(), the ISO 5807 set, frame()
     connectors  arrow(), path(), route_under()
     arrange     arrange()/row()/column()/grid(), pipeline(), enclose(), lane()
-    annotate    title(), label(), section(), legend(), glossary()
+    annotate    title(), label(), section(), legend(), glossary(), takeaway(), note()
     pack        pack() — coordinate-free graph layout
-    checks      the seven inspection checks
+    checks      the seven inspection checks and the three design checks
     gates       Gates and save()
     scene       Scene, assembled from the above
     assets      the vendored Excalidraw runtime the offline viewer inlines
