@@ -3,6 +3,7 @@
   "title": "What happens when you ask for a diagram",
   "subtitle": "Left to right. Nothing in this description carries a coordinate — pack() worked out every position, and the seven gates judged the result. Colours are in the key below; dashed lines are paths the flow takes back.",
   "direction": "LR",
+  "edge_style": "orthogonal",
   "seed": 19,
   "roles": {
     "you": "grey",
@@ -34,7 +35,7 @@
     {"src": "route", "dst": "gates"},
     {"src": "gates", "dst": "scene", "label": "clean"},
     {"src": "gates", "dst": "html"},
-    {"src": "gates", "dst": "graph", "label": "not clean: describe it better"},
+    {"src": "gates", "dst": "graph", "label": "not clean: describe it better", "dashed": true},
     {"src": "scene", "dst": "edit", "label": "still editable"}
   ],
   "groups": [

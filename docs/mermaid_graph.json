@@ -3,6 +3,7 @@
   "title": "A Mermaid flowchart, drawn as an editable scene",
   "subtitle": "Top to bottom. Translated line by line from the Mermaid source in README.md, as references/mermaid_to_graph.md describes. No parser: the model reads the page and writes this graph.",
   "direction": "TB",
+  "edge_style": "orthogonal",
   "seed": 31,
   "roles": {
     "customer": "grey",
