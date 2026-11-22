@@ -3,6 +3,7 @@
   "title": "How a change reaches the people who installed the plugin",
   "subtitle": "Left to right. main takes no direct push: every change is a branch, a pull request and five CI jobs. Dashed lines are the way back when a job fails.",
   "direction": "LR",
+  "edge_style": "orthogonal",
   "seed": 23,
   "roles": {"you": "grey", "job": "blue", "gate": "orange", "release": "green"},
   "nodes": [

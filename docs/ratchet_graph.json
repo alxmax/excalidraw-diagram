@@ -3,6 +3,7 @@
   "title": "How the layout ratchet decides",
   "subtitle": "Top to bottom. Every graph in layout_corpus/, written to break the layout, is packed on every test run; each of the seven checks is counted and compared with the recorded baseline.",
   "direction": "TB",
+  "edge_style": "orthogonal",
   "seed": 29,
   "roles": {
     "input": "grey",
