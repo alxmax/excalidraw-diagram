@@ -12,7 +12,7 @@ check_arrow_crossings() empty.
 """
 
 from .annotate import numbered_text
-from .geometry import as_point, fit_text, text_extent
+from .geometry import as_point, fit_text, segments_cross, text_extent
 from .shapes import SUBLABEL_SIZE
 from .style import Font, Paint
 
@@ -357,7 +357,7 @@ class _PackRun(object):
         channel.append(self.at[-1] + self.extent[-1] + 60.0)
         _, _, far_x, far_y = self.scene.bounds()
         far = (far_y if self.lr else far_x) + margin
-        lane, trunk = 0, self._trunks()
+        lane, trunk, detours = 0, self._trunks(), []
         for k, link in enumerate(self.links):
             src, dst = str(link["src"]), str(link["dst"])
             a, b = self.placed[src], self.placed[dst]
@@ -370,10 +370,13 @@ class _PackRun(object):
                 self.scene.arrow(a, b, label=link.get("label"),
                                  paint=Paint(dashed=bool(link.get("dashed"))))
                 continue
-            self._route((a, b), (self.layer[src], self.layer[dst]), channel,
-                        (far + self.opts.lane_gap * (lane + 1), min(lane * 5.0, 10.0),
-                         link.get("label")), dashed=bool(link.get("dashed")))
+            detours.append(((a, b), (self.layer[src], self.layer[dst]), channel,
+                            (far + self.opts.lane_gap * (lane + 1), min(lane * 5.0, 10.0),
+                             link.get("label")), bool(link.get("dashed"))))
             lane += 1
+        # routed last, so each detour sees every straight arrow and bus it could cut
+        for ends, spans, chan, lane_spec, dashed in detours:
+            self._route(ends, spans, chan, lane_spec, dashed=dashed)
 
     def _trunks(self):
         """{source id: trunk coordinate} for every node with a bus edge, empty
@@ -443,29 +446,52 @@ class _PackRun(object):
         height of a box's side, and no gate would see a line through that text.
         The lane's nudge offsets connectors that share a channel. The line is grey and
         dashed only when its edge is, as a straight arrow is: a detour must not read as
-        a different kind of relationship."""
+        a different kind of relationship.
+
+        Each end can use the channel on either side of its layer. The default pair
+        is tried first and kept unless another pair cuts fewer drawn connectors: the
+        gap after a layer also carries that layer's bus, and a detour through it
+        would cut the bus's branches."""
         lane_at, nudge, label = lane
         sx, sy, sw, sh, _ = self.scene._geom[ends[0]]
         dx, dy, dw, dh, _ = self.scene._geom[ends[1]]
         ls, ld = spans
-        out_i, in_i = (ls, ld + 1) if ld <= ls else (ls + 1, ld)
-        if out_i == in_i:       # neighbouring layers: both legs would share one
-            out_i, in_i = (ls + 1, ld) if ld <= ls else (ls, ld + 1)   # channel
-        out_c, in_c = channel[out_i] - nudge, channel[in_i] - nudge
+        # the default, then its mirror (the one neighbouring layers fall back to)
+        preferred = [(ls, ld + 1), (ls + 1, ld)] if ld <= ls else [(ls + 1, ld), (ls, ld + 1)]
+        pairs = preferred + [(o, i) for o in (ls, ls + 1) for i in (ld, ld + 1)
+                             if (o, i) not in preferred]
         # clear of enclose()'s 24px frame, inside the row gap
         gap = self.opts.gap_minor
         stub = min(max(gap * 0.75, 30.0), gap - 6.0)
-        if self.lr:                                 # lanes run below the diagram
-            s_out, d_out = sy + sh + stub, dy + dh + stub
-            pts = [(sx + sw / 2, sy + sh), (sx + sw / 2, s_out), (out_c, s_out),
-                   (out_c, lane_at), (in_c, lane_at),
-                   (in_c, d_out), (dx + dw / 2, d_out), (dx + dw / 2, dy + dh)]
-        else:                                       # lanes run right of it
-            s_out, d_out = sx + sw + stub, dx + dw + stub
-            pts = [(sx + sw, sy + sh / 2), (s_out, sy + sh / 2), (s_out, out_c),
-                   (lane_at, out_c), (lane_at, in_c),
-                   (d_out, in_c), (d_out, dy + dh / 2), (dx + dw, dy + dh / 2)]
+
+        def points(out_i, in_i):
+            out_c, in_c = channel[out_i] - nudge, channel[in_i] - nudge
+            if self.lr:                             # lanes run below the diagram
+                s_out, d_out = sy + sh + stub, dy + dh + stub
+                return [(sx + sw / 2, sy + sh), (sx + sw / 2, s_out), (out_c, s_out),
+                        (out_c, lane_at), (in_c, lane_at),
+                        (in_c, d_out), (dx + dw / 2, d_out), (dx + dw / 2, dy + dh)]
+            s_out, d_out = sx + sw + stub, dx + dw + stub   # lanes run right of it
+            return [(sx + sw, sy + sh / 2), (s_out, sy + sh / 2), (s_out, out_c),
+                    (lane_at, out_c), (lane_at, in_c),
+                    (d_out, in_c), (d_out, dy + dh / 2), (dx + dw, dy + dh / 2)]
+
+        drawn = self._connector_legs()
+        # neighbouring layers: both legs in one channel would overlap, so skip it
+        candidates = [points(o, i) for o, i in pairs if o != i]
+        pts = min(candidates, key=lambda c: sum(
+            segments_cross(leg, other) for leg in zip(c, c[1:]) for other in drawn))
         return self.scene.path(pts, label=label, paint=Paint(stroke="grey", dashed=dashed))
+
+    def _connector_legs(self):
+        """Every straight leg of the connectors drawn so far, as ((x1, y1), (x2, y2))."""
+        legs = []
+        for el in self.scene.elements:
+            pts = el.get("points") or ()
+            if el.get("type") in ("arrow", "line") and not el.get("polygon") and len(pts) > 1:
+                xy = [(el["x"] + px, el["y"] + py) for px, py in pts]
+                legs.extend(zip(xy, xy[1:]))
+        return legs
 
 
 class PackMixin(object):

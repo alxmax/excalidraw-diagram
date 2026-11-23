@@ -33,6 +33,9 @@ Every bullet below is binding.
   leaves a shape sitting on another one has failed.
 - The CLI reaches `pack()` through `scene --from-json`, so a caller never has to
   write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb.
+- `pack()` routes an edge after every straight arrow and bus. Each end may use the
+  strip on either side of its layer, and `pack()` picks the strip whose path crosses
+  the fewest connectors.
 
 ## Cases
 CASE-1 — a described graph with groups and a feedback edge lays out cleanly
@@ -62,6 +65,11 @@ CASE-4 — a graph that cannot be laid out is refused, and says why
          direction it does not know
   When   `pack()` runs
   Then   it raises `ValueError` naming what is wrong
+
+CASE-5 — a feedback edge avoids its target's bus
+  Given  a top-to-bottom orthogonal graph whose decision fans out to three nodes, with a feedback edge into it
+  When   `pack()` lays it out
+  Then   no two connectors cross
 
 ## Context
 **Notes**

@@ -394,7 +394,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1490"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1504"
         },
         {
           "role": "implements",
@@ -652,7 +652,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1693"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1707"
         },
         {
           "role": "implements",
@@ -728,7 +728,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1759"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1773"
         },
         {
           "role": "implements",
@@ -927,7 +927,7 @@
       "members": [
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1330"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1344"
         },
         {
           "role": "implements",
@@ -1042,7 +1042,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1592"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1606"
         },
         {
           "role": "implements",
@@ -1168,7 +1168,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1821"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1835"
         },
         {
           "role": "implements",
@@ -1222,7 +1222,8 @@
         "A node can say how its label is set, and `pack()` sizes and connects it for that. [[REQ-EXCALIDRAW-858]] details the behaviour.",
         "An edge can be flipped, laying its source out beyond its target, so two sources that share targets do not cross. [[REQ-EXCALIDRAW-859]] details the behaviour.",
         "A layout `pack()` produces passes the same gates a hand-written generator's does. Passing is the definition of a finished layout: a run that places every node and leaves a shape sitting on another one has failed.",
-        "The CLI reaches `pack()` through `scene --from-json`, so a caller never has to write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb."
+        "The CLI reaches `pack()` through `scene --from-json`, so a caller never has to write Python to get a diagram. [[REQ-EXCALIDRAW-850]] details that verb.",
+        "`pack()` routes an edge after every straight arrow and bus. Each end may use the strip on either side of its layer, and `pack()` picks the strip whose path crosses the fewest connectors."
       ],
       "verify": [],
       "notes": [
@@ -1233,7 +1234,7 @@
         "`pack()`, the `_PackRun` steps (`layers`, `measure`, `place`, `enclose`, `connect`, `_route`) and the pure graph functions `back_edges`, `layer_of`, `by_barycenter` in `plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py`.",
         "`CasesExcalidraw034` in `plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py`."
       ],
-      "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once\n         with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong",
+      "accept": "CASE-1 — a described graph with groups and a feedback edge lays out cleanly\n  Given  a 13-node graph with two groups, one feedback edge and one edge that\n         skips a layer, none of them carrying coordinates\n  When   `pack()` runs over it, once with `PackOptions(direction=\"LR\")` and once\n         with `\"TB\"`\n  Then   in both orientations all seven inspection checks return empty\n\nCASE-2 — a second graph of a different shape lays out cleanly too\n  Given  a differently shaped graph: two feedback edges at different spans, one\n         forward edge that skips a layer, and no groups\n  When   `pack()` runs over it in both orientations\n  Then   all seven inspection checks return empty, because a layout that only\n         works on the graph it was written against is not a layout\n\nCASE-3 — the degenerate shapes are laid out, not crashed on\n  Given  a 200-node chain, two disconnected components, an isolated node, and a\n         12-way fan-out that rejoins\n  When   `pack()` runs over each\n  Then   each is placed with all seven checks empty and none of them exhausts\n         the recursion limit\n\nCASE-4 — a graph that cannot be laid out is refused, and says why\n  Given  a description the builder cannot place: no nodes, a repeated id, an\n         empty id, an edge naming a node that does not exist, a self-edge, or a\n         direction it does not know\n  When   `pack()` runs\n  Then   it raises `ValueError` naming what is wrong\n\nCASE-5 — a feedback edge avoids its target's bus\n  Given  a top-to-bottom orthogonal graph whose decision fans out to three nodes, with a feedback edge into it\n  When   `pack()` lays it out\n  Then   no two connectors cross",
       "input": "",
       "output": "",
       "desc": "",
@@ -1264,8 +1265,8 @@
       "milestone": "v1.1.0",
       "priority": "",
       "risks": [],
-      "clauses": 4,
-      "covered": 4,
+      "clauses": 5,
+      "covered": 5,
       "clarify": []
     },
     {
@@ -1314,7 +1315,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:485"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:511"
         }
       ],
       "test_exempt": null,
@@ -1376,7 +1377,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:486"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py:512"
         }
       ],
       "test_exempt": null,
@@ -2391,7 +2392,7 @@
         },
         {
           "role": "implements",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py:68"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/sides.py:59"
         }
       ],
       "test_exempt": null,
@@ -2706,7 +2707,7 @@
         },
         {
           "role": "tested-by",
-          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1447"
+          "loc": "plugin-full/skills/excalidraw-diagram/scripts/test_excalidraw.py:1461"
         },
         {
           "role": "implements",
@@ -3125,9 +3126,9 @@
     },
     {
       "month": "2026-11",
-      "count": 17,
+      "count": 18,
       "first": "2026-11-06",
-      "last": "2026-11-16",
+      "last": "2026-11-23",
       "versions": [
         "v2.10.0",
         "v2.11.0",
@@ -3145,11 +3146,20 @@
         "v2.20.0",
         "v2.21.0",
         "v2.22.0",
-        "v2.22.1"
+        "v2.22.1",
+        "v2.22.2"
       ],
       "landmark": "v2.22.0",
       "headline": "**A visual hierarchy pass: one focus, a node budget, right angles, two tiers of text,",
       "entries": [
+        {
+          "version": "v2.22.2",
+          "date": "2026-11-23",
+          "headline": "A routed edge no longer cuts its target's bus",
+          "body": "**A routed edge no longer cuts its target's bus.** Full edition.\n\n- `pack()` routed a feedback edge into its target through the strip after the target's\n  layer. With `edge_style=\"orthogonal\"` that strip also carries the target's bus, so the\n  detour cut a branch (`docs/ratchet_graph.json`: `_baseline.json -> any count different?`\n  crossed the `up` branch). Detours are now routed after every straight arrow and bus.\n  Each end may use the strip on either side of its layer, and `pack()` keeps the one\n  crossing the fewest connectors. The default still wins a tie, so a layout that had no\n  crossing keeps its geometry.\n- `make_full_architecture.py` counts its generators instead of naming a number, and\n  drops the test and requirement counts it could not keep current.",
+          "first_commit": "2026-11-23",
+          "last_commit": "2026-11-23"
+        },
         {
           "version": "v2.22.1",
           "date": "2026-11-16",
@@ -3589,14 +3599,14 @@
   ],
   "design": {
     "files": 32,
-    "clean_files": 28,
-    "score": 88,
+    "clean_files": 27,
+    "score": 84,
     "candidates": {
       "encapsulation": 5,
       "abstraction": 0,
       "inheritance": 0,
       "polymorphism": 0,
-      "standards": 0
+      "standards": 1
     },
     "findings": [
       {
@@ -3624,6 +3634,14 @@
         "detail": "`arrow` takes 7 parameters (over 6)"
       },
       {
+        "pillar": "standards",
+        "kind": "file-too-long",
+        "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/pack.py",
+        "line": 1,
+        "name": "pack.py",
+        "detail": "520 lines (over 500)"
+      },
+      {
         "pillar": "encapsulation",
         "kind": "long-parameter-list",
         "file": "plugin-full/skills/excalidraw-diagram/scripts/excalidraw_engine/shapes.py",
@@ -3642,6 +3660,7 @@
     ],
     "advice": {
       "data-clump": "the same parameters travel through several functions: make them one object with those functions as methods",
+      "file-too-long": "a file this long is several modules sharing a name: split it along the prefix families it already shows",
       "long-parameter-list": "a parameter list this long is an object waiting to be named: group the parameters that travel together"
     }
   },

@@ -1,5 +1,19 @@
 # Changelog
 
+## plugin `v2.22.2` — 2026-11-23
+
+**A routed edge no longer cuts its target's bus.** Full edition.
+
+- `pack()` routed a feedback edge into its target through the strip after the target's
+  layer. With `edge_style="orthogonal"` that strip also carries the target's bus, so the
+  detour cut a branch (`docs/ratchet_graph.json`: `_baseline.json -> any count different?`
+  crossed the `up` branch). Detours are now routed after every straight arrow and bus.
+  Each end may use the strip on either side of its layer, and `pack()` keeps the one
+  crossing the fewest connectors. The default still wins a tie, so a layout that had no
+  crossing keeps its geometry.
+- `make_full_architecture.py` counts its generators instead of naming a number, and
+  drops the test and requirement counts it could not keep current.
+
 ## plugin `v2.22.1` — 2026-11-16
 
 **Labels in capitals are no longer cut off in the viewer.** Full edition.

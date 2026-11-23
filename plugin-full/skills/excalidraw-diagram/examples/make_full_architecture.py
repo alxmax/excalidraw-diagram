@@ -16,11 +16,16 @@ Every save() gate runs at "error". Run from the repo root, writing into the
 regenerable diagrams/ dir:
     python plugin-full/skills/excalidraw-diagram/examples/make_full_architecture.py diagrams
 """
+import glob
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from excalidraw_builder import Font, Gates, Scene
+
+# counted, not written: a hand-typed count goes stale with the next example
+N_EXAMPLES = len(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        "make_*.py")))
 
 s = Scene(seed=31, roles={
     "engine":   "blue",     # excalidraw_builder.py
@@ -42,8 +47,8 @@ parts = s.row([
     ("SKILL.md\nthe contract", "skill"),
     ("excalidraw_builder.py\nstdlib only", "engine"),
     ("references/\napi + examples", "words"),
-    ("examples/make_*.py\nfour generators", "artifact"),
-    ("requirements/\n14 promises", "words"),
+    ("examples/make_*.py\n%d generators" % N_EXAMPLES, "artifact"),
+    ("requirements/\ngate-checked promises", "words"),
 ], (80, y + 44), gap=28, cell={"size": (200, 64), "font": 13})
 s.enclose(parts, label="excalidraw-diagram plugin")
 
@@ -95,7 +100,7 @@ yb = yi + 150
 mkt = s.box(".claude-plugin\nmarketplace.json", (80, yb, 190, 64),
             paint="external", font=13)
 inst = s.box("/plugin install", (470, yb, 170, 64), paint="external", font=13)
-ci = s.box("git + CI\n80 tests, every example", (840, yb, 220, 64),
+ci = s.box("git + CI\nevery test, every example", (840, yb, 220, 64),
            paint="external", font=13)
 s.arrow(mkt, inst, label="lists")
 s.arrow(inst, ci, label="then every push")

@@ -1181,6 +1181,20 @@ class CasesExcalidraw034(unittest.TestCase):  # tested-by: REQ-EXCALIDRAW-851  #
                options=eb.PackOptions(direction="TB"))
         self.assertEqual(s.check_overlaps(), [])
 
+    def test_a_feedback_edge_avoids_its_targets_bus(self):  # verifies: ARCH-EXCALIDRAW-034#CASE-5
+        # the README's ratchet graph: the strip under "cmp" carries its bus, so a
+        # feedback edge entering through it cut the branch to "rose". No gate sees
+        # one connector crossing another, so the geometry is asserted here
+        from excalidraw_engine.sides import crossings
+        nodes = [{"id": n} for n in ("corpus", "pack", "count", "base", "ok", "rose", "fell")]
+        nodes.append({"id": "cmp", "kind": "decision"})
+        edges = [{"src": a, "dst": b} for a, b in (
+            ("corpus", "pack"), ("pack", "count"), ("count", "cmp"), ("base", "cmp"),
+            ("cmp", "ok"), ("cmp", "rose"), ("cmp", "fell"), ("fell", "base"))]
+        s = eb.Scene(seed=29)
+        s.pack(nodes, edges, options=eb.PackOptions(direction="TB", edge_style="orthogonal"))
+        self.assertEqual(crossings([e for e in s.elements if not e.get("polygon")])[1], 0)
+
     def test_a_frame_caption_dodges_the_arrows_entering_the_group(self):  # verifies: REQ-EXCALIDRAW-851#CASE-7
         nodes = [{"id": i} for i in ("in", "a", "b", "c")]
         edges = [{"src": "in", "dst": n, "label": n} for n in ("a", "b", "c")]
