@@ -19,8 +19,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 SKILL = os.path.join(ROOT, "plugin-full", "skills", "excalidraw-diagram")
 sys.path.insert(0, os.path.join(SKILL, "scripts"))
 from excalidraw_builder import DASHED, Font, Gates, Scene
+from excalidraw_engine.gates import _GATES
 
 # counted at generation time, so the labels cannot go stale
+N_GATES = len(_GATES)
 N_EXAMPLES = len(glob.glob(os.path.join(SKILL, "examples", "make_*.py")))
 N_TESTS = unittest.defaultTestLoader.discover(
     os.path.join(SKILL, "scripts"), pattern="test_*.py").countTestCases()
@@ -30,13 +32,12 @@ for _path in glob.glob(os.path.join(ROOT, "requirements", "*.md")):
         N_REQS += sum(1 for line in _f if line.startswith("id:"))
 
 s = Scene(seed=7, roles={
-    "you":      "grey",     # the person asking, or Claude acting for them
-    "contract": "violet",   # SKILL.md - the instructions the skill follows
+    "you":      "grey",     # the person asking, and the way a release reaches them
+    "contract": "violet",   # SKILL.md and requirements/ - what the skill promises
     "engine":   "blue",     # excalidraw_builder.py
-    "gate":     "orange",   # a check that can fail the build
+    "gate":     "yellow",   # a check that can fail the build
     "output":   "green",    # files the skill produces
-    "spec":     "indigo",   # requirements/ - what the skill promises
-    "ship":     "teal",     # packaging: manifests, marketplace, CI
+    "focus":    "accent",   # save(): the one decision this diagram is about
 })
 
 s.title("excalidraw-diagram — how this repository works", (40, -96), font=32)
@@ -53,12 +54,12 @@ parts = s.row([
     ("excalidraw_builder.py\nthe builder, stdlib only", "engine"),
     ("test_*.py\n%d tests, every example" % N_TESTS, "gate"),
     ("examples/make_*.py\n%d worked generators" % N_EXAMPLES, "output"),
-    ("requirements/\n%d promises, gate-checked" % N_REQS, "spec"),
+    ("requirements/\n%d promises, gate-checked" % N_REQS, "contract"),
 ], (80, row_y), gap=26, cell={"size": (215, 70), "font": 12})
 s.enclose(parts, label="plugin-full/  -  what gets installed")
 _, _, fx2, _ = s.bounds()
 s.box("marketplace.json + CI\nversion, checks, release", (fx2 + 60, row_y, 215, 70),
-      paint="ship", font=12)
+      paint="you", font=12)
 s.label("One skill, one stdlib-only builder. The examples are the documentation: "
         "CI runs each one, so a stale example is a failed build.",
         (80, row_y + 110), font=Font(12, align="left"))
@@ -71,7 +72,7 @@ steps = s.pipeline([
     ("read SKILL.md,\nexplore X", "process", "contract"),
     ("write\nmake_diagram.py", "process", "contract"),
     ("run it against\nthe builder", "process", "engine"),
-    {"text": "save():\n7 gates\npass?", "kind": "decision", "paint": "gate", "label": "yes"},
+    {"text": "save():\n%d gates\npass?" % N_GATES, "kind": "decision", "paint": "focus", "label": "yes"},
     {"text": ".excalidraw\n+ .html", "kind": "terminator", "paint": "output", "size": (150, 56)},
 ], (120, flow_y), gap=110)
 s.route_under(steps[4], steps[2], label="no -> fix the layout, run again", drop=60)
@@ -96,10 +97,10 @@ rel_y = ci_y + 210
 pr = s.box("pull request\n(main is push-protected)", (80, rel_y, 230, 70),
            paint="you", font=12)
 mkt = s.box("marketplace.json\nlists the version", (560, rel_y, 230, 70),
-            paint="ship", font=12)
+            paint="you", font=12)
 inst = s.box("/plugin install\nexcalidraw-diagram", (1040, rel_y, 230, 70),
              paint="you", font=12)
-s.arrow(pr, ci, label="triggers", paint=DASHED)
+s.arrow(pr, ci, label="triggers", paint=DASHED, elbow=True)
 s.arrow(pr, mkt, label="merge + version bump")
 s.arrow(mkt, inst, label="consumers receive it")
 s.label("The requirement corpus is the promise, the tests are the proof, the version bump is "
@@ -111,13 +112,12 @@ s.label("The requirement corpus is the promise, the tests are the proof, the ver
 _, _, _, bottom = s.bounds()
 ly = bottom + 70
 s.legend([
-    ("You, or Claude acting for you", "you"),
-    ("The skill's contract (SKILL.md)", "contract"),
+    ("You, and the way a release reaches you", "you"),
+    ("What is promised: SKILL.md, requirements/", "contract"),
     ("The builder", "engine"),
     ("A check that can fail the build", "gate"),
+    ("save(): where an unreadable diagram is refused", "focus"),
     ("What the skill produces", "output"),
-    ("Requirements: what is promised", "spec"),
-    ("Packaging and release", "ship"),
 ], (80, ly), title="What the colours mean")
 s.glossary([
     ("skill", "a markdown contract Claude Code loads when a request matches it"),
