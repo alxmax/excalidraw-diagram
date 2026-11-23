@@ -11,6 +11,7 @@ facts. The search never returns an assignment worse than it, and the same schema
 gives the same answer.
 """
 
+from .geometry import segments_cross
 from .pack import PackOptions
 from .scene import Scene
 
@@ -29,22 +30,12 @@ def _lines(elements):
     return out
 
 
-def _turn(p, q, r):
-    return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
-
-
-def _cross(a, b):
-    (p1, p2), (p3, p4) = a, b
-    return (_turn(p3, p4, p1) * _turn(p3, p4, p2) < 0
-            and _turn(p1, p2, p3) * _turn(p1, p2, p4) < 0)
-
-
 def crossings(elements):
     """(routed, pairs): how many connectors are routed round the diagram instead of drawn
     straight, and how many pairs of connectors cross, in a scene's elements."""
     lines = _lines(elements)
     pairs = sum(1 for i in range(len(lines)) for j in range(i + 1, len(lines))
-                if any(_cross(a, b) for a in lines[i][1] for b in lines[j][1]))
+                if any(segments_cross(a, b) for a in lines[i][1] for b in lines[j][1]))
     return sum(1 for routed, _ in lines if routed), pairs
 
 

@@ -22,8 +22,8 @@
       "reason": "2.0.0: the Scene API takes at/paint/font/Gates values, the builder became the excalidraw_engine package, and the MCP server was added; contracts renamed to match, obligations unchanged, and REQ-853/REQ-852 added"
     },
     "ARCH-EXCALIDRAW-034": {
-      "hash": "ad77989ca477",
-      "reason": "label ink follows fill contrast; pack node font and diamond sizing (REQ-858)"
+      "hash": "d92307d27b57",
+      "reason": "ARCH-EXCALIDRAW-034: pack() picks the routing strip with the fewest connector crossings (CASE-5)"
     },
     "ARCH-RELEASE-035": {
       "hash": "a29e804efb66",

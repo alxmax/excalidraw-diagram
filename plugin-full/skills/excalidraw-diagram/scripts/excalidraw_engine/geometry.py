@@ -174,6 +174,18 @@ def seg_rect_overlap(p0, p1, rect):
     return (t1 - t0) * math.hypot(dx, dy)
 
 
+def _turn(p, q, r):
+    return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+
+def segments_cross(a, b):
+    """True when segments a = (p1, p2) and b = (p3, p4) cross at a point inside
+    both. Touching, a shared end and collinear overlap do not count."""
+    (p1, p2), (p3, p4) = a, b
+    return (_turn(p3, p4, p1) * _turn(p3, p4, p2) < 0
+            and _turn(p1, p2, p3) * _turn(p1, p2, p4) < 0)
+
+
 def polyline_midpoint(points):
     """The point at half the total arc length along a polyline — the visual
     middle of a routed connector, not a corner waypoint."""

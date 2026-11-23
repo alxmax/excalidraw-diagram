@@ -1,6 +1,6 @@
 {
   "name": "excalidraw-diagram",
-  "version": "2.22.1",
+  "version": "2.22.2",
   "description": "Excalidraw diagram skill: turn a description of a system, flow or architecture into an editable .excalidraw scene plus a self-contained HTML viewer.",
   "owner": {
     "name": "Schipor Alexandru"
@@ -8,13 +8,13 @@
   "plugins": [
     {
       "name": "excalidraw-diagram",
-      "version": "2.22.1",
+      "version": "2.22.2",
       "source": "./plugin",
       "description": "Instructions-only edition: the skill as Markdown and JSON, no bundled code or MCP server."
     },
     {
       "name": "excalidraw-diagram-full",
-      "version": "2.22.1",
+      "version": "2.22.2",
       "source": "./plugin-full",
       "description": "Full edition: the stdlib Python builder with auto-layout and readability gates, plus its local MCP server."
     }

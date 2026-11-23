@@ -10,12 +10,24 @@ Regenerate from the repo root (the .excalidraw + .html land where you say):
 Then open out/repo_map.html and use Excalidraw's menu > Export image to refresh
 docs/repo_map.png.
 """
+import glob
 import os
 import sys
+import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugin-full",
-                                "skills", "excalidraw-diagram", "scripts"))
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+SKILL = os.path.join(ROOT, "plugin-full", "skills", "excalidraw-diagram")
+sys.path.insert(0, os.path.join(SKILL, "scripts"))
 from excalidraw_builder import DASHED, Font, Gates, Scene
+
+# counted at generation time, so the labels cannot go stale
+N_EXAMPLES = len(glob.glob(os.path.join(SKILL, "examples", "make_*.py")))
+N_TESTS = unittest.defaultTestLoader.discover(
+    os.path.join(SKILL, "scripts"), pattern="test_*.py").countTestCases()
+N_REQS = 0
+for _path in glob.glob(os.path.join(ROOT, "requirements", "*.md")):
+    with open(_path, encoding="utf-8") as _f:
+        N_REQS += sum(1 for line in _f if line.startswith("id:"))
 
 s = Scene(seed=7, roles={
     "you":      "grey",     # the person asking, or Claude acting for them
@@ -39,9 +51,9 @@ row_y = y + 44
 parts = s.row([
     ("SKILL.md\nthe contract Claude follows", "contract"),
     ("excalidraw_builder.py\nthe builder, stdlib only", "engine"),
-    ("test_excalidraw.py\n65 tests + every example", "gate"),
-    ("examples/make_*.py\nfour worked generators", "output"),
-    ("requirements/\n11 promises, gate-checked", "spec"),
+    ("test_*.py\n%d tests, every example" % N_TESTS, "gate"),
+    ("examples/make_*.py\n%d worked generators" % N_EXAMPLES, "output"),
+    ("requirements/\n%d promises, gate-checked" % N_REQS, "spec"),
 ], (80, row_y), gap=26, cell={"size": (215, 70), "font": 12})
 s.enclose(parts, label="plugin-full/  -  what gets installed")
 _, _, fx2, _ = s.bounds()
